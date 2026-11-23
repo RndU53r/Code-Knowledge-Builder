@@ -1,0 +1,40 @@
+{
+  "Findings": [
+    {
+      "SchemaVersion": "2018-10-08",
+      "Id": "arn:aws:securityhub:eu-west-1:111122223333:finding/ec2-sg-open-3000",
+      "ProductArn": "arn:aws:securityhub:eu-west-1::product/aws/securityhub",
+      "Title": "EC2.19 Security groups should not allow unrestricted access to high-risk ports (gateway-sg 3000/tcp from 0.0.0.0/0)",
+      "Severity": {
+        "Label": "HIGH"
+      },
+      "Compliance": {
+        "Status": "FAILED"
+      },
+      "Resources": [
+        {
+          "Type": "AwsEc2SecurityGroup",
+          "Id": "arn:aws:ec2:eu-west-1:111122223333:security-group/sg-0abc"
+        }
+      ]
+    },
+    {
+      "SchemaVersion": "2018-10-08",
+      "Id": "arn:aws:securityhub:eu-west-1:111122223333:finding/iam-star",
+      "ProductArn": "arn:aws:securityhub:eu-west-1::product/aws/securityhub",
+      "Title": "IAM.1 IAM policies should not allow full administrative privileges (orders-app)",
+      "Severity": {
+        "Label": "CRITICAL"
+      },
+      "Compliance": {
+        "Status": "FAILED"
+      },
+      "Resources": [
+        {
+          "Type": "AwsIamPolicy",
+          "Id": "arn:aws:iam::111122223333:policy/orders-app"
+        }
+      ]
+    }
+  ]
+}

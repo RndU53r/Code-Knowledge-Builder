@@ -39,6 +39,8 @@ Use the headings exactly as written in the template. The list below abbreviates 
 6. **Known-safe patterns and known-risky areas:** short bullets for each, cited.
 7. **Inter-service contracts:** producer, consumer, contract file, and the auth on the channel.
 8. **Config and env conditions:** only the `[security]` rows from outputs-and-conditions, in the same `condition | effect | default | source` form.
+Cloud and context: section 2 includes internet exposure from IaC and CSPM, section 6 lists open CSPM findings and documented-vs-observed drift under known-risky areas, and section 9 prioritizes paths where drift or CSPM findings meet code sinks.
+
 9. **Threat-model summary and scanner focus:** a prioritized table: priority, focus area, paths (globs or files), why, threat IDs. Put scanner-actionable items first.
 
 **Front matter:** fill in `languages`, `entry_points` (count), and `focus_areas` (short kebab-case tags such as `sqli`, `ssrf`, `authz-bypass`, `idor`, `ci-pwn-request`). Also fill in `scope`, `revision`, and `generated`. Leave `ckb_context: 1` as is: it's the format version.

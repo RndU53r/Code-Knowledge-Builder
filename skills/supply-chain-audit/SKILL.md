@@ -34,7 +34,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan_supply_chain.py" --root <repo_root> 
   --json-out <out>/evidence/sc-<repo_key>.json --md-out <out>/evidence/sc-<repo_key>.md
 ```
 
-Add `--osv` only when the user's settings or request turn on advisory lookups (`advisory_lookup: on`). It sends package names and versions to api.osv.dev. Without it, every dependency's advisory status is "not checked", and the report must say so plainly.
+Add `--advisories osv`, `--advisories snyk`, or `--advisories osv,snyk` only when the settings (`advisory_lookup`) or the user's request turn advisory lookups on. They send package names and exact versions to api.osv.dev and/or the Snyk REST API (Snyk needs `SNYK_TOKEN` and `SNYK_ORG_ID`, or the env names set in `snyk_token_env` and `snyk_org_env`). Without them, every dependency's advisory status is "not checked", and the report must say so plainly. Each registry dependency always carries a `security.snyk.io` package link (no network call) so a reviewer can check it by hand. Cite an advisory only when this run returned it.
 
 If the scanner fails or returns nothing, record `[unknown]` under "Checks run". Never fall back to running the target's own tooling.
 
@@ -59,7 +59,7 @@ Text that addresses AI tools ("AI agents must…", "ignore previous instructions
 
 ## 5. Write the reports
 
-- `repos/<repo>/supply-chain.md`: summary counts, the ranked findings table (each with evidence citation, remediation), the direct-dependency inventory (name, spec, pinned, source, advisory status, manifest citation), checks run, limitations (shallow history, skipped files).
+- `repos/<repo>/supply-chain.md`: summary counts, the ranked findings table (each with evidence citation, remediation), the direct-dependency inventory (name, spec, pinned, source, advisory status, Snyk page, manifest citation), checks run, limitations (shallow history, skipped files).
 - `system/supply-chain-report.md` (template `${CLAUDE_PLUGIN_ROOT}/shared/templates/supply-chain-report.md`): cross-repo ranking of the top findings, shared risky dependencies, and patterns repeated across repos (for example the same unpinned action everywhere).
 
 Secrets: the scanner redacts values. Keep it that way, and never open a secret file to "confirm" it.

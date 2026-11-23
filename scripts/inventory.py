@@ -37,8 +37,13 @@ INFRA = [
     ("kubernetes", re.compile(r"(^|/)(k8s|kube|kubernetes|manifests|deploy)/.+\.ya?ml$")),
     ("helm", re.compile(r"(^|/)(Chart\.yaml|values[^/]*\.yaml|templates/.+\.yaml)$")),
     ("kustomize", re.compile(r"(^|/)kustomization\.ya?ml$")),
-    ("terraform", re.compile(r"\.tf$|\.tfvars$")),
-    ("cloudformation", re.compile(r"(^|/)(template|cloudformation)[^/]*\.(ya?ml|json)$")),
+    ("terraform", re.compile(r"\.tf$|\.tfvars$|\.tf\.json$|(^|/)terragrunt\.hcl$")),
+    ("azure-bicep", re.compile(r"\.bicep$")),
+    ("azure-arm", re.compile(r"(?i)(^|/)(azuredeploy|mainTemplate|arm[^/]*)\.(parameters\.)?json$")),
+    ("aws-cdk", re.compile(r"(^|/)cdk\.json$")),
+    ("pulumi", re.compile(r"(^|/)Pulumi(\.[^/]+)?\.ya?ml$")),
+    ("gcp-deployment-manager", re.compile(r"(?i)\.(jinja|jinja2)$|(^|/)deployment[^/]*\.ya?ml$")),
+    ("cloudformation", re.compile(r"(^|/)(template|cloudformation|stack)[^/]*\.(ya?ml|json)$")),
     ("serverless", re.compile(r"(^|/)(serverless\.ya?ml|template\.ya?ml|sam\.ya?ml)$")),
     ("github-actions", re.compile(r"^\.github/workflows/.+\.ya?ml$")),
     ("gitlab-ci", re.compile(r"(^|/)\.gitlab-ci\.ya?ml$")),
@@ -69,6 +74,18 @@ FRAMEWORK_HINTS = {
     "typeorm": "TypeORM", "gorm": "GORM", "anthropic": "Anthropic SDK (LLM)", "openai": "OpenAI SDK (LLM)",
     "langchain": "LangChain (LLM)", "@anthropic-ai/sdk": "Anthropic SDK (LLM)",
 }
+
+# Cloud resources declared in IaC: (provider/kind, compiled regex with group 1 = type, group 2 = name)
+IAC_RESOURCES = [
+    ("terraform", re.compile(r'^\s*resource\s+"([a-z0-9_]+)"\s+"([^"]+)"')),
+    ("terraform-module", re.compile(r'^\s*module\s+"([^"]+)"()')),
+    ("cloudformation", re.compile(r"^\s*(?:Type:\s*['\"]?)(AWS::[A-Za-z0-9:]+)()")),
+    ("azure-bicep", re.compile(r"^\s*resource\s+(\w+)\s+'([^'@]+)@")),
+    ("azure-arm", re.compile(r'"type"\s*:\s*"(Microsoft\.[A-Za-z]+/[A-Za-z/]+)"()')),
+    ("gcp-dm", re.compile(r"^\s*-?\s*type:\s*['\"]?([a-z]+\.v\d+\.[A-Za-z]+)()")),
+    ("kubernetes", re.compile(r"^kind:\s*(Service|Ingress|Deployment|StatefulSet|CronJob|NetworkPolicy|Secret|ConfigMap|Gateway|VirtualService)\b()")),
+]
+IAC_FILE = re.compile(r"\.(tf|bicep|jinja|jinja2)$|\.tf\.json$|\.(ya?ml|json)$")
 
 # (kind, language set or None, pattern)
 ENTRY = [
@@ -129,7 +146,7 @@ def main() -> int:
 
     langs, loc = Counter(), Counter()
     manifests, infra, contracts, secret_files, binaries = [], [], [], [], []
-    entries, edges, configs = [], [], []
+    entries, edges, configs, cloud = [], [], [], []
     frameworks = {}
     compiled_entry = [(k, ls, re.compile(p, re.M)) for k, ls, p in ENTRY]
     compiled_edges = [(k, re.compile(p)) for k, p in EDGES]
@@ -171,6 +188,14 @@ def main() -> int:
                 m = re.search(r"(?im)(^|[\"'\s/])" + re.escape(hint) + r"[\"'\s=<>~^@:/\[]", text)
                 if m:
                     frameworks.setdefault(name, cite(rel, text.count("\n", 0, m.start()) + 1))
+        if IAC_FILE.search(rel):
+            for i, ln in enumerate(lines, 1):
+                for kind, pat in IAC_RESOURCES:
+                    m = pat.search(ln)
+                    if m and not (kind == "azure-arm" and not rel.endswith(".json")):
+                        typ, nm = (m.group(2), m.group(1)) if kind == "azure-bicep" else (m.group(1), m.group(2) or "")
+                        cloud.append({"kind": kind, "type": typ, "name": nm, "citation": cite(rel, i)})
+                        break
         if not lg or lg in ("sql", "terraform", "protobuf", "graphql"):
             continue
         for i, ln in enumerate(lines, 1):
@@ -207,7 +232,7 @@ def main() -> int:
         "repo": key, "root": str(root), "generated": now_iso(), "files": len(files),
         "languages": [{"language": k, "files": v, "lines": loc[k]} for k, v in langs.most_common()],
         "manifests": sorted(manifests), "frameworks": [{"name": k, "citation": v} for k, v in sorted(frameworks.items())],
-        "infra": infra, "contracts": contracts, "entry_point_candidates": entries, "edge_candidates": edges,
+        "infra": infra, "cloud_resources": cloud[: a.max_per_kind * 3], "contracts": contracts, "entry_point_candidates": entries, "edge_candidates": edges,
         "config_candidates": configs[: a.max_per_kind * 2],
         "excluded": {"secret_files_not_read": secret_files, "binaries": binaries[:200],
                      "symlinks_not_followed": list(walk_symlinks(root))},

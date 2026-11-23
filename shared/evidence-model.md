@@ -17,6 +17,11 @@ The evidence labels and provenance block are adapted from OthmanAdi/codebase-kno
 | `[inferred]` | Best explanation that connects observations | Citations of the observations + one-line reasoning |
 | `[unknown]` | Evidence missing, excluded, contradictory, or out of budget | What evidence would resolve it |
 | `[n/a]` | The section does not apply | Brief reason |
+| `[documented]` | Supported only by an architecture doc, diagram, or runbook (a `ctx-*` source), which records intent, not proof | Citation to the `ctx-*` file. If code, IaC, or CSPM contradicts it, record drift (see the context-ingest skill) |
+
+## Context sources
+
+Context ingested with `scripts/ingest_context.py` is registered under `ctx-*` keys and cited like code (`` `ctx-arch/security-design.docx.md:14` ``). Precedence when sources disagree: **code and IaC** (what is built) > **CSPM and scanner results** (what was deployed at scan time; cite the finding row) > **documents and diagrams** (`[documented]` intent). Never let a document overrule code. Report the disagreement as drift.
 
 ## Confidence
 

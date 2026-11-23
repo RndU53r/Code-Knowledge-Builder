@@ -37,6 +37,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 3. Write `system/threat-model.md` from the template, including a DFD with trust-boundary subgraphs.
 4. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> <out>/system/threat-model.md` and fix the errors.
 
+**Context:** if your prompt lists `ctx-*` keys, read their converted files under `<out>/evidence/context/<key>/`, following the `context-ingest` skill: IaC and CSPM are evidence, and documents and diagrams are `[documented]` claims to check against the code.
+
 **Rules:** static only; write only under `<out>`; no threat without code evidence (put speculation under Assumptions); ratings follow the rubric, without inflation; never include secret values.
 
 **Final message (≤ 12 lines):** the top five risks (ID, one line, rating, citation), STRIDE counts, whether the LLM Top 10 applied, and the verifier result.

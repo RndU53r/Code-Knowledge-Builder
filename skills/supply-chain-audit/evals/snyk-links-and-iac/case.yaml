@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: snyk-links-and-iac
+expected_outcome: |
+  Reports SC-D05/D07/D08/D09 IaC findings with citations; dependency table includes security.snyk.io links; advisories not checked.
+context:
+  scaffold_script: place-files.sh

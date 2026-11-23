@@ -31,7 +31,7 @@ from ckb_common import find_out_dir, now_iso, repo_roots_for_output, within  # n
 
 CITE = re.compile(r"`(?P<repo>[A-Za-z0-9._-]+)/(?P<path>[^`\s:]+):(?P<start>\d+)(?:-(?P<end>\d+))?`"
                   r"(?:\s*«(?P<quote>[^»]{1,400})»)?")
-MARKER = re.compile(r"\[(inferred|unknown|n/a)\]")
+MARKER = re.compile(r"\[(inferred|unknown|n/a|documented)\]")
 SLACK = 2
 
 

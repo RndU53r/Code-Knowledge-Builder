@@ -27,6 +27,15 @@ flowchart LR
 flowchart TB
 ```
 
+## Cloud resources (from IaC and CSPM)
+| Resource | Type | Provider | Exposure | Open CSPM findings | Source |
+| --- | --- | --- | --- | --- | --- |
+
+## Documented vs observed
+<!-- only when context docs or diagrams were supplied -->
+| Claim (documented) | Source | Observed | Evidence | Verdict |
+| --- | --- | --- | --- | --- |
+
 ## Key design decisions and constraints
 | Decision or constraint | Evidence | Label | Confidence |
 | --- | --- | --- | --- |

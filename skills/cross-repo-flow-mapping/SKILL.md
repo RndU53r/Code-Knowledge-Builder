@@ -31,7 +31,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_RO
 
 Build two lists from the per-repo flows: **producers** (outbound calls, publishes, writes) and **consumers** (routes, subscriptions, reads). Then match them by the identifiers in `references/matching-rules.md`:
 
-1. **Resolve indirection first.** An outbound URL like `${ORDERS_URL}/orders` resolves through env and config: compose `environment:`, K8s `env:`, Helm values, `.env.example` (names only, never secret values), and defaults in code. Cite each hop. If it can't be resolved, the edge stays at medium or low confidence.
+1. **Resolve indirection first.** IaC (Terraform, CloudFormation, ARM/Bicep, Deployment Manager, in repos or in `ctx-*` keys) often names the actual queue, topic, bucket, or database behind an env var. An outbound URL like `${ORDERS_URL}/orders` resolves through env and config: compose `environment:`, K8s `env:`, Helm values, `.env.example` (names only, never secret values), and defaults in code. Cite each hop. If it can't be resolved, the edge stays at medium or low confidence.
 2. **Match on the strongest key available:** contract operation (OpenAPI path and method, proto service and method) > exact topic, queue, or routing key > table or bucket name > hostname or service name > naming similarity. Record which key matched.
 3. **Unmatched sides are findings, not noise.** A producer with no consumer (or the reverse) goes in the "Unmatched endpoints" table with `[unknown]`. It may be external, dead code, or a bug.
 4. **Shared state.** When two repos write or read the same table, cache key prefix, or bucket path, add a shared-state edge. Shared writers are a high-value input for the threat model.

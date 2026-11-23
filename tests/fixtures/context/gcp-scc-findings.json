@@ -1,0 +1,20 @@
+[
+  {
+    "finding": {
+      "name": "organizations/1/sources/2/findings/f1",
+      "category": "OPEN_SSH_PORT",
+      "severity": "HIGH",
+      "state": "ACTIVE",
+      "resourceName": "//compute.googleapis.com/projects/shop/global/firewalls/allow-admin"
+    }
+  },
+  {
+    "finding": {
+      "name": "organizations/1/sources/2/findings/f2",
+      "category": "PUBLIC_BUCKET_ACL",
+      "severity": "HIGH",
+      "state": "ACTIVE",
+      "resourceName": "//storage.googleapis.com/shop-exports-fixture"
+    }
+  }
+]

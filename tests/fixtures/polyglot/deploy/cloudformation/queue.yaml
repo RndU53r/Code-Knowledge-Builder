@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Dead-letter queue for fulfillment (fixture; never deploy)
+Resources:
+  FulfillmentDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: fulfillment-dlq
+      SqsManagedSseEnabled: true
+  OpsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: ops
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action: "*"
+                Resource: "*"

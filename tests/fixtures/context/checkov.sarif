@@ -1,0 +1,52 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Checkov"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CKV_AZURE_44",
+          "level": "error",
+          "message": {
+            "text": "Ensure Storage Account is using the latest version of TLS encryption"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/azure/main.bicep"
+                },
+                "region": {
+                  "startLine": 4
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CKV_GCP_28",
+          "level": "error",
+          "message": {
+            "text": "Ensure that Cloud Storage bucket is not anonymously or publicly accessible"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "deploy/terraform/gcp/main.tf"
+                },
+                "region": {
+                  "startLine": 7
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

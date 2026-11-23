@@ -42,6 +42,10 @@ flowchart LR
 | Data sensitivity | | |
 | LLM (OWASP LLM Top 10), if applicable | | |
 
+## Cloud posture (CSPM) and documented-control drift
+| Item | Kind (CSPM finding / drift) | Severity | Related threat IDs | Source |
+| --- | --- | --- | --- | --- |
+
 ## Assumptions
 <!-- speculative threats without code evidence go here, not in the STRIDE table -->
 

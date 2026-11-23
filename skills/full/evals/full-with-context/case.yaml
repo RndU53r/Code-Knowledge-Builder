@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: full-with-context
+expected_outcome: |
+  Context ingested under ctx-* keys; HLD has drift table and cloud resources; threat model has cloud posture section; context.md mentions CSPM.
+context:
+  scaffold_script: place-files.sh

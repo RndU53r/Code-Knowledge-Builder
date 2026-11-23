@@ -7,8 +7,10 @@ Usage:
 
 Emits JSON (stdout or --json-out) and optionally a markdown findings table whose
 evidence column uses ckb citations (`key/path:line`). Never executes target code.
---osv queries api.osv.dev with package names and exact versions (opt-in; sends data
-off-machine). Without it, advisory status is "not checked".
+--advisories osv,snyk queries api.osv.dev and/or the Snyk REST API (SNYK_TOKEN + SNYK_ORG_ID)
+with package names and exact versions (opt-in; sends data off-machine). Without it, advisory
+status is "not checked". Every registry dependency always gets a security.snyk.io page link
+(no network call) so a human can check it.
 """
 from __future__ import annotations
 
@@ -50,6 +52,9 @@ REMEDIATION = {
     "SC-D04": "Verify downloaded binaries with a pinned sha256 or signature before use.",
     "SC-D05": "Avoid privileged containers, host networking, and running as UID 0.",
     "SC-D06": "Pin module sources to an immutable ref and providers to a version constraint.",
+    "SC-D07": "Block public access (S3 Block Public Access, Azure allowBlobPublicAccess=false, no allUsers bindings); front with authenticated access.",
+    "SC-D08": "Replace wildcard IAM actions/roles with least-privilege, resource-scoped permissions.",
+    "SC-D09": "Enable encryption at rest and enforce TLS 1.2+ / HTTPS-only.",
     "SC-S01": "Decode and review the blob; remove it if it is not a legitimate asset.",
     "SC-S02": "Never eval/exec content fetched at runtime or decoded from opaque strings.",
     "SC-S03": "Remove network access from import- and build-time code paths.",
@@ -218,8 +223,14 @@ class Scanner:
                 self.gitlab_ci(rel, text)
             if ext in (".yml", ".yaml") and re.search(r"(?m)^\s*kind:\s*(Deployment|Pod|StatefulSet|DaemonSet|Job|CronJob)\b", text):
                 self.k8s(rel, text)
-            if ext == ".tf":
+            if ext == ".tf" or base.endswith(".tf.json"):
                 self.terraform(rel, text)
+            if ext == ".bicep" or (ext == ".json" and '"Microsoft.' in text):
+                self.azure(rel, text)
+            if ext in (".yml", ".yaml", ".json", ".template") and ("AWSTemplateFormatVersion" in text or re.search(r"Type:\s*['\"]?AWS::", text)):
+                self.cloudformation(rel, text)
+            if ext in (".yml", ".yaml", ".jinja") and re.search(r"type:\s*['\"]?compute\.v\d\.firewall|type:\s*['\"]?storage\.v\d", text):
+                self.gcp_dm(rel, text)
             if base in ("Makefile", "makefile", "GNUmakefile") or ext in (".sh", ".bash", ".ps1"):
                 self.ran("install-time-shell")
         self.symlinks()
@@ -326,7 +337,7 @@ class Scanner:
     def dep(self, eco, name, spec, source, rel, line, pinned):
         self.deps.append({"ecosystem": eco, "name": name, "spec": spec, "source": source, "pinned": pinned,
                           "manifest": rel, "line": line, "citation": f"{self.key}/{rel}:{line}",
-                          "advisory": "not checked"})
+                          "advisory": "not checked", "snyk_url": None})
 
     def typosquat(self, eco, name, rel, line, raw):
         self.ran("typosquat")
@@ -686,8 +697,40 @@ class Scanner:
             if re.search(r"privileged\s*:\s*true|hostNetwork\s*:\s*true|hostPID\s*:\s*true|runAsUser\s*:\s*0\b|allowPrivilegeEscalation\s*:\s*true", ln):
                 self.add("SC-D05", "containers-iac", RISKY, "high", "high", rel, i, ln, "privileged pod setting")
 
+    def iac_common(self, rel, lines, provider):
+        """Cloud misconfiguration patterns shared by Terraform/CloudFormation/ARM/Bicep/DM."""
+        for i, ln in enumerate(lines, 1):
+            if re.search(r'"Action"\s*:\s*"\*"|Action:\s*["\']?\*["\']?\s*$|actions\s*=\s*\[\s*"\*"\s*\]|"actions"\s*:\s*\[\s*"\*"', ln):
+                self.add("SC-D08", "containers-iac", RISKY, "high", "medium", rel, i, ln, f"{provider}: wildcard IAM action")
+            if re.search(r'(?i)acl\s*[=:]\s*["\']?public-read(-write)?|PublicRead(Write)?\b|block_public_acls\s*=\s*false|'
+                         r'allowBlobPublicAccess["\']?\s*[:=]\s*true|publicNetworkAccess["\']?\s*[:=]\s*["\']?Enabled|'
+                         r'"allUsers"|"allAuthenticatedUsers"|members\s*=\s*\[[^\]]*"allUsers"', ln):
+                self.add("SC-D07", "containers-iac", RISKY, "high", "medium", rel, i, ln, f"{provider}: storage or service publicly accessible")
+            if re.search(r'(?i)(encrypted|storage_encrypted|enable_encryption|encryption_enabled|supportsHttpsTrafficOnly|enableHttpsTrafficOnly)["\']?\s*[:=]\s*["\']?false|'
+                         r'minimumTlsVersion["\']?\s*[:=]\s*["\']?TLS1_0|ssl_enforcement_enabled\s*=\s*false|require_ssl\s*=\s*false', ln):
+                self.add("SC-D09", "containers-iac", RISKY, "medium", "medium", rel, i, ln, f"{provider}: encryption or TLS disabled")
+            if re.search(r'(?i)source_ranges\s*=\s*\[\s*"0\.0\.0\.0/0"|sourceAddressPrefix["\']?\s*[:=]\s*["\']?(\*|Internet|0\.0\.0\.0/0)|'
+                         r'CidrIp:\s*["\']?0\.0\.0\.0/0|"CidrIp"\s*:\s*"0\.0\.0\.0/0"|sourceRanges:\s*\[?\s*["\']?0\.0\.0\.0/0', ln):
+                self.add("SC-D05", "containers-iac", RISKY, "medium", "medium", rel, i, ln, f"{provider}: ingress open to the internet")
+            if re.search(r'(?i)(password|admin_password|administratorLoginPassword|secret|MasterUserPassword)["\']?\s*[:=]\s*["\'][^"\'$\{\[]{6,}["\']', ln):
+                self.add("SC-S08", "secrets", RISKY, "high", "medium", rel, i, ln, f"{provider}: literal password/secret in IaC")
+
+    def azure(self, rel, text):
+        self.ran("azure-iac")
+        self.iac_common(rel, text.splitlines(), "Azure")
+
+    def cloudformation(self, rel, text):
+        self.ran("cloudformation")
+        self.iac_common(rel, text.splitlines(), "AWS CloudFormation")
+
+    def gcp_dm(self, rel, text):
+        self.ran("gcp-deployment-manager")
+        self.iac_common(rel, text.splitlines(), "GCP Deployment Manager")
+
     def terraform(self, rel, text):
         self.ran("terraform")
+        prov = "Terraform/" + ("AWS" if "aws_" in text else "Azure" if "azurerm_" in text else "GCP" if "google_" in text else "IaC")
+        self.iac_common(rel, text.splitlines(), prov)
         for i, ln in enumerate(text.splitlines(), 1):
             m = re.search(r'source\s*=\s*"(git::[^"]+|github\.com/[^"]+|https?://[^"]+)"', ln)
             if m and "?ref=" not in m.group(1):
@@ -738,18 +781,49 @@ class Scanner:
                          f"recent commit {commit[0]} ({commit[1][:10]}) touched build/CI file")
 
 
+SNYK_SITE_ECO = {"npm": "npm", "pypi": "pip", "go": "golang", "maven": "maven", "crates": "cargo",
+                 "rubygems": "rubygems", "packagist": "composer"}
+PURL_TYPE = {"npm": "npm", "pypi": "pypi", "go": "golang", "maven": "maven", "crates": "cargo",
+             "rubygems": "gem", "packagist": "composer"}
+OSV_ECO = {"npm": "npm", "pypi": "PyPI", "go": "Go", "crates": "crates.io", "maven": "Maven",
+           "rubygems": "RubyGems", "packagist": "Packagist"}
+
+
+def exact_version(d: dict) -> str | None:
+    if not d["pinned"]:
+        return None
+    v = re.sub(r"^(==|=|v(?=\d))", "", d["spec"].strip().strip('"'))
+    return v if re.match(r"^\d[\w.+-]*$", v) else None
+
+
+def snyk_link(d: dict) -> str | None:
+    """Public security.snyk.io page for the package (no network call; for humans to check)."""
+    import urllib.parse
+    eco = SNYK_SITE_ECO.get(d["ecosystem"])
+    if not eco or d["source"] != "registry":
+        return None
+    url = f"https://security.snyk.io/package/{eco}/{urllib.parse.quote(d['name'], safe='@')}"
+    v = exact_version(d)
+    return url + (f"/{urllib.parse.quote(v)}" if v else "")
+
+
+def add_advisory(d: dict, source: str, ids: list[str], url_fmt: str) -> None:
+    prev = d.get("advisories", [])
+    prev += [{"source": source, "id": i, "url": url_fmt.format(i)} for i in ids]
+    d["advisories"] = prev
+    d.setdefault("checked_by", []).append(source)
+
+
 def osv_lookup(deps: list[dict]) -> str:
     import urllib.request
-    eco_map = {"npm": "npm", "pypi": "PyPI", "go": "Go", "crates": "crates.io", "maven": "Maven",
-               "rubygems": "RubyGems", "packagist": "Packagist"}
     queries, idx = [], []
     for i, d in enumerate(deps):
-        v = re.sub(r"^[=v]=?", "", d["spec"]) if d["pinned"] else None
-        if v and d["ecosystem"] in eco_map:
-            queries.append({"package": {"name": d["name"], "ecosystem": eco_map[d["ecosystem"]]}, "version": v})
+        v = exact_version(d)
+        if v and d["ecosystem"] in OSV_ECO:
+            queries.append({"package": {"name": d["name"], "ecosystem": OSV_ECO[d["ecosystem"]]}, "version": v})
             idx.append(i)
     if not queries:
-        return "no pinned dependencies to check"
+        return "OSV: no exactly pinned dependencies to check"
     req = urllib.request.Request("https://api.osv.dev/v1/querybatch", data=json.dumps({"queries": queries}).encode(),
                                  headers={"Content-Type": "application/json"})
     try:
@@ -758,12 +832,60 @@ def osv_lookup(deps: list[dict]) -> str:
     except Exception as e:  # noqa: BLE001
         return f"OSV lookup failed: {type(e).__name__}"
     for i, res in zip(idx, results):
-        vulns = [v["id"] for v in res.get("vulns", [])]
-        deps[i]["advisory"] = ("vulnerable: " + ", ".join(f"https://osv.dev/vulnerability/{v}" for v in vulns)) if vulns else "no known advisory (OSV)"
+        add_advisory(deps[i], "osv", [v["id"] for v in res.get("vulns", [])], "https://osv.dev/vulnerability/{}")
+    return f"OSV: checked {len(queries)} pinned dependencies"
+
+
+def snyk_lookup(deps: list[dict], token_env: str, org_env: str) -> str:
+    """Snyk REST API 'list issues for a package' (needs a Snyk token and org id; opt-in)."""
+    import urllib.parse
+    import urllib.request
+    import os
+    token, org = os.environ.get(token_env), os.environ.get(org_env)
+    if not token or not org:
+        return f"Snyk: not checked ({token_env} and {org_env} must be set)"
+    checked = failed = 0
     for d in deps:
-        if d["advisory"] == "not checked" and not d["pinned"]:
+        v = exact_version(d)
+        t = PURL_TYPE.get(d["ecosystem"])
+        if not v or not t or d["source"] != "registry":
+            continue
+        name = d["name"]
+        if t == "maven" and ":" in name:
+            name = name.replace(":", "/", 1)
+        elif t == "npm" and name.startswith("@"):
+            name = "%40" + name[1:]
+        purl = f"pkg:{t}/{name}@{v}"
+        url = (f"https://api.snyk.io/rest/orgs/{urllib.parse.quote(org)}/packages/{urllib.parse.quote(purl, safe='')}"
+               f"/issues?version=2024-10-15&limit=100")
+        req = urllib.request.Request(url, headers={"Authorization": f"token {token}",
+                                                   "Accept": "application/vnd.api+json"})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read()).get("data", [])
+        except Exception as e:  # noqa: BLE001
+            failed += 1
+            d.setdefault("lookup_errors", []).append(f"snyk: {type(e).__name__}")
+            continue
+        ids = [(it.get("attributes") or {}).get("key") or it.get("id") for it in data]
+        add_advisory(d, "snyk", [i for i in ids if i], "https://security.snyk.io/vuln/{}")
+        checked += 1
+    return f"Snyk: checked {checked} pinned dependencies" + (f", {failed} lookups failed" if failed else "")
+
+
+def finalize_advisories(deps: list[dict]) -> None:
+    for d in deps:
+        d["snyk_url"] = snyk_link(d)
+        adv = d.get("advisories") or []
+        by = d.get("checked_by") or []
+        if adv:
+            d["advisory"] = "vulnerable: " + ", ".join(f"{a['id']} ({a['url']})" for a in adv)
+        elif by:
+            d["advisory"] = "no known advisory (" + "+".join(sorted(set(by))) + ")"
+        elif not d["pinned"]:
             d["advisory"] = "not checked (unpinned)"
-    return f"checked {len(queries)} pinned dependencies against OSV.dev"
+        else:
+            d["advisory"] = "not checked"
 
 
 def to_markdown(rep: dict) -> str:
@@ -774,11 +896,11 @@ def to_markdown(rep: dict) -> str:
             continue
         out.append(f"| {f['id']} | {f['check']} | {f['class']} | {f['severity']} | {f['confidence']} | `{f['citation']}` | "
                    f"{f['message']}{(' — ' + chr(96) + f['excerpt'] + chr(96)) if f['excerpt'] else ''} | {f['remediation']} |")
-    out += ["", "| Ecosystem | Name | Version spec | Pinned? | Source | Advisory status | Manifest |",
-            "| --- | --- | --- | --- | --- | --- | --- |"]
+    out += ["", "| Ecosystem | Name | Version spec | Pinned? | Source | Advisory status | Snyk page | Manifest |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for d in rep["dependencies"]:
         out.append(f"| {d['ecosystem']} | {d['name']} | {safe_excerpt(d['spec'], 40)} | {'yes' if d['pinned'] else 'no'} | "
-                   f"{d['source']} | {d['advisory']} | `{d['citation']}` |")
+                   f"{d['source']} | {d['advisory']} | {('<' + d['snyk_url'] + '>') if d.get('snyk_url') else 'n/a'} | `{d['citation']}` |")
     info = [f for f in rep["findings"] if f["severity"] == "info"]
     if info:
         out += ["", "Informational:", ""] + [f"- {f['message']} `{f['citation']}`" for f in info]
@@ -793,12 +915,22 @@ def main() -> int:
     ap.add_argument("--key", required=True)
     ap.add_argument("--json-out")
     ap.add_argument("--md-out")
-    ap.add_argument("--osv", action="store_true")
+    ap.add_argument("--osv", action="store_true", help="alias for --advisories osv")
+    ap.add_argument("--advisories", default="", help="comma list: osv,snyk (opt-in; sends package names+versions off-machine)")
+    ap.add_argument("--snyk-token-env", default="SNYK_TOKEN")
+    ap.add_argument("--snyk-org-env", default="SNYK_ORG_ID")
     ap.add_argument("--exclude", action="append", default=[])
     a = ap.parse_args()
     s = Scanner(Path(a.root), a.key, a.exclude)
     rep = s.run()
-    rep["advisory_lookup"] = osv_lookup(rep["dependencies"]) if a.osv else "not checked (advisory_lookup off)"
+    sources = {x.strip().lower() for x in a.advisories.split(",") if x.strip()} | ({"osv"} if a.osv else set())
+    notes = []
+    if "osv" in sources:
+        notes.append(osv_lookup(rep["dependencies"]))
+    if "snyk" in sources:
+        notes.append(snyk_lookup(rep["dependencies"], a.snyk_token_env, a.snyk_org_env))
+    finalize_advisories(rep["dependencies"])
+    rep["advisory_lookup"] = "; ".join(notes) if notes else "not checked (advisory_lookup off)"
     js = json.dumps(rep, indent=2)
     if a.json_out:
         Path(a.json_out).parent.mkdir(parents=True, exist_ok=True)

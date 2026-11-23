@@ -1,7 +1,7 @@
 ---
 name: full
 description: Run the whole ckb pipeline on one or more repos (authorization, safe acquisition, inventory, per-repo and system architecture, cross-repo flows, outputs and conditions, threat model, context.md, supply-chain audit, citation verification, and index). Static analysis only.
-argument-hint: "<source...>"
+argument-hint: "<source...> [--context <docs|diagrams|iac|cspm...>]"
 disable-model-invocation: true
 allowed-tools: Read, Grep, Glob, Write, Edit, Agent, AskUserQuestion, Skill, Bash(git log:*), Bash(git show:*), Bash(git rev-parse:*), Bash(git ls-files:*), Bash(git status:*), Bash(git blame:*)
 ---
@@ -12,7 +12,7 @@ Run everything for: $ARGUMENTS
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT}/shared/pipeline.md`.
 
-1. **P0–P2** once for all sources (one authorization question).
+1. **P0–P2b** once for all sources and context (one authorization question; ingest any `--context` paths).
 2. **Parallel per-repo wave:** in a single message, dispatch one `ckb:repo-analyzer` and one `ckb:supply-chain-auditor` per repo. They're independent.
 3. Verify each repo's files (`ckb:citation-verifier`) and fix failures.
 4. Write `system/supply-chain-report.md` (cross-repo ranking, `shared/templates/supply-chain-report.md`) → verify.

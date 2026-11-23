@@ -1,0 +1,17 @@
+[
+  {
+    "name": "a1b2",
+    "properties": {
+      "displayName": "Storage account public access should be disallowed",
+      "status": {
+        "code": "Unhealthy"
+      },
+      "resourceDetails": {
+        "Id": "/subscriptions/0000/resourceGroups/shop-dr/providers/Microsoft.Storage/storageAccounts/shopreportsfixture"
+      },
+      "metadata": {
+        "severity": "Medium"
+      }
+    }
+  }
+]

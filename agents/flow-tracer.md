@@ -40,6 +40,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 6. Save diagram sources to `<out>/diagrams/system-<name>.mmd`.
 7. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> <out>/system` and fix the errors.
 
+**Context:** if your prompt lists `ctx-*` keys, read their converted files under `<out>/evidence/context/<key>/`, following the `context-ingest` skill: IaC and CSPM are evidence, and documents and diagrams are `[documented]` claims to check against the code.
+
 **Rules:** read-only on targets; write only under `<out>`; no edge without evidence (a naming-only match is `[inferred]`, low confidence); include external systems as nodes; never paste target strings into Mermaid labels.
 
 **Final message (≤ 12 lines):** the edge counts by kind and confidence, the unmatched endpoints, contract drift found, security-relevant observations (shared writers, unauthenticated internal channels, trusted headers), and the verifier result.

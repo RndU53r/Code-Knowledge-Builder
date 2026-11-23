@@ -29,4 +29,8 @@
 | Artifact (Dockerfile/K8s/Helm/Terraform/CI/gateway) | What it tells us | Source |
 | --- | --- | --- |
 
+## Cloud resources declared in this repo
+| Type | Name | Provider | Source |
+| --- | --- | --- | --- |
+
 ## Exclusions and unknowns

@@ -1,0 +1,50 @@
+[
+  {
+    "status_code": "FAIL",
+    "severity": "High",
+    "finding_info": {
+      "uid": "prowler-aws-s3_bucket_public_access-eu-west-1-shop-invoices-fixture",
+      "title": "S3 bucket shop-invoices-fixture allows public read"
+    },
+    "resources": [
+      {
+        "uid": "arn:aws:s3:::shop-invoices-fixture"
+      }
+    ],
+    "cloud": {
+      "provider": "aws"
+    }
+  },
+  {
+    "status_code": "FAIL",
+    "severity": "Medium",
+    "finding_info": {
+      "uid": "prowler-aws-rds_instance_storage_encrypted-shop-db",
+      "title": "RDS instance shop-db storage is not encrypted"
+    },
+    "resources": [
+      {
+        "uid": "arn:aws:rds:eu-west-1:111122223333:db:shop-db"
+      }
+    ],
+    "cloud": {
+      "provider": "aws"
+    }
+  },
+  {
+    "status_code": "PASS",
+    "severity": "Low",
+    "finding_info": {
+      "uid": "prowler-aws-mq_broker_not_publicly_accessible-orders",
+      "title": "MQ broker orders is not publicly accessible"
+    },
+    "resources": [
+      {
+        "uid": "arn:aws:mq:eu-west-1:111122223333:broker:orders"
+      }
+    ],
+    "cloud": {
+      "provider": "aws"
+    }
+  }
+]

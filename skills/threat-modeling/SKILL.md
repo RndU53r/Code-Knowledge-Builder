@@ -26,7 +26,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_RO
 
 ## Inputs
 
-The analysis outputs (overviews, flows, `system/data-flows.md`, HLDs, outputs-and-conditions). If they're missing, run the analysis stages first. A threat model built without flows misses inter-service trust issues. Use supply-chain findings (`repos/*/supply-chain.md`, `system/supply-chain-report.md`), if present, as threats against the build and deploy path. Pick up conditions marked `[security]` in the outputs-and-conditions files.
+The analysis outputs (overviews, flows, `system/data-flows.md`, HLDs, outputs-and-conditions). If they're missing, run the analysis stages first. A threat model built without flows misses inter-service trust issues. Use supply-chain findings (`repos/*/supply-chain.md`, `system/supply-chain-report.md`), if present, as threats against the build and deploy path. Pick up conditions marked `[security]` in the outputs-and-conditions files. With context (`ctx-*` keys): cloud resources from IaC become assets and boundaries; open CSPM findings are observed gaps, cited by finding row; documented controls count as mitigations only when code or IaC confirms them, and contradicted ones become drift threats. Fill in the template's "Cloud posture (CSPM) and documented-control drift" section.
 
 ## Steps
 

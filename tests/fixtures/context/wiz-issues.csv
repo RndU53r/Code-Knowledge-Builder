@@ -1,0 +1,3 @@
+Issue ID,Severity,Resource,Control,Status
+wiz-001,Critical,arn:aws:iam::111122223333:policy/orders-app,Admin-equivalent IAM policy attached to workload,Open
+wiz-002,Low,gateway-sg,Security group allows ingress from internet,Resolved

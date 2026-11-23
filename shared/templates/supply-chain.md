@@ -20,8 +20,8 @@
 | --- | --- | --- | --- | --- | --- | --- |
 
 ## Dependency inventory (direct)
-| Ecosystem | Name | Version spec | Pinned? | Source (registry/git/url) | Advisory status | Manifest |
-| --- | --- | --- | --- | --- | --- | --- |
+| Ecosystem | Name | Version spec | Pinned? | Source (registry/git/url) | Advisory status | Snyk page | Manifest |
+| --- | --- | --- | --- | --- | --- | --- | --- |
 <!-- Advisory status: "not checked" unless advisory_lookup is on and a cited advisory exists -->
 
 ## Investigated, not an issue

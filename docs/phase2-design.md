@@ -177,3 +177,9 @@ code-knowledge-builder/            (this repo's root)
 1. **Slash-command namespace.** Claude Code namespaces commands by plugin name. A plugin named `code-knowledge-builder` gives `/code-knowledge-builder:analyze`, not `/ckb:analyze`. **Recommend:** name the plugin `ckb` (display name "Code Knowledge Builder") so the commands are `/ckb:*` as specified.
 2. **Advisory lookups.** Checking for known CVEs means sending package names and versions to OSV.dev. **Recommend:** off by default, with a setting to turn it on. When off, reports say "not checked".
 3. **Your real repos.** Not needed until Phase 5 validation. Send the list (paths or URLs, languages, deployment) whenever you're ready, and I'll ask you to confirm authorization for each.
+
+## Addendum (v0.2.0)
+
+- **Advisories:** `advisory_lookup: off | osv | snyk | osv,snyk`. Snyk uses the REST API (`SNYK_TOKEN`, `SNYK_ORG_ID`). Every registry dependency gets a `security.snyk.io` page link with no network call.
+- **Context inputs (`--context`, `context_paths`):** architecture docs (docx, pptx, pdf, md, html), diagrams (draw.io, vsdx, svg, images), cloud IaC (Terraform AWS/Azure/GCP, CloudFormation/SAM/CDK, ARM/Bicep, Deployment Manager, k8s/Helm), and CSPM or scanner results (ASFF, Prowler, ScoutSuite, Defender, GCP SCC, Checkov, SARIF, CSV). They're converted by `scripts/ingest_context.py` into `ctx-*` citable sources. The new `context-ingest` skill and the `[documented]` label separate intent from observation, and a "Documented vs observed" drift table feeds the HLD and threat model.
+- **IaC checks** SC-D07 (public storage), SC-D08 (wildcard IAM), SC-D09 (encryption/TLS off), and multi-cloud SC-D05; the inventory lists `cloud_resources`.

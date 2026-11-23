@@ -22,8 +22,11 @@
 | SC-D02 | containers-iac | `ADD https://…` |
 | SC-D03 | containers-iac | container runs as root |
 | SC-D04 | containers-iac | binary downloaded without checksum or signature verification |
-| SC-D05 | containers-iac | privileged pod settings; ingress 0.0.0.0/0 |
+| SC-D05 | containers-iac | privileged pod settings; ingress from 0.0.0.0/0, `Internet`, or `*` (AWS SG/CFN, Azure NSG, GCP firewall) |
 | SC-D06 | containers-iac | Terraform module without a pinned ref |
+| SC-D07 | containers-iac | public storage or service (S3 public ACL or block disabled, Azure allowBlobPublicAccess/publicNetworkAccess, GCP allUsers) across Terraform, CloudFormation, ARM/Bicep, and Deployment Manager |
+| SC-D08 | containers-iac | wildcard IAM actions (`"Action": "*"`, `actions = ["*"]`) |
+| SC-D09 | containers-iac | encryption at rest or TLS disabled (storage_encrypted=false, supportsHttpsTrafficOnly=false, TLS1_0, require_ssl=false) |
 | SC-S01 | source-indicators | long base64/hex blobs (high when near a decoder or eval) |
 | SC-S02 | source-indicators | eval/exec/Function of fetched or decoded content |
 | SC-S03 | source-indicators | network or process calls in import-time or build-time files |

@@ -36,6 +36,8 @@ If `overview.md` or `flows.md` is missing, run `repo-inventory` and `code-analys
 - **Component diagram:** one component flowchart per HLD.
 - **Components:** each runtime unit (service, worker, job, lambda, datastore, broker, gateway) with its responsibility in one sentence, its tech, and a citation.
 - **Boundaries and externals:** network exposure (from ingress, gateway, compose ports, Terraform security groups), third-party APIs, managed services. If exposure can't be established, mark it `[unknown]`. Don't assume a service is internal or public.
+- **Cloud resources:** list the resources from the inventory's `cloud_resources` (Terraform, CloudFormation, ARM/Bicep, Deployment Manager) and any CSPM findings against them (from `ctx-*` keys).
+- **Documented vs observed:** when `ctx-*` documents or diagrams exist, fill in the drift table described in the `context-ingest` skill. Diagram-only components stay `[documented]`.
 - **Deployment topology:** only what the infra artifacts show (replicas, namespaces, images, env injection, ingress hosts). With no infra files, write `[unknown]: no deployment artifacts in scope` instead of drawing a guess.
 - **Decisions and constraints:** only those evidenced in code or config, such as timeouts, body limits, idempotency keys, or retry policies.
 
