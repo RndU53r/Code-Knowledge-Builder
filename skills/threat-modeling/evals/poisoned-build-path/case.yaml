@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: poisoned-build-path
+expected_outcome: |
+  Threats against build path: pull_request_target pwn request, postinstall exec, script injection; injection text reported.
+context:
+  scaffold_script: place-files.sh

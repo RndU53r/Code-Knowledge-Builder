@@ -1,0 +1,22 @@
+services:
+  gateway:
+    build: ../gateway
+    ports: ["3000:3000"]
+    environment:
+      ORDERS_URL: http://orders:8000
+      JWT_SECRET: ${JWT_SECRET}
+  orders:
+    build: ../orders
+    environment:
+      DATABASE_URL: postgresql://orders@db:5432/shop
+      RABBITMQ_URL: amqp://rabbitmq:5672/
+  fulfillment:
+    build: ../fulfillment
+    environment:
+      DATABASE_URL: postgresql://fulfillment@db:5432/shop
+      RABBITMQ_URL: amqp://rabbitmq:5672/
+      SHIPPING_API_URL: https://api.shipping.example.com
+  db:
+    image: postgres:16
+  rabbitmq:
+    image: rabbitmq:3-management

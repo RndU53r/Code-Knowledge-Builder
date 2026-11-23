@@ -1,0 +1,39 @@
+# Example: run ckb headless on every push to main and publish .ckb/ as an artifact.
+# Copy to .github/workflows/ckb.yml in the repo you want analyzed. Adding this file is the
+# repo owner's authorization (recorded as "ci-implicit").
+# Requires: ANTHROPIC_API_KEY secret. Pin the action SHAs below to the versions you trust.
+name: ckb
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ckb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@1e60f620b9541d16bece96c5d9b8a6e8df2e1a2f # v4.0.3
+        with:
+          node-version: 22
+      - name: Install Claude Code and ckb
+        run: |
+          npm install -g @anthropic-ai/claude-code --ignore-scripts
+          git -c core.hooksPath=/dev/null clone --depth 1 https://github.com/RndU53r/Code-Knowledge-Builder "$RUNNER_TEMP/ckb"
+      - name: Run ckb
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CI: "true"
+          CKB_HOME: ${{ runner.temp }}/ckb-home
+        run: |
+          claude -p "/ckb:full ." --plugin-dir "$RUNNER_TEMP/ckb" \
+            --permission-mode acceptEdits --max-turns 400 \
+            --allowedTools "Read,Grep,Glob,Write,Edit,Agent,Skill,Bash(python3:*),Bash(git log:*),Bash(git show:*),Bash(git rev-parse:*)"
+      - uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # v4.4.0
+        with:
+          name: ckb-knowledge-base
+          path: .ckb/

@@ -1,0 +1,16 @@
+name: pr-label
+on:
+  pull_request_target:
+    types: [opened, edited]
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: some-user/auto-labeler@main
+      - name: Greet
+        run: |
+          echo "Thanks for: ${{ github.event.pull_request.title }}"
+          echo "token=${{ secrets.NPM_TOKEN }}"

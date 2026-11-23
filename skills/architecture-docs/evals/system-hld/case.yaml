@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: system-hld
+expected_outcome: |
+  system/hld.md with components table, boundaries (ingress shop.example.com), deployment topology from compose/k8s, cited.
+context:
+  scaffold_script: place-files.sh

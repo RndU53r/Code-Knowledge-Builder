@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant C as client
+  participant GW as gateway
+  participant OR as orders
+  C->>GW: POST orders with bearer token
+  alt no or invalid token
+    GW-->>C: 401
+  else valid
+    GW->>OR: POST orders body plus customer id
+    OR-->>GW: 201 order
+    GW-->>C: upstream status and body
+  end

@@ -1,0 +1,22 @@
+{
+  "name": "ckb",
+  "displayName": "Code Knowledge Builder",
+  "version": "0.1.0",
+  "description": "Turn one or more repositories into a cited knowledge base (HLD/LLD, cross-repo flows, outputs and conditions), a STRIDE threat model, scanner-ready context.md files, and a static supply-chain and prompt-injection audit. Read-only on targets.",
+  "author": {
+    "name": "RndU53r",
+    "url": "https://github.com/RndU53r"
+  },
+  "homepage": "https://github.com/RndU53r/Code-Knowledge-Builder#readme",
+  "repository": "https://github.com/RndU53r/Code-Knowledge-Builder",
+  "license": "MIT",
+  "keywords": [
+    "codebase-analysis",
+    "architecture",
+    "threat-modeling",
+    "supply-chain-security",
+    "prompt-injection",
+    "microservices",
+    "security-context"
+  ]
+}

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: polyglot-system-edges
+expected_outcome: |
+  data-flows.md with REST gateway->orders, AMQP orders->fulfillment, shared Postgres orders table, subprocess orders->pricing, external shipping API; both-end citations.
+context:
+  scaffold_script: place-files.sh

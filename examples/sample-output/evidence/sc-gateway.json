@@ -1,0 +1,78 @@
+{
+  "repo": "gateway",
+  "root": "<fixtures>/polyglot/gateway",
+  "generated": "2026-11-23T09:56:10Z",
+  "files_scanned": 5,
+  "findings": [
+    {
+      "check": "SC-D01",
+      "category": "containers-iac",
+      "class": "risky-practice",
+      "severity": "low",
+      "confidence": "high",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "gateway/Dockerfile:1",
+      "excerpt": "FROM node:20-alpine",
+      "message": "base image node:20-alpine not pinned by digest",
+      "remediation": "Pin base images by digest (image@sha256:...).",
+      "id": "GATEWAY-SC-001"
+    }
+  ],
+  "dependencies": [
+    {
+      "ecosystem": "npm",
+      "name": "express",
+      "spec": "4.19.2",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "package.json",
+      "line": 7,
+      "citation": "gateway/package.json:7",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "axios",
+      "spec": "1.7.2",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "package.json",
+      "line": 8,
+      "citation": "gateway/package.json:8",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "npm",
+      "name": "jsonwebtoken",
+      "spec": "9.0.2",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "package.json",
+      "line": 9,
+      "citation": "gateway/package.json:9",
+      "advisory": "not checked"
+    }
+  ],
+  "checks_run": {
+    "hidden-unicode": 5,
+    "secret-values": 5,
+    "curl-pipe-sh": 5,
+    "agent-injection": 5,
+    "dockerfile": 1,
+    "npm-lockfile": 1,
+    "lockfile-drift": 1,
+    "npm-manifest": 1,
+    "typosquat": 3,
+    "npm-lifecycle-scripts": 1,
+    "eval-of-fetched": 2,
+    "encoded-blobs": 2,
+    "symlinks": 1,
+    "git-hooks": 1,
+    "recent-build-ci-commits": 1
+  },
+  "limitations": [
+    "not a git checkout: commit history checks skipped"
+  ],
+  "advisory_lookup": "not checked (advisory_lookup off)"
+}

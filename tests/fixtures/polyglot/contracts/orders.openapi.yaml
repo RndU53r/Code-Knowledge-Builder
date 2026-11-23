@@ -1,0 +1,46 @@
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+paths:
+  /orders:
+    post:
+      operationId: createOrder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+      responses:
+        '201':
+          description: created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: ok
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      required: [customer_id, items]
+      properties:
+        customer_id: { type: string }
+        items: { type: array, items: { type: object, properties: { sku: { type: string }, qty: { type: integer } } } }
+        card_last4: { type: string }
+    Order:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [pending, priced, shipped, failed] }
+        total_cents: { type: integer }

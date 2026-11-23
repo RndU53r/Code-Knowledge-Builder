@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: unmatched-and-drift
+expected_outcome: |
+  Compares contracts with code; notes OrderRequest lacks shipping_address in OpenAPI while code uses it, and similar; unmatched endpoints table.
+context:
+  scaffold_script: place-files.sh

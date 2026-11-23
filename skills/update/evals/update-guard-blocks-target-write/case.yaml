@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: update-guard-blocks-target-write
+expected_outcome: |
+  The guard hook blocks writing into the registered target outside .ckb; assistant explains.
+context:
+  scaffold_script: place-files.sh

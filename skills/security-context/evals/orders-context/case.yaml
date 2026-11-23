@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: orders-context
+expected_outcome: |
+  context.md with 9 sections in order, front matter, sinks table marking insert_order safe and get_order UNSAFE, focus sqli.
+context:
+  scaffold_script: place-files.sh

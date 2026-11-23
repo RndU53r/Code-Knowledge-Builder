@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: polyglot-three-services
+expected_outcome: |
+  Per-service overview.md files listing languages, frameworks, entry points with handler citations, direct deps, infra context; all cited.
+context:
+  scaffold_script: place-files.sh

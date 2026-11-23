@@ -1,0 +1,126 @@
+{
+  "repo": "orders",
+  "root": "<fixtures>/polyglot/orders",
+  "generated": "2026-11-23T09:56:10Z",
+  "files_scanned": 7,
+  "findings": [
+    {
+      "check": "SC-D03",
+      "category": "containers-iac",
+      "class": "risky-practice",
+      "severity": "medium",
+      "confidence": "high",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "orders/Dockerfile:1",
+      "excerpt": "",
+      "message": "container runs as root (no non-root USER)",
+      "remediation": "Add a non-root USER and drop privileges.",
+      "id": "ORDERS-SC-001"
+    },
+    {
+      "check": "SC-D01",
+      "category": "containers-iac",
+      "class": "risky-practice",
+      "severity": "low",
+      "confidence": "high",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "orders/Dockerfile:1",
+      "excerpt": "FROM python:3.12-slim",
+      "message": "base image python:3.12-slim not pinned by digest",
+      "remediation": "Pin base images by digest (image@sha256:...).",
+      "id": "ORDERS-SC-002"
+    },
+    {
+      "check": "SC-M02",
+      "category": "manifests",
+      "class": "risky-practice",
+      "severity": "low",
+      "confidence": "medium",
+      "path": "requirements.txt",
+      "line": 1,
+      "citation": "orders/requirements.txt:1",
+      "excerpt": "",
+      "message": "requirements without --hash pins or a lockfile (installs are not reproducible)",
+      "remediation": "Commit the ecosystem lockfile and install with the frozen/locked mode in CI.",
+      "id": "ORDERS-SC-003"
+    }
+  ],
+  "dependencies": [
+    {
+      "ecosystem": "pypi",
+      "name": "fastapi",
+      "spec": "==0.111.0",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "requirements.txt",
+      "line": 1,
+      "citation": "orders/requirements.txt:1",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "uvicorn",
+      "spec": "==0.30.1",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "requirements.txt",
+      "line": 2,
+      "citation": "orders/requirements.txt:2",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "psycopg2-binary",
+      "spec": "==2.9.9",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "requirements.txt",
+      "line": 3,
+      "citation": "orders/requirements.txt:3",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pika",
+      "spec": "==1.3.2",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "requirements.txt",
+      "line": 4,
+      "citation": "orders/requirements.txt:4",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "pypi",
+      "name": "pydantic",
+      "spec": "==2.7.4",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "requirements.txt",
+      "line": 5,
+      "citation": "orders/requirements.txt:5",
+      "advisory": "not checked"
+    }
+  ],
+  "checks_run": {
+    "hidden-unicode": 7,
+    "secret-values": 7,
+    "curl-pipe-sh": 7,
+    "agent-injection": 7,
+    "dockerfile": 1,
+    "pip-requirements": 1,
+    "typosquat": 5,
+    "eval-of-fetched": 5,
+    "encoded-blobs": 5,
+    "import-time-network": 1,
+    "symlinks": 1,
+    "git-hooks": 1,
+    "recent-build-ci-commits": 1
+  },
+  "limitations": [
+    "not a git checkout: commit history checks skipped"
+  ],
+  "advisory_lookup": "not checked (advisory_lookup off)"
+}

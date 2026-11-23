@@ -1,0 +1,8 @@
+.claude/*.local.md
+__pycache__/
+*.pyc
+.DS_Store
+# eval workspaces and pipeline runs over fixtures
+evals/workspace/
+tests/fixtures/**/.ckb/
+tests/out/

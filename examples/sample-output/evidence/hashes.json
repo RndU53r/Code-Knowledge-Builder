@@ -1,0 +1,66 @@
+{
+  "generated": "2026-11-23T10:09:22Z",
+  "repos": {
+    "fulfillment": {
+      "Dockerfile": "20aa1ba27d901da7264ae7f321c5068c07bf7438fd25a141228f2ea56b642bd5",
+      "cmd/pricing/main.go": "1b48d38d09844ad78374bfbabec0383f8be2cd1636a4aec641d18ac8f778929c",
+      "cmd/worker/main.go": "a4ba574aaa1a0b41d70f36b84f161337b8ee7c9db038fad37ab7bd0ca3c74c54",
+      "go.mod": "f26649ecca2690ccbff30e64ab9f455973f34029efbabfa06fa894b61bbe4c53",
+      "go.sum": "ff3ac87342ae41f6cf5a79f10ace6f3bb89b57d4d9b3d7602f4fd2cd985863e1",
+      "internal/queue/consumer.go": "81f21472bd6aeecba5b8ed6faa856d736c1b7eb49603c57e86fa282002e80138"
+    },
+    "gateway": {
+      "Dockerfile": "e4df5424afd5c7fc7eacb2e6f927983a7052eec4ea734c10483fa8cebc0b1f8d",
+      "package-lock.json": "c14de3f071c2a71233b881561c42652436e87dfe1000fea1d2c54be5519f0c2e",
+      "package.json": "0b8f8eafd529284d201aa9acc6be0f514a1f7c86b4b56fee157d356b77e51ed1",
+      "src/auth.js": "1b9ad0345ae2fd34c2098619aa1acb71e365328454ff91d583b1d15a7db47010",
+      "src/server.js": "bda4b99afd5566a215d46c5709963f037c5171dd965e915097245d083430657a"
+    },
+    "orders": {
+      "Dockerfile": "46895f860da395caf2c6477fac087a3e210902f7ebb80044ac68359b5818fc7e",
+      "app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "app/db.py": "fc9715bdec1751ff4d0170fd9402b1872aaa170baf3cbf35da8da02a63553f1c",
+      "app/events.py": "463b74f4df1eb288324a562723de4297e97eb8652142ab1c436d6bc92069c055",
+      "app/main.py": "fdfad2e3646cbde221d8b569ef6f1601e7ba0f9dda2ced42f60ef583549edaa6",
+      "app/pricing.py": "a832cfcc7c011c32964ef3a988052f8f4ddc7eafb807679a84d4fc59b3cefc91",
+      "requirements.txt": "5352f76fd2f581d2fbc50044b45e330df92a9c11b0c22118fc4b0284ba1ef3ea"
+    },
+    "platform": {
+      ".github/workflows/ci.yml": "39a99ee3e437149cbe626877cfb10030691450f057f51294cac21e6cc296c3ad",
+      "README.md": "0ec6bf0c9416cd9af63995734c00d0da163b0898fa082283948179957fbe88cb",
+      "contracts/order_created.schema.json": "c75d895941701f236fc6980452e12b67affa98a856010f7391e0b438c4a3748d",
+      "contracts/orders.openapi.yaml": "2148e86774cb3d52eb334e0052a2b623e1d855b6001c111a5287faba67c8b251",
+      "deploy/docker-compose.yml": "a797fdd59713211733a4e0bd4bddded19d2dd50febbf0fe9aa21ede2c90a8abc",
+      "deploy/k8s/gateway.yaml": "7b9c40ba4dec6743c4e9f4f8349fd4fa34966fc7b9b64c68f6ece9412370a886",
+      "fulfillment/Dockerfile": "20aa1ba27d901da7264ae7f321c5068c07bf7438fd25a141228f2ea56b642bd5",
+      "fulfillment/cmd/pricing/main.go": "1b48d38d09844ad78374bfbabec0383f8be2cd1636a4aec641d18ac8f778929c",
+      "fulfillment/cmd/worker/main.go": "a4ba574aaa1a0b41d70f36b84f161337b8ee7c9db038fad37ab7bd0ca3c74c54",
+      "fulfillment/go.mod": "f26649ecca2690ccbff30e64ab9f455973f34029efbabfa06fa894b61bbe4c53",
+      "fulfillment/go.sum": "ff3ac87342ae41f6cf5a79f10ace6f3bb89b57d4d9b3d7602f4fd2cd985863e1",
+      "fulfillment/internal/queue/consumer.go": "81f21472bd6aeecba5b8ed6faa856d736c1b7eb49603c57e86fa282002e80138",
+      "gateway/Dockerfile": "e4df5424afd5c7fc7eacb2e6f927983a7052eec4ea734c10483fa8cebc0b1f8d",
+      "gateway/package-lock.json": "c14de3f071c2a71233b881561c42652436e87dfe1000fea1d2c54be5519f0c2e",
+      "gateway/package.json": "0b8f8eafd529284d201aa9acc6be0f514a1f7c86b4b56fee157d356b77e51ed1",
+      "gateway/src/auth.js": "1b9ad0345ae2fd34c2098619aa1acb71e365328454ff91d583b1d15a7db47010",
+      "gateway/src/server.js": "bda4b99afd5566a215d46c5709963f037c5171dd965e915097245d083430657a",
+      "orders/Dockerfile": "46895f860da395caf2c6477fac087a3e210902f7ebb80044ac68359b5818fc7e",
+      "orders/app/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "orders/app/db.py": "fc9715bdec1751ff4d0170fd9402b1872aaa170baf3cbf35da8da02a63553f1c",
+      "orders/app/events.py": "463b74f4df1eb288324a562723de4297e97eb8652142ab1c436d6bc92069c055",
+      "orders/app/main.py": "fdfad2e3646cbde221d8b569ef6f1601e7ba0f9dda2ced42f60ef583549edaa6",
+      "orders/app/pricing.py": "a832cfcc7c011c32964ef3a988052f8f4ddc7eafb807679a84d4fc59b3cefc91",
+      "orders/requirements.txt": "5352f76fd2f581d2fbc50044b45e330df92a9c11b0c22118fc4b0284ba1ef3ea"
+    },
+    "poisoned": {
+      ".github/workflows/pr-label.yml": "57a349e8783d8778a6371180dd01cc5e1c33d1bc5ac9de9351a1e07d9ed0f4fa",
+      ".husky/pre-commit": "38cbfbba0a6305e8d4a2545c7be1007a1a886f67dd4df1e76077995ea9068b26",
+      "AGENTS.md": "90c06197fa859932bd1bcbc17b987b3359d6209d6f47658d9f606d0d232bcd13",
+      "Dockerfile": "dba9379ef075cb9e7309ec0c8e62a23ee28da0cf55ba0c20f3c3037b51469e85",
+      "README.md": "5f430898b43fa18c2ae36c2bac0c3f2a982d267dc6f71448e8340d9ff234569b",
+      "docs/CONTRIBUTING.md": "02caf6dfe91d0916e8279a4f05e991d508c2e2b2deefa162f6c49e7f74c4a4cc",
+      "package.json": "ed1382721b3baa342093e378371eff7528838a93d685cab1e87864fcc4f16203",
+      "scripts/setup.js": "8ee81d47d2762bba381bd0f391bb48968a9c07ceb40c37d61535b0f75ada61be",
+      "src/index.js": "367e8901f4e0d2169b9edc702a7ad444f22b1b05dbcd9d2fbd4c34313a4216d0"
+    }
+  }
+}

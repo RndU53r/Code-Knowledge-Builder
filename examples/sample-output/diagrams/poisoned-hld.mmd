@@ -1,0 +1,5 @@
+flowchart LR
+  DEV["developer or consumer install"] --> SJ["setup script"]
+  SJ --> X1{{"attacker hosts"}}
+  PR["untrusted PR"] --> CI["pr-label workflow"]
+  CI --> SEC["repo secrets"]

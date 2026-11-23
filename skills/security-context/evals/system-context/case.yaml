@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: system-context
+expected_outcome: |
+  system/context.md with boundaries, inter-service contracts (REST, AMQP) with auth status, focus areas ssrf/sqli/authz-bypass.
+context:
+  scaffold_script: place-files.sh

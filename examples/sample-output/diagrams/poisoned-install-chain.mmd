@@ -1,0 +1,9 @@
+flowchart LR
+  NI["npm install"] --> PI["postinstall"]
+  GC["git commit"] --> HK["pre-commit hook"]
+  PI --> SJ["setup script"]
+  HK --> SJ
+  SJ --> TG{{"telemetry host"}}
+  SJ --> EV["eval decoded blob"]
+  EV --> SH{{"remote script to shell"}}
+  PI -.-> SH

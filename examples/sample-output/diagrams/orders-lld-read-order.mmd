@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant GW as gateway
+  participant API as orders
+  participant DB as postgres
+  GW->>API: GET orders id
+  API->>DB: SELECT with id string-built
+  alt no row
+    API-->>GW: 404
+  else row
+    API-->>GW: id status total
+  end

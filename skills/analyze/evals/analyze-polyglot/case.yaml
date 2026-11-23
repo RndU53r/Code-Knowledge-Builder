@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: analyze-polyglot
+expected_outcome: |
+  Asks/records authorization, registers 3 repos, writes per-repo overview/flows/hld/lld/outputs and system data-flows/hld, verification report.
+context:
+  scaffold_script: place-files.sh

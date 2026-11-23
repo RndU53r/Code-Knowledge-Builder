@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: threat-model-no-sources
+expected_outcome: |
+  With no registered repos and no args, asks which repos to model rather than scanning arbitrary directories.

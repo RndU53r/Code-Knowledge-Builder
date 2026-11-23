@@ -1,0 +1,4 @@
+flowchart LR
+  U["internet client"] -->|"HTTPS"| GW["gateway (Express)"]
+  GW -->|"REST POST and GET orders"| OR["orders"]
+  GW -->|"GET source URL"| X{{"any host"}}

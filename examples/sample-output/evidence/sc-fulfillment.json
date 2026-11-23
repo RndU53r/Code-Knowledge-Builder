@@ -1,0 +1,77 @@
+{
+  "repo": "fulfillment",
+  "root": "<fixtures>/polyglot/fulfillment",
+  "generated": "2026-11-23T09:56:10Z",
+  "files_scanned": 6,
+  "findings": [
+    {
+      "check": "SC-D01",
+      "category": "containers-iac",
+      "class": "risky-practice",
+      "severity": "low",
+      "confidence": "high",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "fulfillment/Dockerfile:1",
+      "excerpt": "FROM golang:1.22 AS build",
+      "message": "base image golang:1.22 not pinned by digest",
+      "remediation": "Pin base images by digest (image@sha256:...).",
+      "id": "FULFILLMENT-SC-001"
+    },
+    {
+      "check": "SC-D01",
+      "category": "containers-iac",
+      "class": "risky-practice",
+      "severity": "low",
+      "confidence": "high",
+      "path": "Dockerfile",
+      "line": 6,
+      "citation": "fulfillment/Dockerfile:6",
+      "excerpt": "FROM gcr.io/distroless/static:nonroot",
+      "message": "base image gcr.io/distroless/static:nonroot not pinned by digest",
+      "remediation": "Pin base images by digest (image@sha256:...).",
+      "id": "FULFILLMENT-SC-002"
+    }
+  ],
+  "dependencies": [
+    {
+      "ecosystem": "go",
+      "name": "github.com/lib/pq",
+      "spec": "v1.10.9",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "go.mod",
+      "line": 6,
+      "citation": "fulfillment/go.mod:6",
+      "advisory": "not checked"
+    },
+    {
+      "ecosystem": "go",
+      "name": "github.com/rabbitmq/amqp091-go",
+      "spec": "v1.10.0",
+      "source": "registry",
+      "pinned": true,
+      "manifest": "go.mod",
+      "line": 7,
+      "citation": "fulfillment/go.mod:7",
+      "advisory": "not checked"
+    }
+  ],
+  "checks_run": {
+    "hidden-unicode": 6,
+    "secret-values": 6,
+    "curl-pipe-sh": 6,
+    "agent-injection": 6,
+    "dockerfile": 1,
+    "go-mod": 1,
+    "eval-of-fetched": 3,
+    "encoded-blobs": 3,
+    "symlinks": 1,
+    "git-hooks": 1,
+    "recent-build-ci-commits": 1
+  },
+  "limitations": [
+    "not a git checkout: commit history checks skipped"
+  ],
+  "advisory_lookup": "not checked (advisory_lookup off)"
+}

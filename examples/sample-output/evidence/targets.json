@@ -1,0 +1,45 @@
+{
+  "out_dir": "<fixtures>/.ckb",
+  "repos": {
+    "fulfillment": {
+      "dirty": null,
+      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "local",
+      "revision": "unversioned",
+      "root": "<fixtures>/polyglot/fulfillment",
+      "source": "<fixtures>/polyglot/fulfillment"
+    },
+    "gateway": {
+      "dirty": null,
+      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "local",
+      "revision": "unversioned",
+      "root": "<fixtures>/polyglot/gateway",
+      "source": "<fixtures>/polyglot/gateway"
+    },
+    "orders": {
+      "dirty": null,
+      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "local",
+      "revision": "unversioned",
+      "root": "<fixtures>/polyglot/orders",
+      "source": "<fixtures>/polyglot/orders"
+    },
+    "platform": {
+      "dirty": null,
+      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "local",
+      "revision": "unversioned",
+      "root": "<fixtures>/polyglot",
+      "source": "<fixtures>/polyglot"
+    },
+    "poisoned": {
+      "dirty": null,
+      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "local",
+      "revision": "unversioned",
+      "root": "<fixtures>/poisoned",
+      "source": "<fixtures>/poisoned"
+    }
+  }
+}

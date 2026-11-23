@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: no-infra-says-unknown
+expected_outcome: |
+  HLD notes only Dockerfile as deployment evidence; topology beyond it marked [unknown]; no invented k8s.
+context:
+  scaffold_script: place-files.sh

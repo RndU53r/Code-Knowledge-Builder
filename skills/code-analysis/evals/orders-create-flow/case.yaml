@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: orders-create-flow
+expected_outcome: |
+  flows.md traces handler -> pricing subprocess -> db insert -> publish, with errors (400 MAX_ITEMS, pricing failure) and polyglot subprocess edge.
+context:
+  scaffold_script: place-files.sh

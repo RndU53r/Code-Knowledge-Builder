@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: gateway-lld-diagram
+expected_outcome: |
+  lld.md with sequenceDiagram including requireAuth/JWT verify and the axios call to orders, using synthetic participant aliases.
+context:
+  scaffold_script: place-files.sh

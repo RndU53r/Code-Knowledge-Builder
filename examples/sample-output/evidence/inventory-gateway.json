@@ -1,0 +1,113 @@
+{
+  "repo": "gateway",
+  "root": "<fixtures>/polyglot/gateway",
+  "generated": "2026-11-23T09:56:10Z",
+  "files": 5,
+  "languages": [
+    {
+      "language": "javascript",
+      "files": 2,
+      "lines": 69
+    }
+  ],
+  "manifests": [
+    "package-lock.json",
+    "package.json"
+  ],
+  "frameworks": [
+    {
+      "name": "Express",
+      "citation": "gateway/package.json:7"
+    }
+  ],
+  "infra": [
+    {
+      "kind": "dockerfile",
+      "path": "Dockerfile",
+      "citation": "gateway/Dockerfile:1"
+    }
+  ],
+  "contracts": [],
+  "entry_point_candidates": [
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:11",
+      "text": "app.get('/healthz', (req, res) => res.json({ ok: true }));"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:13",
+      "text": "app.post('/orders', requireAuth, async (req, res) => {"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:26",
+      "text": "app.get('/orders/:id', requireAuth, async (req, res) => {"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:31",
+      "text": "app.get('/admin/report', requireAuth, requireRole('admin'), async (req, res) => {"
+    }
+  ],
+  "edge_candidates": [
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:15",
+      "text": "const resp = await axios.post(`${ORDERS_URL}/orders`, { ...req.body, customer_id: req.user.sub }, {"
+    },
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:27",
+      "text": "const resp = await axios.get(`${ORDERS_URL}/orders/${req.params.id}`, { timeout: 5000 });"
+    },
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "gateway/src/server.js:32",
+      "text": "const resp = await axios.get(`${req.query.source}`, { timeout: 5000 });"
+    }
+  ],
+  "config_candidates": [
+    {
+      "kind": "env",
+      "name": "JWT_SECRET",
+      "citation": "gateway/src/auth.js:3",
+      "text": "const JWT_SECRET = process.env.JWT_SECRET;"
+    },
+    {
+      "kind": "env",
+      "name": "AUTH_DISABLED",
+      "citation": "gateway/src/auth.js:4",
+      "text": "const AUTH_DISABLED = process.env.AUTH_DISABLED === 'true';"
+    },
+    {
+      "kind": "env",
+      "name": "ORDERS_URL",
+      "citation": "gateway/src/server.js:5",
+      "text": "const ORDERS_URL = process.env.ORDERS_URL || 'http://orders:8000';"
+    },
+    {
+      "kind": "env",
+      "name": "PORT",
+      "citation": "gateway/src/server.js:6",
+      "text": "const PORT = process.env.PORT || 3000;"
+    }
+  ],
+  "excluded": {
+    "secret_files_not_read": [],
+    "binaries": [],
+    "symlinks_not_followed": []
+  },
+  "truncated": {
+    "entry_points": {},
+    "edges": {}
+  },
+  "note": "All candidates are regex matches. Open each cited line and confirm before stating as fact."
+}

@@ -1,0 +1,5 @@
+flowchart LR
+  MQ[["RabbitMQ orders"]] -.->|"AMQP order.created"| WK["worker"]
+  WK -->|"HTTPS POST shipments"| SH{{"shipping API"}}
+  WK ==>|"UPDATE status"| DB[("Postgres shop")]
+  OR["orders"] -->|"subprocess"| PR["pricing CLI"]

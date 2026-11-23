@@ -1,0 +1,340 @@
+{
+  "repo": "platform",
+  "root": "<fixtures>/polyglot",
+  "generated": "2026-11-23T09:56:10Z",
+  "files": 24,
+  "languages": [
+    {
+      "language": "python",
+      "files": 5,
+      "lines": 105
+    },
+    {
+      "language": "go",
+      "files": 3,
+      "lines": 119
+    },
+    {
+      "language": "javascript",
+      "files": 2,
+      "lines": 69
+    }
+  ],
+  "manifests": [
+    "fulfillment/go.mod",
+    "fulfillment/go.sum",
+    "gateway/package-lock.json",
+    "gateway/package.json",
+    "orders/requirements.txt"
+  ],
+  "frameworks": [
+    {
+      "name": "Express",
+      "citation": "platform/gateway/package.json:7"
+    },
+    {
+      "name": "FastAPI",
+      "citation": "platform/orders/requirements.txt:1"
+    },
+    {
+      "name": "PostgreSQL",
+      "citation": "platform/fulfillment/go.mod:6"
+    },
+    {
+      "name": "RabbitMQ (amqp091)",
+      "citation": "platform/fulfillment/go.mod:7"
+    },
+    {
+      "name": "RabbitMQ (pika)",
+      "citation": "platform/orders/requirements.txt:3"
+    }
+  ],
+  "infra": [
+    {
+      "kind": "github-actions",
+      "path": ".github/workflows/ci.yml",
+      "citation": "platform/.github/workflows/ci.yml:1"
+    },
+    {
+      "kind": "compose",
+      "path": "deploy/docker-compose.yml",
+      "citation": "platform/deploy/docker-compose.yml:1"
+    },
+    {
+      "kind": "kubernetes",
+      "path": "deploy/k8s/gateway.yaml",
+      "citation": "platform/deploy/k8s/gateway.yaml:1"
+    },
+    {
+      "kind": "dockerfile",
+      "path": "fulfillment/Dockerfile",
+      "citation": "platform/fulfillment/Dockerfile:1"
+    },
+    {
+      "kind": "dockerfile",
+      "path": "gateway/Dockerfile",
+      "citation": "platform/gateway/Dockerfile:1"
+    },
+    {
+      "kind": "dockerfile",
+      "path": "orders/Dockerfile",
+      "citation": "platform/orders/Dockerfile:1"
+    }
+  ],
+  "contracts": [
+    {
+      "kind": "json-schema",
+      "path": "contracts/order_created.schema.json",
+      "citation": "platform/contracts/order_created.schema.json:1"
+    },
+    {
+      "kind": "openapi",
+      "path": "contracts/orders.openapi.yaml",
+      "citation": "platform/contracts/orders.openapi.yaml:1"
+    }
+  ],
+  "entry_point_candidates": [
+    {
+      "kind": "main",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/pricing/main.go:14",
+      "text": "func main() {"
+    },
+    {
+      "kind": "cli",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/pricing/main.go:16",
+      "text": "flag.Parse()"
+    },
+    {
+      "kind": "main",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/worker/main.go:17",
+      "text": "func main() {"
+    },
+    {
+      "kind": "consumer",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/worker/main.go:26",
+      "text": "err = queue.Consume(os.Getenv(\"RABBITMQ_URL\"), func(evt queue.OrderCreated) error {"
+    },
+    {
+      "kind": "consumer",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/worker/main.go:28",
+      "text": "req, _ := http.NewRequest(\"POST\", shippingURL+\"/shipments\", bytes.NewReader(payload))"
+    },
+    {
+      "kind": "consumer",
+      "language": "go",
+      "citation": "platform/fulfillment/internal/queue/consumer.go:33",
+      "text": "msgs, err := ch.Consume(q.Name, \"fulfillment\", false, false, false, false, nil)"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:11",
+      "text": "app.get('/healthz', (req, res) => res.json({ ok: true }));"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:13",
+      "text": "app.post('/orders', requireAuth, async (req, res) => {"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:26",
+      "text": "app.get('/orders/:id', requireAuth, async (req, res) => {"
+    },
+    {
+      "kind": "http",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:31",
+      "text": "app.get('/admin/report', requireAuth, requireRole('admin'), async (req, res) => {"
+    },
+    {
+      "kind": "http",
+      "language": "python",
+      "citation": "platform/orders/app/main.py:25",
+      "text": "@app.post(\"/orders\", status_code=201)"
+    },
+    {
+      "kind": "http",
+      "language": "python",
+      "citation": "platform/orders/app/main.py:37",
+      "text": "@app.get(\"/orders/{order_id}\")"
+    }
+  ],
+  "edge_candidates": [
+    {
+      "kind": "http-client",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/worker/main.go:28",
+      "text": "req, _ := http.NewRequest(\"POST\", shippingURL+\"/shipments\", bytes.NewReader(payload))"
+    },
+    {
+      "kind": "db",
+      "language": "go",
+      "citation": "platform/fulfillment/cmd/worker/main.go:35",
+      "text": "_, dbErr := db.Exec(\"UPDATE orders SET status = $1 WHERE id = $2\", status, evt.OrderID)"
+    },
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:15",
+      "text": "const resp = await axios.post(`${ORDERS_URL}/orders`, { ...req.body, customer_id: req.user.sub }, {"
+    },
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:27",
+      "text": "const resp = await axios.get(`${ORDERS_URL}/orders/${req.params.id}`, { timeout: 5000 });"
+    },
+    {
+      "kind": "http-client",
+      "language": "javascript",
+      "citation": "platform/gateway/src/server.js:32",
+      "text": "const resp = await axios.get(`${req.query.source}`, { timeout: 5000 });"
+    },
+    {
+      "kind": "db",
+      "language": "python",
+      "citation": "platform/orders/app/db.py:14",
+      "text": "cur.execute("
+    },
+    {
+      "kind": "db",
+      "language": "python",
+      "citation": "platform/orders/app/db.py:15",
+      "text": "\"INSERT INTO orders (id, customer_id, total_cents, card_last4, status) VALUES (%s, %s, %s, %s, 'pending')\","
+    },
+    {
+      "kind": "db",
+      "language": "python",
+      "citation": "platform/orders/app/db.py:23",
+      "text": "cur.execute(f\"SELECT id, status, total_cents FROM orders WHERE id = '{order_id}'\")"
+    },
+    {
+      "kind": "topic-or-queue",
+      "language": "python",
+      "citation": "platform/orders/app/events.py:8",
+      "text": "ROUTING_KEY = \"order.created\""
+    },
+    {
+      "kind": "topic-or-queue",
+      "language": "python",
+      "citation": "platform/orders/app/events.py:17",
+      "text": "ch.exchange_declare(exchange=EXCHANGE, exchange_type=\"topic\", durable=True)"
+    },
+    {
+      "kind": "publish",
+      "language": "python",
+      "citation": "platform/orders/app/events.py:24",
+      "text": "ch.basic_publish(exchange=EXCHANGE, routing_key=ROUTING_KEY, body=body)"
+    },
+    {
+      "kind": "topic-or-queue",
+      "language": "python",
+      "citation": "platform/orders/app/events.py:24",
+      "text": "ch.basic_publish(exchange=EXCHANGE, routing_key=ROUTING_KEY, body=body)"
+    },
+    {
+      "kind": "subprocess",
+      "language": "python",
+      "citation": "platform/orders/app/pricing.py:10",
+      "text": "proc = subprocess.run([PRICING_BIN, \"--json\"], input=json.dumps(items), capture_output=True, text=True, timeout=5)"
+    }
+  ],
+  "config_candidates": [
+    {
+      "kind": "env",
+      "name": "DATABASE_URL",
+      "citation": "platform/fulfillment/cmd/worker/main.go:18",
+      "text": "db, err := sql.Open(\"postgres\", os.Getenv(\"DATABASE_URL\"))"
+    },
+    {
+      "kind": "env",
+      "name": "SHIPPING_API_URL",
+      "citation": "platform/fulfillment/cmd/worker/main.go:22",
+      "text": "shippingURL := os.Getenv(\"SHIPPING_API_URL\")"
+    },
+    {
+      "kind": "env",
+      "name": "SHIPPING_API_KEY",
+      "citation": "platform/fulfillment/cmd/worker/main.go:23",
+      "text": "apiKey := os.Getenv(\"SHIPPING_API_KEY\")"
+    },
+    {
+      "kind": "env",
+      "name": "RABBITMQ_URL",
+      "citation": "platform/fulfillment/cmd/worker/main.go:26",
+      "text": "err = queue.Consume(os.Getenv(\"RABBITMQ_URL\"), func(evt queue.OrderCreated) error {"
+    },
+    {
+      "kind": "env",
+      "name": "JWT_SECRET",
+      "citation": "platform/gateway/src/auth.js:3",
+      "text": "const JWT_SECRET = process.env.JWT_SECRET;"
+    },
+    {
+      "kind": "env",
+      "name": "AUTH_DISABLED",
+      "citation": "platform/gateway/src/auth.js:4",
+      "text": "const AUTH_DISABLED = process.env.AUTH_DISABLED === 'true';"
+    },
+    {
+      "kind": "env",
+      "name": "ORDERS_URL",
+      "citation": "platform/gateway/src/server.js:5",
+      "text": "const ORDERS_URL = process.env.ORDERS_URL || 'http://orders:8000';"
+    },
+    {
+      "kind": "env",
+      "name": "PORT",
+      "citation": "platform/gateway/src/server.js:6",
+      "text": "const PORT = process.env.PORT || 3000;"
+    },
+    {
+      "kind": "env",
+      "name": "DATABASE_URL",
+      "citation": "platform/orders/app/db.py:5",
+      "text": "DATABASE_URL = os.environ.get(\"DATABASE_URL\", \"postgresql://orders@db:5432/shop\")"
+    },
+    {
+      "kind": "env",
+      "name": "RABBITMQ_URL",
+      "citation": "platform/orders/app/events.py:6",
+      "text": "RABBITMQ_URL = os.environ.get(\"RABBITMQ_URL\", \"amqp://gues…[REDACTED]@rabbitmq:5672/\")"
+    },
+    {
+      "kind": "env",
+      "name": "PUBLISH_EVENTS",
+      "citation": "platform/orders/app/events.py:9",
+      "text": "PUBLISH_EVENTS = os.environ.get(\"PUBLISH_EVENTS\", \"true\") == \"true\""
+    },
+    {
+      "kind": "env",
+      "name": "MAX_ITEMS",
+      "citation": "platform/orders/app/main.py:10",
+      "text": "MAX_ITEMS = int(os.environ.get(\"MAX_ITEMS\", \"50\"))"
+    },
+    {
+      "kind": "env",
+      "name": "PRICING_BIN",
+      "citation": "platform/orders/app/pricing.py:5",
+      "text": "PRICING_BIN = os.environ.get(\"PRICING_BIN\", \"/usr/local/bin/pricing\")"
+    }
+  ],
+  "excluded": {
+    "secret_files_not_read": [],
+    "binaries": [],
+    "symlinks_not_followed": []
+  },
+  "truncated": {
+    "entry_points": {},
+    "edges": {}
+  },
+  "note": "All candidates are regex matches. Open each cited line and confirm before stating as fact."
+}

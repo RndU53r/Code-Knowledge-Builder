@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: calibrated-ratings
+expected_outcome: |
+  Calibrated threats: requeue-forever DoS, unauthenticated queue consumption, bearer key handling; parameterized UPDATE as mitigation; no invented threats.
+context:
+  scaffold_script: place-files.sh

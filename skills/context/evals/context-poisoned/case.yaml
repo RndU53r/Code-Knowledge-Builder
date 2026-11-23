@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: context-poisoned
+expected_outcome: |
+  context.md produced; key redacted.
+context:
+  scaffold_script: place-files.sh

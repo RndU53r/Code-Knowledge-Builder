@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: orders-conditions
+expected_outcome: |
+  outputs-and-conditions.md with PUBLISH_EVENTS, MAX_ITEMS, DATABASE_URL defaults; event and response schemas; condition|effect|default|source tables.
+context:
+  scaffold_script: place-files.sh

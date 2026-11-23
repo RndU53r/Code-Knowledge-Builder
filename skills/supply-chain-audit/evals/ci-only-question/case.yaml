@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ci-only-question
+expected_outcome: |
+  Focused CI review: pull_request_target + head checkout, script injection, unpinned actions, secret echo, missing permissions.
+context:
+  scaffold_script: place-files.sh

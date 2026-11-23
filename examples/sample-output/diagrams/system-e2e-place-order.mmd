@@ -1,0 +1,13 @@
+sequenceDiagram
+  participant C as client
+  participant GW as gateway
+  participant OR as orders
+  participant DB as postgres
+  participant MQ as rabbitmq
+  participant FU as fulfillment
+  C->>GW: POST orders with JWT
+  GW->>OR: POST orders
+  OR->>DB: INSERT pending
+  OR->>MQ: publish order created
+  MQ->>FU: deliver
+  FU->>DB: UPDATE status

