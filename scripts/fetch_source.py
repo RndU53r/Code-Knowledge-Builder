@@ -15,7 +15,8 @@ Branch rule (when --ref is not given): main, else master, else the remote's defa
 - Local git repo: if the repo's current branch is not main/master, a READ-ONLY snapshot of main (else
   master) is exported with `git archive` into scratch; your checkout and working tree are never touched.
   Uncommitted work is not in a snapshot; use --working-tree to analyze the folder as it is on disk.
-  Service sub-directories of a repo are resolved inside the same snapshot. Folders that are not git
+  Service sub-directories of a repo are resolved inside the same snapshot. Snapshots live in a per-user,
+  owner-only (0700) cache under the scratch dir and are never reused unless owned by you and private. Folders that are not git
   repos, or repos with no main/master, are analyzed in place.
 
 Auth (never printed, never in a URL or argv): --token-env VAR reads a token from that env var.
@@ -35,6 +36,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -260,13 +262,46 @@ def safe_extract(data: bytes, dest: Path) -> int:
     return n
 
 
+def owned_private_dir(p: Path) -> bool:
+    """A real directory (not a symlink) owned by the current user with no group/world access."""
+    try:
+        st = p.lstat()
+    except OSError:
+        return False
+    if not stat.S_ISDIR(st.st_mode):
+        return False
+    if hasattr(os, "getuid") and (st.st_uid != os.getuid() or st.st_mode & 0o077):
+        return False
+    return True
+
+
+def snapshot_cache(scratch_parent: Path) -> Path:
+    """Per-user, owner-only cache for snapshots. The shared temp dir is never trusted: a predictable name there
+    could be pre-created by another user, so an unusable cache falls back to a fresh mkdtemp (mode 0700)."""
+    uid = os.getuid() if hasattr(os, "getuid") else 0
+    cache = scratch_parent / f"ckb-snapshots-{uid}"
+    try:
+        cache.mkdir(mode=0o700, parents=True, exist_ok=True)
+    except OSError:
+        pass
+    if owned_private_dir(cache):
+        return cache
+    return Path(tempfile.mkdtemp(prefix="ckb-snapshots-", dir=scratch_parent))
+
+
 def snapshot(top: Path, branch: str, scratch_parent: Path) -> tuple[Path, str]:
     rev = git(["rev-parse", "--verify", f"refs/heads/{branch}^{{commit}}"], cwd=top).stdout.strip()
-    snap = scratch_parent / f"ckb-snap-{hashlib.sha1((str(top) + rev).encode()).hexdigest()[:12]}"
+    cache = snapshot_cache(scratch_parent)
+    digest = hashlib.sha1((str(top) + rev).encode()).hexdigest()[:12]
+    snap = cache / f"snap-{digest}"
+    if snap.exists() or snap.is_symlink():
+        if owned_private_dir(snap) and (snap / ".ckb-snapshot-complete").is_file():
+            return snap, rev
+        # not ours / not private / incomplete: never reuse or delete it, build in a fresh private directory
+        snap = Path(tempfile.mkdtemp(prefix=f"snap-{digest}-", dir=cache))
+    else:
+        snap.mkdir(mode=0o700)
     if not (snap / ".ckb-snapshot-complete").is_file():
-        if snap.exists():
-            shutil.rmtree(snap)
-        snap.mkdir(parents=True)
         r = subprocess.run(["git", *GIT_SAFE, "archive", "--format=tar", f"refs/heads/{branch}"], cwd=top, capture_output=True)
         if r.returncode != 0:
             raise SystemExit(f"git archive failed: {r.stderr.decode(errors='replace')[:300]}")

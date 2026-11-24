@@ -80,6 +80,12 @@ check("branch rule: feature checkout -> snapshot of main", meta["source_mode"] =
 check("snapshot has main's content, not feature/uncommitted", (snap / "svc/a.txt").read_text() == "main-version\n" and not (snap / "wip.txt").exists() and not (snap / "uncommitted.txt").exists())
 after = (git(r1, "rev-parse", "HEAD"), git(r1, "rev-parse", "--abbrev-ref", "HEAD"), git(r1, "status", "--porcelain"), (r1 / "svc/a.txt").read_text())
 check("checkout untouched (HEAD, branch, status, files)", before == after, (before, after))
+cache = snap.parent
+check("snapshot cache is a per-user owner-only directory", oct(cache.stat().st_mode & 0o777) == "0o700" and cache.name.startswith("ckb-snapshots-") and oct(snap.stat().st_mode & 0o777) == "0o700", (cache, oct(cache.stat().st_mode)))
+snap.chmod(0o777)  # simulate a snapshot dir another user could have tampered with
+meta_t = jrun("fetch_source.py", "--out", tmp / "o1b", "--key", "r1b", "--scratch", tmp / "scr", r1)
+check("a group/world-writable snapshot dir is never reused (fresh private one is built)", Path(meta_t["root"]) != snap and (Path(meta_t["root"]) / "svc/a.txt").read_text() == "main-version\n", meta_t["root"])
+snap.chmod(0o700)
 meta2 = jrun("fetch_source.py", "--out", tmp / "o2", "--key", "svc", "--scratch", tmp / "scr", r1 / "svc")
 check("service subdir resolves inside the snapshot", meta2["source_mode"] == "snapshot" and meta2["root"].endswith("svc") and (Path(meta2["root"]) / "a.txt").read_text() == "main-version\n")
 meta3 = jrun("fetch_source.py", "--out", tmp / "o3", "--key", "wt", "--working-tree", r1)
