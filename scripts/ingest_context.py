@@ -7,8 +7,9 @@ Usage:
   ingest_context.py --out OUT_DIR [--key ctx-NAME] PATH [PATH ...]
 
 Supported (Python stdlib only; nothing is executed, macros are never run):
-  Diagrams   .drawio .drawio.xml .dio (incl. compressed pages), .vsdx (Visio), .svg (text labels)
-  Documents  .docx .pptx .md .txt .rst .adoc .html .htm, .pdf (via `pdftotext` if installed,
+  Diagrams   .drawio .drawio.xml .dio (incl. compressed pages), .vsdx (Visio), .svg (text labels),
+             .excalidraw, Mermaid (.mmd), PlantUML (.puml), Gliffy (.gliffy)
+  Documents  .docx .pptx .md .txt .rst .adoc .html .htm .eml .rtf (notes; email addresses omitted), .pdf (via `pdftotext` if installed,
              otherwise listed under needs_reading for Claude's Read tool), images
              (.png .jpg .jpeg .gif .webp) listed under needs_reading
   CSPM       AWS Security Hub ASFF, Prowler (JSON/OCSF/CSV), ScoutSuite, SARIF (Checkov/tfsec/
@@ -170,6 +171,159 @@ def svg(path: Path) -> list[str]:
     root = safe_xml(path.read_bytes())
     texts = [" ".join(t.itertext()).strip() for t in root.iter() if lname(t.tag) in ("text", "title", "desc")]
     return header(path, "SVG diagram (text labels only; layout/arrows not interpreted)") + ["## Labels", ""] + [f"- {strip_html(t)}" for t in texts if t]
+
+
+# ------------------------------------------------------------------ more diagram formats (same Shapes/Connectors layout as draw.io)
+
+def diagram_md(path: Path, kind: str, shapes: list[tuple[str, str, str]], conns: list[tuple[str, str, str]]) -> list[str]:
+    """shapes: (id, label, container); conns: (from_label, to_label, label)."""
+    out = header(path, kind) + ["## Page: main", "", "### Shapes", ""]
+    for sid, lab, cont in shapes:
+        out.append(f"- shape `{sid}`: {lab}" + (f" · in: {cont}" if cont else ""))
+    out += ["", "### Connectors", ""]
+    for a, b, lab in conns:
+        out.append(f"- `{a}` -> `{b}`" + (f" : {lab}" if lab else ""))
+    return out + [""]
+
+
+def excalidraw(path: Path) -> list[str]:
+    data = json.loads(path.read_text(errors="replace"))
+    els = [e for e in data.get("elements", []) if not e.get("isDeleted")]
+    by_id = {e["id"]: e for e in els}
+    text_of = {}
+    for e in els:
+        if e.get("type") == "text" and e.get("text"):
+            text_of[e.get("containerId") or e["id"]] = e["text"].replace("\n", " ")
+    def lab(i):
+        return text_of.get(i) or (by_id.get(i, {}).get("text") or f"#{i}")
+    shapes = [(e["id"], lab(e["id"]), "") for e in els if e.get("type") in ("rectangle", "ellipse", "diamond") and e["id"] in text_of]
+    conns = []
+    for e in els:
+        if e.get("type") in ("arrow", "line"):
+            s = (e.get("startBinding") or {}).get("elementId")
+            t = (e.get("endBinding") or {}).get("elementId")
+            if s and t:
+                conns.append((lab(s), lab(t), text_of.get(e["id"], "")))
+    return diagram_md(path, "Excalidraw diagram", shapes, conns)
+
+
+MM_NODE = re.compile(r"\b([A-Za-z_][\w-]*)\s*(?:\[\[?\"?([^\]\"]+)\"?\]?\]|\(\(?\"?([^)\"]+)\"?\)?\)|\{\"?([^}\"]+)\"?\}|\[\(\"?([^)\"]+)\"?\)\])")
+MM_EDGE = re.compile(r"\b([A-Za-z_][\w-]*)\b(?:\s*(?:\[[^\]]*\]|\([^)]*\)|\{[^}]*\}))?\s*(?:-->|-\.->|==>|---|-\.-|--)\s*(?:\|([^|]*)\|\s*)?\b([A-Za-z_][\w-]*)\b")
+MM_SEQ = re.compile(r"^\s*([A-Za-z_][\w-]*)\s*-{1,2}>>?\+?\s*([A-Za-z_][\w-]*)\s*:\s*(.*)$")
+
+
+def mermaid_file(path: Path) -> list[str]:
+    text = path.read_text(errors="replace")
+    labels, shapes, conns, aliases = {}, [], [], {}
+    for m in MM_NODE.finditer(text):
+        labels[m.group(1)] = strip_html(next(g for g in m.groups()[1:] if g)).strip("() ")
+    for ln in text.splitlines():
+        pm = re.match(r"^\s*(?:participant|actor)\s+([A-Za-z_][\w-]*)(?:\s+as\s+(.+))?$", ln)
+        if pm:
+            aliases[pm.group(1)] = strip_html(pm.group(2) or pm.group(1))
+        sm = MM_SEQ.match(ln)
+        if sm:
+            conns.append((sm.group(1), sm.group(2), strip_html(sm.group(3))))
+            continue
+        for em in MM_EDGE.finditer(ln):
+            conns.append((em.group(1), em.group(3), strip_html(em.group(2) or "")))
+    names = {**labels, **aliases}
+    used = {x for a, b, _ in conns for x in (a, b)} | set(names)
+    shapes = [(i, names.get(i, i), "") for i in sorted(used)]
+    return diagram_md(path, "Mermaid diagram", shapes, [(names.get(a, a), names.get(b, b), l) for a, b, l in conns])
+
+
+PU_DECL = re.compile(r'^\s*(component|node|database|queue|actor|participant|cloud|rectangle|package|folder|frame|entity|boundary|control|storage)\s+(?:"([^"]+)"|\[([^\]]+)\]|(\S+))(?:\s+as\s+(\S+))?')
+PU_EDGE = re.compile(r'^\s*(?:"([^"]+)"|\[([^\]]+)\]|(\w[\w.-]*))\s*([-.=]+(?:\|>|>|\*|o)?|<[-.=]+)\s*(?:"([^"]+)"|\[([^\]]+)\]|(\w[\w.-]*))\s*(?::\s*(.*))?$')
+
+
+def plantuml(path: Path) -> list[str]:
+    ids, shapes, conns = {}, [], []
+    for ln in path.read_text(errors="replace").splitlines():
+        d = PU_DECL.match(ln)
+        if d:
+            label_ = d.group(2) or d.group(3) or d.group(4)
+            ident = d.group(5) or label_
+            ids[ident] = label_
+            shapes.append((ident, label_, ""))
+            continue
+        e = PU_EDGE.match(ln)
+        if e and re.search(r">|<", e.group(4)):
+            a = e.group(1) or e.group(2) or e.group(3)
+            b = e.group(5) or e.group(6) or e.group(7)
+            if e.group(4).startswith("<"):
+                a, b = b, a
+            conns.append((ids.get(a, a), ids.get(b, b), strip_html(e.group(8) or "")))
+    names = {s[1] for s in shapes}
+    for a, b, _ in conns:
+        for x in (a, b):
+            if x not in names:
+                names.add(x)
+                shapes.append((x, x, ""))
+    return diagram_md(path, "PlantUML diagram", shapes, conns)
+
+
+def gliffy(path: Path) -> list[str]:
+    data = json.loads(path.read_text(errors="replace"))
+    shapes, conns, labels = [], [], {}
+    def walk(o):
+        if isinstance(o, dict):
+            if "id" in o and isinstance(o.get("children"), list) or "graphic" in o:
+                txt = []
+                def texts(x):
+                    if isinstance(x, dict):
+                        if isinstance(x.get("text"), dict) and x["text"].get("html"):
+                            txt.append(strip_html(x["text"]["html"]))
+                        for v in x.values():
+                            texts(v)
+                    elif isinstance(x, list):
+                        for v in x:
+                            texts(v)
+                texts(o)
+                if o.get("id") is not None and txt and "lineWidth" not in json.dumps(o.get("graphic", {}))[:200]:
+                    labels[o["id"]] = txt[0]
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+    walk(data)
+    def find_lines(o):
+        if isinstance(o, dict):
+            c = o.get("constraints") or {}
+            s = (c.get("startConstraint") or {}).get("StartPositionConstraint", {}).get("nodeId")
+            e = (c.get("endConstraint") or {}).get("EndPositionConstraint", {}).get("nodeId")
+            if s is not None and e is not None:
+                conns.append((labels.get(s, f"#{s}"), labels.get(e, f"#{e}"), ""))
+            for v in o.values():
+                find_lines(v)
+        elif isinstance(o, list):
+            for v in o:
+                find_lines(v)
+    find_lines(data)
+    shapes = [(str(i), t, "") for i, t in labels.items()]
+    return diagram_md(path, "Gliffy diagram", shapes, conns)
+
+
+def eml(path: Path) -> list[str]:
+    from email import policy
+    from email.parser import BytesParser
+    msg = BytesParser(policy=policy.default).parsebytes(path.read_bytes())
+    body = msg.get_body(preferencelist=("plain", "html"))
+    text = body.get_content() if body else ""
+    if body and body.get_content_type() == "text/html":
+        text = strip_html(text)
+    out = header(path, "email (notes)")
+    out += [f"- Subject: {strip_html(str(msg.get('subject', '')))}", f"- Date: {msg.get('date', '')}", "- (sender/recipient addresses omitted)", ""]
+    return out + [ln.rstrip() for ln in text.splitlines()][:3000]
+
+
+def rtf(path: Path) -> list[str]:
+    raw = path.read_text(errors="replace")
+    raw = re.sub(r"\\'[0-9a-f]{2}", "", raw)
+    raw = re.sub(r"\\[a-z]+-?\d* ?", " ", raw)
+    raw = re.sub(r"[{}]", "", raw)
+    return header(path, "RTF notes") + [ln.strip() for ln in raw.splitlines() if ln.strip()][:3000]
 
 
 # ------------------------------------------------------------------ documents
@@ -410,6 +564,18 @@ def convert(path: Path, dest_dir: Path, rel: str):
         lines, kind = vsdx(path), "diagram: visio"
     elif ext == ".svg":
         lines, kind = svg(path), "diagram: svg"
+    elif ext == ".excalidraw":
+        lines, kind = excalidraw(path), "diagram: excalidraw"
+    elif ext in (".mmd", ".mermaid"):
+        lines, kind = mermaid_file(path), "diagram: mermaid"
+    elif ext in (".puml", ".plantuml", ".pu"):
+        lines, kind = plantuml(path), "diagram: plantuml"
+    elif ext == ".gliffy":
+        lines, kind = gliffy(path), "diagram: gliffy"
+    elif ext == ".eml":
+        lines, kind = eml(path), "document: email notes"
+    elif ext == ".rtf":
+        lines, kind = rtf(path), "document: rtf notes"
     elif ext == ".docx":
         lines, kind = docx(path), "document: word"
     elif ext == ".pptx":

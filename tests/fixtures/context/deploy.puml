@@ -1,0 +1,7 @@
+@startuml
+component "API Gateway" as gw
+component "Orders service" as orders
+database "Postgres shop" as db
+gw -> orders : HTTPS
+orders --> db : SQL
+@enduml

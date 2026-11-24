@@ -33,6 +33,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 
 **Navigate with the graph:** `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> explain|neighbors|path|impact|taint ...` gives cited starting points. Open the cited lines before relying on any of them.
 
+**Start from the draft.** `<out>/system/threat-model.md` may already hold a rule-based draft (`<!-- ckb:threat-seed -->`), built from the knowledge graph with cited threats. Read it first. For each draft threat, open the cited code and decide: confirm (keep or re-rate), correct, or remove with a one-line reason under Assumptions. Then add what the rules cannot see (business-logic abuse, authorization by data ownership, LLM-specific flows, multi-step chains). When you write the refined model, **remove the draft marker line**. Do not edit `graph/proposals/seed-*.jsonl`; add your own proposals.
+
 **Process**
 1. Follow the `threat-modeling` skill and its references (STRIDE checklist, sinks and CWE, rating rubric).
 2. Re-open the source at every sink you report and trace untrusted input → sink, citing both ends and any sanitizer. Parameterized or allowlisted paths are mitigations: cite them.

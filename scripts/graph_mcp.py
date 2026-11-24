@@ -37,6 +37,9 @@ TOOLS = [
                                                       "depth": {"type": "integer"}, **OUT_PROP}}},
     {"name": "ckb_taint", "op": "taint", "description": "Candidate source-to-sink paths (endpoints/consumers to unsafe SQL/command/SSRF/code sinks). Candidates only: confirm each hop in code.",
      "inputSchema": {"type": "object", "properties": {"source": {"type": "string"}, "sink": {"type": "string"}, "max_depth": {"type": "integer"}, **OUT_PROP}}},
+    {"name": "ckb_callgraph", "op": "callgraph", "description": "Call graph rolled up at function, file or repo level (HTTP/gRPC, topics, shared tables, subprocess, imports), optionally for one repo or around a focus node. Every edge carries citations and confidence.",
+     "inputSchema": {"type": "object", "properties": {"level": {"type": "string", "enum": ["function", "file", "repo"]}, "repo": {"type": "string"},
+                                                      "focus": {"type": "string"}, "depth": {"type": "integer"}, "limit": {"type": "integer"}, **OUT_PROP}}},
     {"name": "ckb_tour", "op": "tour", "description": "List guided tours, or return one tour's steps (node, note, citation).",
      "inputSchema": {"type": "object", "properties": {"name": {"type": "string"}, **OUT_PROP}}},
 ]

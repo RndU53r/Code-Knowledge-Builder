@@ -33,11 +33,13 @@ def sha(s: str) -> str:
     return "'sha256-" + base64.b64encode(hashlib.sha256(s.encode()).digest()).decode() + "'"
 
 
-def render(graph: dict, live: dict | None = None, cap: int = 5000) -> str:
+def render(graph: dict, live: dict | None = None, cap: int = 5000, callgraph: dict | None = None) -> str:
     html = (VIEWER / "viewer.html").read_text()
     css = (VIEWER / "viewer.css").read_text()
     js = (VIEWER / "viewer.js").read_text()
     data = {"graph": graph, "cap": cap}
+    if callgraph:
+        data["callgraph"] = {lv: callgraph[lv] for lv in ("function", "file", "repo") if lv in callgraph}
     if live:
         data["live"] = live
     connect = "'self'" if live else "'none'"
@@ -55,8 +57,10 @@ def main() -> int:
     a = ap.parse_args()
     out = Path(a.out).resolve()
     graph = json.loads((graph_dir(out) / "graph.json").read_text())
+    cgp = graph_dir(out) / "callgraph.json"
+    cg = json.loads(cgp.read_text()) if cgp.is_file() else None
     p = graph_dir(out) / "index.html"
-    atomic_write(p, render(graph, cap=a.cap))
+    atomic_write(p, render(graph, cap=a.cap, callgraph=cg))
     print(json.dumps({"viewer": str(p), "nodes": len(graph["nodes"]), "edges": len(graph["edges"])}))
     return 0
 

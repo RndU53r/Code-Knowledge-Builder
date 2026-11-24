@@ -29,7 +29,7 @@ NODE_KINDS = {
     # docs
     "doc_section",
 }
-EXTRACTORS = {"ast", "tree-sitter", "regex", "llm", "context", "scanner"}
+EXTRACTORS = {"ast", "tree-sitter", "regex", "llm", "context", "scanner", "rule"}  # rule = deterministic rule engine (threat_seed, doc_claims)
 CONFIDENCE = {"high", "medium", "low"}
 LABELS = {"observed", "inferred", "documented", "unknown"}
 
@@ -59,14 +59,14 @@ EDGE_KINDS = {
     "tested_by": {"ast", "regex", "llm"},
     "flows_to": {"ast", "llm"},
     "reaches_sink": {"ast", "regex", "tree-sitter", "llm"},
-    "threatens": {"llm"},
+    "threatens": {"llm", "rule"},
     "finding_at": {"scanner"},
-    "affects": {"context", "scanner", "llm"},
-    "crosses_boundary": {"llm"},
-    "inside_boundary": {"llm"},
-    "mitigated_by": {"llm"},
-    "documented_as": {"llm", "context"},
-    "drifts_from": {"llm"},
+    "affects": {"context", "scanner", "llm", "rule"},
+    "crosses_boundary": {"llm", "rule"},
+    "inside_boundary": {"llm", "rule"},
+    "mitigated_by": {"llm", "rule"},
+    "documented_as": {"llm", "context", "rule"},
+    "drifts_from": {"llm", "rule"},
 }
 
 ID_RE = re.compile(r"^[a-z_]+:[A-Za-z0-9._-]+:[^\n]{0,400}$")
@@ -78,6 +78,30 @@ def safe_str(v, limit: int = MAX_STR) -> str:
     s = redact_text(str(v if v is not None else ""))
     s = "".join(ch for ch in s if ch == "\t" or ord(ch) >= 32)
     return s[:limit] + ("…" if len(s) > limit else "")
+
+
+def safe_quote(line: str, limit: int = 140) -> str:
+    """Exact text from a source line for use as a proposal quote, cut before any secret-looking value so
+    credentials never land in proposal files. (The verifier checks the quote is a substring of the line.)"""
+    from ckb_common import find_secret_values
+    line = (line or "").strip()
+    hits = sorted(find_secret_values(line), key=lambda t: t[1])
+    if hits:
+        a = hits[0][1]
+        head = line[:a].rstrip()
+        tail = line[hits[0][2]:].strip()
+        line = head if len(head) >= 8 else (tail if len(tail) >= 8 else head)
+    return line[:limit]
+
+
+def md_safe(s, limit: int = 0) -> str:
+    """Make target-derived text inert inside generated markdown tables: no HTML tags, no event-handler or
+    javascript: patterns, no table/code breakers."""
+    s = str(s).replace("|", "/").replace("`", "'").replace("\n", " ").replace("\r", " ")
+    s = s.replace("<", "\u2039").replace(">", "\u203a")
+    s = re.sub(r"(?i)\b(on[a-z]+)\s*=", r"\1:", s)
+    s = re.sub(r"(?i)javascript\s*:", "javascript[:]", s)
+    return s[:limit] if limit else s
 
 
 def node_id(kind: str, repo: str, path: str = "", qualname: str = "") -> str:

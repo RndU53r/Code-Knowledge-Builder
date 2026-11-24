@@ -1,0 +1,561 @@
+#!/usr/bin/env python3
+"""Deterministic draft threat model from the ckb knowledge graph (so every run, even headless/CI, gets one).
+
+Usage:
+  threat_seed.py --out OUT_DIR [--force]
+
+Reads graph.json (+ supply-chain JSON, CSPM/IaC nodes, drift nodes) and applies fixed rules:
+  injection paths (taint candidates to unsafe SQL/command/SSRF/code/deserialization sinks), endpoints with
+  no authentication evidence, security switches an env var can turn off, plaintext or identity-header trust
+  between services, unauthenticated message channels and requeue-forever consumers, tables written by
+  several repos, outbound calls with no timeout, cloud misconfigurations (IaC + CSPM), confirmed-suspicious
+  supply-chain findings, documented-vs-observed drift, and LLM integrations (OWASP LLM Top 10).
+
+Writes
+  <out>/system/threat-model.md          draft (carries <!-- ckb:threat-seed -->; never overwrites a refined
+                                        file that lacks the marker unless --force)
+  <out>/graph/proposals/seed-threats.jsonl   threat / trust_boundary nodes + threatens / crosses_boundary
+                                        edges, extractor "rule", verified by graph_merge.py like any proposal
+Every threat cites code, IaC, or scan evidence. Ratings follow skills/threat-modeling/references/rating-rubric.md.
+The threat-modeler agent then confirms, refines, or removes each draft threat.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from ckb_common import now_iso, read_text, repo_roots_for_output  # noqa: E402
+from graph_common import atomic_write, graph_dir, md_safe, safe_quote, safe_str  # noqa: E402
+from graph_query import GraphStore  # noqa: E402
+
+MARK = "<!-- ckb:threat-seed -->"
+RANK = {"low": 1, "medium": 2, "high": 3}
+INV = {1: "low", 2: "medium", 3: "high"}
+AUTH_RX = re.compile(r"(?i)(require_?auth|requires?_?login|login_required|authenticate|authorize|authorized|jwt|bearer|oauth|\bauth\b|current_?user|get_current|"
+                     r"depends\(.*(user|auth|token)|verify_?token|check_?permission|has_?role|require_?role|@secured|@preauthorize|isauthenticated|passport\.|session\.user)")
+HEALTH_RX = re.compile(r"(?i)/(health|healthz|ready|readyz|live|livez|ping|metrics|favicon|static|docs|openapi|swagger)")
+SWITCH_RX = re.compile(r"(?i)((AUTH|SECURITY|VERIFY|TLS|SSL|CSRF|SIGNATURE|CERT)\w*(DISABLE|OFF|SKIP|BYPASS|INSECURE|NOVERIFY)|(DISABLE|SKIP|BYPASS|NO|INSECURE)_?(AUTH|VERIFY|TLS|SSL|CSRF|SIGNATURE|CERT)\w*|\bDEBUG\b|ALLOW_ALL|TRUST_ALL)")
+IDHEADER_RX = re.compile(r"(?i)['\"`](x-(request-)?user(-id)?|x-forwarded-user|x-tenant(-id)?|x-auth-user|x-userid)['\"`]")
+SIGN_RX = re.compile(r"(?i)(hmac|signature|sign\(|verify\(|jwt|checksum|schema\.validate|jsonschema|validate\()")
+REQUEUE_RX = re.compile(r"(?i)(Nack\([^)]*,\s*true\)|requeue\s*[=:]\s*(true|True)|basic_nack\([^)]*requeue\s*=\s*True|\.nack\([^)]*true|reject\([^)]*true)")
+DLQ_RX = re.compile(r"(?i)(dead[-_ ]?letter|\bdlq\b|x-dead-letter|deadletter)")
+SECRET_ENV = re.compile(r"(?i)(PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|PRIVATE_?KEY|CREDENTIAL)")
+CWE = {"sql": ("CWE-89", "A03:2021 Injection"), "command": ("CWE-78", "A03:2021 Injection"), "ssrf": ("CWE-918", "A10:2021 SSRF"),
+       "code": ("CWE-94", "A03:2021 Injection"), "deserialization": ("CWE-502", "A08:2021 Software and Data Integrity Failures")}
+CLOUD_CHECK = {"SC-D07": ("CWE-284", "Information disclosure", "Public cloud storage or service", "Block public access; require authenticated access",
+                          "A01:2021 Broken Access Control", "high", "high"),
+               "SC-D08": ("CWE-269", "Elevation of privilege", "Wildcard IAM permissions", "Replace wildcard actions with least-privilege, resource-scoped permissions",
+                          "A01:2021 Broken Access Control", "medium", "high"),
+               "SC-D09": ("CWE-311", "Information disclosure", "Encryption or TLS disabled", "Enable encryption at rest and require TLS 1.2+",
+                          "A02:2021 Cryptographic Failures", "medium", "medium"),
+               "SC-D05": ("CWE-284", "Elevation of privilege", "Ingress open to the internet", "Restrict ingress to required sources; put services behind a gateway/WAF",
+                          "A05:2021 Security Misconfiguration", "high", "medium")}
+SC_CWE = {"install-time": ("CWE-829", "Install-time code execution from a dependency or script"), "ci-cd": ("CWE-829", "Untrusted input or code reaches a privileged CI/CD job"),
+          "source-indicators": ("CWE-506", "Embedded malicious or obfuscated code"), "prompt-injection": ("CWE-1427", "Text aimed at AI agents (prompt injection)"),
+          "secrets": ("CWE-798", "Hardcoded credential"), "manifests": ("CWE-1357", "Risky dependency source"), "containers-iac": ("CWE-250", "Insecure container/IaC configuration")}
+
+
+def prio(l: str, i: str) -> str:
+    a, b = RANK[l], RANK[i]
+    if a == 3 and b == 3:
+        return "critical"
+    if a <= 1 and b <= 1:
+        return "low"
+    return INV[max(a, b)]
+
+
+class Ctx:
+    def __init__(self, out: Path):
+        self.out = out
+        self.store = GraphStore(out)
+        self.g = self.store
+        self.roots = {k: v for k, v in repo_roots_for_output(out).items()}
+        self.cache = {}
+        self.nodes = self.store.nodes
+        self.in_http = defaultdict(list)
+        for e in self.store.edges:
+            if e["kind"] in ("http_calls", "grpc_calls"):
+                self.in_http[e["dst"]].append(e)
+        self.handler = {}
+        for e in self.store.edges:
+            if e["kind"] == "routes_to":
+                self.handler.setdefault(e["src"], []).append(e["dst"])
+
+    def lines(self, repo: str, path: str):
+        key = (repo, path)
+        if key not in self.cache:
+            root = self.roots.get(repo)
+            t = read_text(root / path) if root and path else None
+            self.cache[key] = t.splitlines() if t else []
+        return self.cache[key]
+
+    def line(self, citation: str):
+        m = re.match(r"^([^/]+)/(.+):(\d+)(?:-\d+)?$", citation or "")
+        if not m:
+            return None
+        ls = self.lines(m.group(1), m.group(2))
+        i = int(m.group(3))
+        for j in range(i - 1, min(len(ls), i + 2)):
+            if 0 <= j < len(ls) and ls[j].strip():
+                return ls[j].strip()
+        return None
+
+    def window(self, citation: str, before=2, after=4) -> str:
+        m = re.match(r"^([^/]+)/(.+):(\d+)", citation or "")
+        if not m:
+            return ""
+        ls = self.lines(m.group(1), m.group(2))
+        i = int(m.group(3))
+        return "\n".join(ls[max(0, i - 1 - before): i + after])
+
+    def file_text(self, repo: str, path: str) -> str:
+        return "\n".join(self.lines(repo, path))
+
+    def exposure(self, endpoint_id: str) -> tuple[str, str]:
+        callers = [e for e in self.in_http.get(endpoint_id, []) if self.nodes.get(e["src"], {}).get("repo") != self.nodes[endpoint_id].get("repo")]
+        if callers:
+            names = sorted({self.nodes[e["src"]]["repo"] for e in callers if e["src"] in self.nodes})
+            return "internal", f"called by {', '.join(names)}"
+        return "public-candidate", "no other service calls it (may be internet-facing)"
+
+    def fn_of(self, node_id: str):
+        return node_id
+
+
+def add(threats, **t):
+    t.setdefault("mitigations", [])
+    t.setdefault("gaps", "")
+    t.setdefault("label", "inferred")
+    t.setdefault("confidence", "medium")
+    t["priority"] = prio(t["likelihood"], t["impact"])
+    threats.append(t)
+
+
+# ---------------------------------------------------------------- rules
+
+def rule_taint(c: Ctx, threats):
+    safe_by = defaultdict(list)
+    for n in c.nodes.values():
+        if n["kind"] == "sink" and (n.get("attrs") or {}).get("safe"):
+            safe_by[((n.get("attrs") or {}).get("sink_type"), n["repo"])].append(n)
+    seen = set()
+    for p in c.store.taint(max_depth=10, limit=60)["paths"]:
+        sink = c.nodes[p["sink"]["id"]]
+        stype = p["sink_type"]
+        key = (p["source"]["id"], sink["id"])
+        if key in seen or stype not in CWE:
+            continue
+        seen.add(key)
+        src = c.nodes[p["source"]["id"]]
+        exp, why = c.exposure(src["id"]) if src["kind"] == "endpoint" else ("internal", "message consumer")
+        lik = "high" if exp == "public-candidate" and p["label"] == "observed-path" else "medium"
+        safe = safe_by.get((stype, sink["repo"]), [])
+        hop_cites = [h["citation"] for h in p["hops"]][:6]
+        add(threats, component=f"{src['name']} → {sink['name']}", stride="Tampering / Information disclosure" if stype in ("sql", "deserialization") else "Elevation of privilege" if stype in ("command", "code") else "Information disclosure",
+            title=f"{stype.upper()} injection path from {src['name']} to an unsafe sink",
+            cwe=CWE[stype][0], owasp=CWE[stype][1], likelihood=lik, impact="high",
+            evidence=[sink["citation"]] + hop_cites[:2], primary=sink["citation"], target=sink["id"],
+            mitigations=[f"A safe pattern exists elsewhere in {sink['repo']}: `{s['citation']}` ({(s.get('attrs') or {}).get('reason')})" for s in safe[:1]],
+            gaps=f"{(sink.get('attrs') or {}).get('reason', 'unsafe construction')}; endpoint exposure: {exp} ({why}). Taint is a candidate path: confirm the input reaches the sink.",
+            control={"sql": "Use parameterized queries / ORM bindings; validate id formats.", "command": "Avoid shells; pass argument arrays; allowlist inputs.",
+                     "ssrf": "Allowlist destination hosts; block link-local/metadata addresses; do not take URLs from requests.",
+                     "code": "Remove eval/exec on inputs; use safe parsers.", "deserialization": "Use safe formats (JSON) and type allowlists."}[stype],
+            label="observed" if p["label"] == "observed-path" else "inferred", confidence="high" if p["label"] == "observed-path" else "medium")
+
+
+def has_auth_evidence(c: Ctx, ep: dict) -> bool:
+    """True if the route line, handler signature, or handler's callees show authentication/authorization."""
+    hs = c.handler.get(ep["id"], [])
+    chain = ""
+    window = c.window(ep["citation"], 1, 3)
+    for h in hs:
+        hn = c.nodes.get(h, {})
+        window += "\n" + c.window(f"{hn.get('repo')}/{hn.get('path')}:{hn.get('range', {}).get('start', 1)}", 1, 3)
+        for e in c.store.out_adj.get(h, []):
+            if e["kind"] == "calls":
+                chain += " " + c.nodes.get(e["dst"], {}).get("name", "")
+    return bool(AUTH_RX.search(window) or AUTH_RX.search(chain))
+
+
+def rule_auth(c: Ctx, threats):
+    n_added = 0
+    for ep in sorted((n for n in c.nodes.values() if n["kind"] == "endpoint"), key=lambda n: n["citation"]):
+        if HEALTH_RX.search(ep.get("attrs", {}).get("path", "")):
+            continue
+        hs = c.handler.get(ep["id"], [])
+        if has_auth_evidence(c, ep):
+            continue
+        if n_added >= 25:
+            break
+        exp, why = c.exposure(ep["id"])
+        reaches_sink = any(e["kind"] == "reaches_sink" for h in hs for e in c.store.out_adj.get(h, []))
+        add(threats, component=ep["name"], stride="Spoofing / Elevation of privilege", title=f"No authentication evidence on {ep['name']}",
+            cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="high" if exp == "public-candidate" else "medium",
+            impact="high" if reaches_sink else "medium", evidence=[ep["citation"]], primary=ep["citation"], target=hs[0] if hs else ep["id"],
+            gaps=f"No auth middleware, decorator, or role check found on the route or its handler chain (exposure: {exp}: {why}). Global middleware or gateway-level auth would not be seen here.",
+            control="Authenticate and authorize in the service itself (do not rely on network position); deny by default.", confidence="medium")
+        n_added += 1
+
+
+def rule_switches(c: Ctx, threats):
+    for n in sorted((n for n in c.nodes.values() if n["kind"] == "env_var"), key=lambda n: n["citation"]):
+        if not SWITCH_RX.search(n["name"]):
+            continue
+        line = c.line(n["citation"]) or ""
+        users = [e["src"] for e in c.store.in_adj.get(n["id"], []) if e["kind"] == "reads_env"]
+        add(threats, component=f"{n['repo']} env {n['name']}", stride="Elevation of privilege", title=f"Security control can be switched off by environment variable {n['name']}",
+            cwe="CWE-1188", owasp="A05:2021 Security Misconfiguration", likelihood="medium", impact="high", evidence=[n["citation"]], primary=n["citation"],
+            target=users[0] if users else None,
+            gaps=f"`{safe_str(line, 120)}` toggles a protection; a mis-set variable in any environment disables it. Default: see the cited line.",
+            control="Remove the bypass from production builds, or fail closed and alert when it is set outside local development.", label="observed", confidence="high")
+
+
+def rule_trust(c: Ctx, threats):
+    done = set()
+    for e in c.store.edges:
+        if e["kind"] != "http_calls" or not e.get("dst_citation"):
+            continue
+        s, d = c.nodes.get(e["src"]), c.nodes.get(e["dst"])
+        if not s or not d or s["repo"] == d["repo"]:
+            continue
+        win = c.window(e["citation"], 3, 6)
+        sfile = c.file_text(s["repo"], s["path"])
+        if IDHEADER_RX.search(win) and (s["repo"], d["repo"], "hdr") not in done:
+            done.add((s["repo"], d["repo"], "hdr"))
+            m = IDHEADER_RX.search(win)
+            add(threats, component=f"{s['repo']} → {d['repo']} ({d['name']})", stride="Spoofing", title=f"{d['repo']} may trust a caller-supplied identity header ({m.group(1)})",
+                cwe="CWE-290", owasp="A07:2021 Identification and Authentication Failures", likelihood="medium", impact="high", evidence=[e["citation"], e["dst_citation"]],
+                primary=e["citation"], target=e["src"],
+                gaps="The caller sets an identity header; unless the callee authenticates the caller (mTLS/signed token) and strips client-supplied copies at the edge, any in-network caller can impersonate a user.",
+                control="Propagate a signed identity token (JWT/mTLS) and verify it in the callee; never trust plain headers.", confidence="medium")
+        pm = re.search(r"['\"`](http://(?!localhost|127\.0\.0\.1)[A-Za-z0-9_.-]+(:\d+)?)", sfile)
+        if pm and (s["repo"], d["repo"], "plain") not in done:
+            ln = next((i for i, x in enumerate(c.lines(s["repo"], s["path"]), 1) if pm.group(1) in x), None)
+            if ln:
+                done.add((s["repo"], d["repo"], "plain"))
+                cite = f"{s['repo']}/{s['path']}:{ln}"
+                add(threats, component=f"{s['repo']} → {d['repo']} (service-to-service HTTP)", stride="Information disclosure / Tampering", title=f"Plain HTTP between {s['repo']} and {d['repo']}",
+                    cwe="CWE-319", owasp="A02:2021 Cryptographic Failures", likelihood="medium", impact="medium", evidence=[cite, e["citation"]], primary=cite, target=e["src"],
+                    gaps=f"The default destination is `{pm.group(1)}` (no TLS). Deployment config may override it; none was found in scope.",
+                    control="Use TLS (ideally mTLS via a service mesh) for service-to-service traffic.", label="observed", confidence="medium")
+
+
+def rule_messaging(c: Ctx, threats):
+    topics = [n for n in c.nodes.values() if n["kind"] == "topic"]
+    for t in sorted(topics, key=lambda n: n["name"]):
+        prods = [e for e in c.store.in_adj.get(t["id"], []) if e["kind"] == "publishes"]
+        cons = [e for e in c.store.in_adj.get(t["id"], []) if e["kind"] == "consumes"]
+        if not prods or not cons:
+            continue
+        pw = c.window(prods[0]["citation"], 8, 3)
+        cw = c.window(cons[0]["citation"], 3, 25)
+        if not SIGN_RX.search(pw) and not SIGN_RX.search(cw):
+            fn_c = cons[0]["src"]
+            add(threats, component=f"topic {t['name']}", stride="Tampering / Spoofing", title=f"No integrity or authenticity check on messages from topic {t['name']}",
+                cwe="CWE-345", owasp="A08:2021 Software and Data Integrity Failures", likelihood="medium", impact="high", evidence=[prods[0]["citation"], cons[0]["citation"]],
+                primary=cons[0]["citation"], target=fn_c,
+                gaps="Neither side signs or validates payloads against a schema; anyone who can publish to the broker can trigger consumer actions.",
+                control="Authenticate producers at the broker, sign or validate messages, and restrict publish permissions per service.", confidence="medium")
+        for cn in cons:
+            fnode = c.nodes.get(cn["src"], {})
+            text = c.file_text(fnode.get("repo", ""), fnode.get("path", ""))
+            rm = REQUEUE_RX.search(text)
+            if rm:
+                ln = next((i for i, x in enumerate(c.lines(fnode["repo"], fnode["path"]), 1) if REQUEUE_RX.search(x)), None)
+                repo_has_dlq = any(DLQ_RX.search(c.file_text(fnode["repo"], n["path"])) for n in c.nodes.values()
+                                   if n["kind"] == "file" and n.get("repo") == fnode["repo"] and n.get("path"))
+                if ln:
+                    cite = f"{fnode['repo']}/{fnode['path']}:{ln}"
+                    add(threats, component=f"consumer of {t['name']}", stride="Denial of service", title=f"Failed messages are requeued without a dead-letter path ({t['name']})",
+                        cwe="CWE-400", owasp="A04:2021 Insecure Design", likelihood="medium", impact="medium", evidence=[cite], primary=cite, target=cn["src"],
+                        mitigations=[f"A dead-letter reference exists in {fnode['repo']}"] if repo_has_dlq else [],
+                        gaps="A poison message is retried forever and may repeat side effects (duplicates)." + ("" if repo_has_dlq else " No dead-letter configuration found."),
+                        control="Add a retry limit and dead-letter queue; make handlers idempotent.", label="observed", confidence="high")
+                    break
+    tables = [n for n in c.nodes.values() if n["kind"] == "table"]
+    for t in sorted(tables, key=lambda n: n["name"]):
+        ws = [e for e in c.store.in_adj.get(t["id"], []) if e["kind"] == "writes"]
+        repos = sorted({c.nodes[e["src"]]["repo"] for e in ws if e["src"] in c.nodes})
+        if len(repos) >= 2:
+            add(threats, component=f"table {t['name']}", stride="Tampering", title=f"Table {t['name']} is written by several services ({', '.join(repos)})",
+                cwe="CWE-653", owasp="A04:2021 Insecure Design", likelihood="medium", impact="medium", evidence=[w["citation"] for w in ws][:3], primary=ws[0]["citation"],
+                target=ws[0]["src"], gaps="Shared writers couple services to one schema and make it hard to enforce per-service invariants and least privilege.",
+                control="Give each table one owning service, or enforce per-service DB roles and constraints.", confidence="medium")
+
+
+def rule_timeouts(c: Ctx, threats):
+    flagged = 0
+    for e in c.store.edges:
+        if e["kind"] != "http_calls" or flagged >= 6:
+            continue
+        s = c.nodes.get(e["src"], {})
+        text = c.file_text(s.get("repo", ""), s.get("path", ""))
+        if text and not re.search(r"(?i)timeout", text):
+            add(threats, component=f"{s['repo']} outbound call", stride="Denial of service", title=f"Outbound HTTP call without a timeout in {s['path']}",
+                cwe="CWE-400", owasp="A04:2021 Insecure Design", likelihood="medium", impact="low", evidence=[e["citation"]], primary=e["citation"], target=e["src"],
+                gaps="No timeout setting appears anywhere in the calling file; a slow dependency can exhaust workers.", control="Set connect and read timeouts and a circuit breaker.", confidence="low")
+            flagged += 1
+
+
+def rule_cloud(c: Ctx, threats):
+    by_res = defaultdict(list)
+    for e in c.store.edges:
+        if e["kind"] == "finding_at":
+            f = c.nodes.get(e["src"], {})
+            chk = (f.get("attrs") or {}).get("check")
+            if chk in CLOUD_CHECK and c.nodes.get(e["dst"], {}).get("kind") == "cloud_resource":
+                by_res[(e["dst"], chk)].append(f)
+    cspm = defaultdict(list)
+    for e in c.store.edges:
+        if e["kind"] == "affects":
+            cspm[e["dst"]].append(c.nodes.get(e["src"], {}))
+    for (res_id, chk), fs in sorted(by_res.items()):
+        cwe, stride, what, ctrl, owasp, l, i = CLOUD_CHECK[chk]
+        res = c.nodes[res_id]
+        corro = cspm.get(res_id, [])
+        add(threats, component=f"{res['name']}", stride=stride, title=f"{what}: {res['name']}", cwe=cwe, owasp=owasp, likelihood=l, impact=i,
+            evidence=[fs[0]["citation"]] + [x["citation"] for x in corro[:2]], primary=fs[0]["citation"], target=res_id,
+            gaps=f"IaC declares it ({chk}). " + (f"A CSPM scan also reports it open ({', '.join(sorted({(x.get('attrs') or {}).get('tool', 'scan') for x in corro}))}): observed at scan time." if corro else "No CSPM result corroborates it."),
+            control=ctrl, label="observed", confidence="high" if corro else "medium")
+
+
+def rule_supply(c: Ctx, threats):
+    seen = set()
+    for n in sorted((n for n in c.nodes.values() if n["kind"] == "sc_finding"), key=lambda n: n["citation"]):
+        a = n.get("attrs") or {}
+        if a.get("check") in CLOUD_CHECK or a.get("class") != "confirmed-suspicious":
+            continue
+        k = (a.get("check"), n["citation"].rsplit(":", 1)[0])
+        if k in seen or len(seen) >= 15:
+            continue
+        seen.add(k)
+        cwe, what = SC_CWE.get(a.get("category"), ("CWE-829", "Supply-chain risk"))
+        add(threats, component=n["citation"].rsplit(":", 1)[0], stride="Tampering / Elevation of privilege", title=f"{what}: {n['name'][:90]}", cwe=cwe,
+            owasp="A08:2021 Software and Data Integrity Failures", likelihood="high", impact="high", evidence=[n["citation"]], primary=n["citation"],
+            target=next((e["dst"] for e in c.store.out_adj.get(n["id"], []) if e["kind"] == "finding_at"), None),
+            gaps=f"Scanner class `{a.get('class')}`, severity {a.get('severity')} ({a.get('check')}). " + (a.get("remediation") or ""),
+            control=a.get("remediation") or "See the supply-chain report.", label="observed", confidence="medium")
+
+
+def rule_drift(c: Ctx, threats):
+    for n in sorted((n for n in c.nodes.values() if n["kind"] == "drift"), key=lambda n: n["citation"]):
+        a = n.get("attrs") or {}
+        add(threats, component=n["name"][:60], stride="Repudiation / false assurance", title=f"Documented control not found in code or IaC: {n['name'][:80]}",
+            cwe="CWE-1059", owasp="A04:2021 Insecure Design", likelihood="medium", impact="medium" if a.get("security", "yes") != "yes" else "high",
+            evidence=[n["citation"]] + ([a["doc_citation"]] if a.get("doc_citation") else []), primary=n["citation"], target=None,
+            gaps=safe_str(a.get("claim", "") + " vs " + a.get("observed", ""), 240), control="Fix the code/IaC to match the claim, or correct the document; record the decision.",
+            label="inferred", confidence="medium")
+
+
+def rule_llm(c: Ctx, threats):
+    pk = [n for n in c.nodes.values() if n["kind"] == "package" and re.search(r"(?i)^(anthropic|openai|langchain|llama.?index|cohere|mistralai|vertexai|ollama|@anthropic-ai)", n["name"])]
+    if not pk:
+        return
+    p = sorted(pk, key=lambda n: n["citation"])[0]
+    for lid, title, ctrl in (("LLM01", "Prompt injection via user or retrieved content", "Separate trusted instructions from untrusted data; filter and constrain outputs."),
+                             ("LLM05", "Improper handling of model output", "Treat model output as untrusted: validate before use in SQL, shell, HTML, or tool calls."),
+                             ("LLM06", "Excessive agency of tools/actions", "Least-privilege tools, human approval for destructive actions.")):
+        add(threats, component=f"LLM integration ({p['name']})", stride="Tampering / Elevation of privilege", title=f"{lid}: {title}", cwe="CWE-1427" if lid == "LLM01" else "CWE-20",
+            owasp=f"OWASP LLM Top 10: {lid}", likelihood="medium", impact="medium", evidence=[p["citation"]], primary=p["citation"], target=None,
+            gaps="An LLM SDK is imported; how untrusted text and outputs flow was not traced by this draft rule. Confirm against the prompt and tool code.", control=ctrl, label="inferred", confidence="low")
+
+
+# ---------------------------------------------------------------- boundaries, output
+
+def boundaries(c: Ctx):
+    tbs, seen = [], set()
+
+    def add_tb(tid, name, kind, cite, crossed):
+        if tid in seen or not cite:
+            return
+        seen.add(tid)
+        tbs.append({"id": tid, "name": name, "kind": kind, "citation": cite, "crossed_by": crossed})
+    for e in c.store.edges:
+        s = c.nodes.get(e["src"], {})
+        if e["kind"] == "http_calls" and e.get("dst_citation"):
+            d = c.nodes.get(e["dst"], {})
+            add_tb(f"TB-{s.get('repo')}-{d.get('repo')}-http", f"{s.get('repo')} → {d.get('repo')} (service boundary, HTTP)", "service", e["citation"], e["src"])
+        elif e["kind"] == "http_calls" and c.nodes.get(e["dst"], {}).get("kind") == "external":
+            add_tb(f"TB-{s.get('repo')}-external", f"{s.get('repo')} → third parties", "third-party", e["citation"], e["src"])
+        elif e["kind"] in ("publishes", "consumes") and c.nodes.get(e["dst"], {}).get("kind") == "topic":
+            add_tb(f"TB-broker-{c.nodes[e['dst']]['name']}", f"message broker topic {c.nodes[e['dst']]['name']}", "messaging", e["citation"], e["src"])
+        elif e["kind"] in ("reads", "writes") and c.nodes.get(e["dst"], {}).get("kind") == "table":
+            add_tb(f"TB-data-{c.nodes[e['dst']]['name']}", f"data store: table {c.nodes[e['dst']]['name']}", "data", e["citation"], e["src"])
+    pub = [n for n in c.nodes.values() if n["kind"] == "endpoint" and c.exposure(n["id"])[0] == "public-candidate"]
+    if pub:
+        p = sorted(pub, key=lambda n: n["citation"])[0]
+        add_tb("TB-internet", "internet → public-facing endpoints (candidates)", "internet", p["citation"], (c.handler.get(p["id"]) or [p["id"]])[0])
+    for n in c.nodes.values():
+        if n["kind"] == "cloud_resource" and re.search(r"(?i)ingress|load.?balancer|api.?gateway|front.?door", n["name"]):
+            add_tb(f"TB-edge-{re.sub(r'[^A-Za-z0-9]+', '-', n['name'])[:40]}", f"edge: {n['name']}", "edge", n["citation"], n["id"])
+    return tbs
+
+
+def esc(s) -> str:
+    return md_safe(s)
+
+
+def quote_of(c: Ctx, citation: str):
+    q = c.line(citation)
+    q = safe_quote(q) if q else None
+    return q or None
+
+
+def write_proposals(c: Ctx, out: Path, threats, tbs):
+    lines = []
+    for t in threats:
+        q = quote_of(c, t["primary"])
+        if not q:
+            continue
+        qn = f"{t['id']}-{re.sub(r'[^a-z0-9]+', '-', t['title'].lower())[:40].strip('-')}"
+        t["qualname"] = qn
+        lines.append({"op": "node", "extractor": "rule", "kind": "threat", "repo": "_system", "qualname": qn, "name": f"{t['id']} {t['title']}"[:200],
+                      "citation": t["primary"], "quote": q, "confidence": t["confidence"], "label": t["label"],
+                      "attrs": {"stride": t["stride"], "cwe": t["cwe"], "owasp": t["owasp"], "likelihood": t["likelihood"], "impact": t["impact"],
+                                "priority": t["priority"], "draft": True, "component": t["component"][:120]}})
+        if t.get("target") and t["target"] in c.nodes:
+            lines.append({"op": "edge", "extractor": "rule", "src": f"threat:_system::{qn}", "kind": "threatens", "dst": t["target"], "citation": t["primary"],
+                          "quote": q, "confidence": t["confidence"], "label": t["label"], "rationale": t["title"][:200]})
+    for b in tbs:
+        q = quote_of(c, b["citation"])
+        if not q:
+            continue
+        lines.append({"op": "node", "extractor": "rule", "kind": "trust_boundary", "repo": "_system", "qualname": b["id"], "name": b["name"][:200], "citation": b["citation"],
+                      "quote": q, "confidence": "medium", "label": "inferred", "attrs": {"boundary_kind": b["kind"], "draft": True}})
+        if b["crossed_by"] in c.nodes:
+            lines.append({"op": "edge", "extractor": "rule", "src": b["crossed_by"], "kind": "crosses_boundary", "dst": f"trust_boundary:_system::{b['id']}",
+                          "citation": b["citation"], "quote": q, "confidence": "medium", "label": "inferred"})
+    p = graph_dir(out) / "proposals" / "seed-threats.jsonl"
+    atomic_write(p, "".join(json.dumps(x) + "\n" for x in lines))
+    return len(lines)
+
+
+def dfd(c: Ctx) -> str:
+    from callgraph import compute, label as lab
+    g = {"nodes": list(c.nodes.values()), "edges": c.store.edges}
+    cg = compute(g, {k: v for k, v in c.roots.items() if not k.startswith("ctx")})
+    rows = cg["repo"]["edges"][:40]
+    names = {n["id"]: n["name"] for n in cg["repo"]["nodes"]}
+    pub = set()
+    for n in c.nodes.values():
+        if n["kind"] == "endpoint" and c.exposure(n["id"])[0] == "public-candidate":
+            pub.add(n["repo"])
+    ids, groups = {}, {"internet": [], "internal": [], "third": []}
+    for r in rows:
+        for x in (r["src"], r["dst"]):
+            if x not in ids:
+                ids[x] = f"N{len(ids) + 1}"
+                kind = c.nodes.get(x, {}).get("kind", "repo")
+                rep = names.get(x, "")
+                groups["third" if kind == "external" else "internet" if rep in pub else "internal"].append(x)
+    out = ["flowchart LR", '  U(("Internet users"))']
+    titles = {"internet": "Trust boundary: public-facing candidates", "internal": "Trust boundary: internal services", "third": "Trust boundary: third parties"}
+    for g, members in groups.items():
+        if members:
+            out.append(f'  subgraph TB_{g}["{titles[g]}"]')
+            out += [f'    {ids[m]}["{lab(names[m])}"]' for m in members]
+            out.append("  end")
+    for m in groups["internet"]:
+        out.append(f"  U -->|\"requests\"| {ids[m]}")
+    for r in rows:
+        out.append(f'  {ids[r["src"]]} {"-.->" if r["label"] == "inferred" else "-->"}|"{lab(r["mechanism"], 24)}"| {ids[r["dst"]]}')
+    return "\n".join(out)
+
+
+def render(c: Ctx, threats, tbs, prop_lines) -> str:
+    targets = json.loads((c.out / "evidence" / "targets.json").read_text()).get("repos", {}) if (c.out / "evidence" / "targets.json").is_file() else {}
+    srcs = ", ".join(f"`{k}` @ `{str(v.get('revision') or 'local')[:12]}`" for k, v in targets.items() if not k.startswith("ctx"))
+    order = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    threats.sort(key=lambda t: (order[t["priority"]], t["primary"]))
+    for i, t in enumerate(threats, 1):
+        t["id"] = f"T-{i:02d}"
+    write_proposals(c, c.out, threats, tbs)
+    L = ["# System threat model (draft)", "", "> **ckb provenance**", f"> - Sources: {srcs}", f"> - Generated: {now_iso()} by ckb threat_seed, stage `threat-model-draft`",
+         "> - Scope: registered repos, IaC, supplied CSPM/docs · Excluded: vendored, generated, binaries, symlinks",
+         "> - Method: deterministic rules over the knowledge graph; no target code executed; ratings per the ckb rubric",
+         "> - Verification: threats are mirrored as graph proposals (graph/proposals/seed-threats.jsonl) and verified by graph_merge", "",
+         f"> **DRAFT** [inferred]: produced by rules, not by a reviewer. The threat-modeler agent confirms, refines, or removes each threat below; until then treat every item as a lead to check in the cited code. {MARK}", "",
+         "## Scope", "", f"Registered repos: {', '.join(f'`{k}`' for k in targets if not k.startswith('ctx')) or '[unknown]'}. Threats come from {len(threats)} rule hits. Rules cover injection paths, authentication evidence, security switches, service-to-service trust, messaging, shared state, timeouts, cloud posture, supply chain, documentation drift, and LLM use. [inferred]", ""]
+    assets = []
+    for n in sorted(c.nodes.values(), key=lambda n: n["citation"] or ""):
+        if n["kind"] == "table":
+            assets.append((n["name"], "data store (table)", "high", n["citation"]))
+        elif n["kind"] == "env_var" and SECRET_ENV.search(n["name"]):
+            assets.append((n["name"], "secret/credential configuration (name only)", "high", n["citation"]))
+        elif n["kind"] == "cloud_resource" and re.search(r"(?i)bucket|storage|db_instance|database|queue|mq_broker|secret|kms|sqs|sns", n["name"]):
+            assets.append((n["name"], "cloud data/messaging resource", "medium", n["citation"]))
+        elif n["kind"] == "topic":
+            assets.append((n["name"], "message topic", "medium", n["citation"]))
+    L += ["## Assets", "", "| Asset | Kind | Sensitivity | Source |", "| --- | --- | --- | --- |"]
+    L += [f"| {esc(a[0])} | {a[1]} | {a[2]} | `{a[3]}` |" for a in assets[:40] if a[3]] or ["| [unknown] none identified | | | |"]
+    L += ["", "## Actors", "", "| Actor | Trust level | Capabilities |", "| --- | --- | --- |",
+          "| Anonymous internet user | untrusted | reach public-facing endpoints [inferred] |", "| Authenticated user | low | call authenticated endpoints [inferred] |",
+          "| Internal service | medium | call internal endpoints, publish/consume topics, read/write shared stores [inferred] |",
+          "| Operator / CI system | high | deploy, configure environment variables, run pipelines [inferred] |",
+          "| Third-party API / SaaS | untrusted | receive outbound calls and data [inferred] |", ""]
+    L += ["## Entry points", "", "| Entry point | Exposure | AuthN evidence | Source |", "| --- | --- | --- | --- |"]
+    auth_missing = {t["primary"] for t in threats if t["cwe"] == "CWE-306"}
+    eps = sorted((n for n in c.nodes.values() if n["kind"] == "endpoint"), key=lambda n: n["citation"])
+    L += [f"| {esc(n['name'])} | {c.exposure(n['id'])[0]} | {'none found' if n['citation'] in auth_missing else 'found or exempt'} | `{n['citation']}` |" for n in eps[:60]] \
+        or ["| [unknown] none | | | |"]
+    L += ["", "## Trust boundaries", "", "| ID | Boundary | Crossed by | Source |", "| --- | --- | --- | --- |"]
+    L += [f"| {b['id']} | {esc(b['name'])} | {esc(c.nodes.get(b['crossed_by'], {}).get('name', ''))} | `{b['citation']}` |" for b in tbs] or ["| [unknown] none | | | |"]
+    L += ["", "## Data flow diagram", "", "```mermaid", dfd(c), "```", ""]
+    L += ["## STRIDE", "", "| ID | Component or flow | STRIDE | Threat | CWE/OWASP | Likelihood | Impact | Existing mitigations | Gaps | Recommended controls | Confidence | Source |",
+          "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    for t in threats:
+        mit = "; ".join(esc(m) for m in t["mitigations"]) or "none found"
+        src = " ".join(f"`{x}`" for x in dict.fromkeys(t["evidence"]))
+        L.append(f"| {t['id']} [draft] | {esc(t['component'])[:70]} | {esc(t['stride'])} | {esc(t['title'])} | {t['cwe']} · {esc(t['owasp'])} | {t['likelihood']} | {t['impact']} | {mit} | {esc(t['gaps'])[:300]} | {esc(t['control'])[:200]} | {t['confidence']} ({t['label']}) | {src} |")
+    if not threats:
+        L.append("| [unknown] no rule matched | | | | | | | | | | | |")
+    cats = [("AuthN/AuthZ", "CWE-306"), ("Secrets handling", "CWE-798"), ("Inter-service trust", "CWE-290"), ("Injection sinks (SQL, cmd, template, deser, SSRF, path)", None), ("Data sensitivity", "CWE-284")]
+    L += ["", "## Focus checks", "", "| Area | Finding | Source |", "| --- | --- | --- |"]
+    for area, cwe in cats:
+        hits = [t for t in threats if (t["cwe"] == cwe if cwe else t["cwe"] in ("CWE-89", "CWE-78", "CWE-918", "CWE-94", "CWE-502"))]
+        if area == "Secrets handling":
+            hits += [t for t in threats if t["cwe"] == "CWE-798"]
+        L.append(f"| {area} | " + (f"{len(hits)} draft threat(s): " + ", ".join(h['id'] for h in hits[:6]) if hits else "none detected by the rules [inferred]") + " | " + (" ".join(f"`{h['primary']}`" for h in hits[:2]) if hits else "[n/a]") + " |")
+    L += ["| LLM (OWASP LLM Top 10) | " + ("LLM SDK imported: see LLM entries" if any(t['owasp'].startswith('OWASP LLM') for t in threats) else "no LLM SDK detected") + " | " + (next((f"`{t['primary']}`" for t in threats if t['owasp'].startswith('OWASP LLM')), "[n/a]")) + " |"]
+    L += ["", "## Prioritized risks", ""]
+    L += [f"{i}. **{t['id']}** ({t['priority']}): {esc(t['title'])}: `{t['primary']}`" for i, t in enumerate(threats[:10], 1)] or ["[unknown] none"]
+    L += ["", "## Assumptions", "", "- Exposure labels are inferred from the call graph (an endpoint nobody else calls is a public candidate); confirm against ingress/gateway configuration. [inferred]",
+          "- Authentication evidence is looked for on the route line and handler chain only: global middleware and gateway-level auth are not visible to these rules. [inferred]",
+          "- Taint paths are candidate reachability over call/route edges, not a full data-flow proof. [inferred]", ""]
+    return "\n".join(L)
+
+
+def run(out: Path, force=False) -> dict:
+    c = Ctx(out)
+    threats = []
+    for rule in (rule_taint, rule_auth, rule_switches, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_drift, rule_llm):
+        rule(c, threats)
+    tbs = boundaries(c)
+    md = render(c, threats, tbs, 0)
+    p = out / "system" / "threat-model.md"
+    wrote = True
+    if p.is_file() and MARK not in p.read_text() and not force:
+        p = out / "system" / "threat-model.draft.md"
+        wrote = False  # a refined (agent-written) model exists: keep it, write the draft alongside
+    atomic_write(p, md)
+    return {"threats": len(threats), "boundaries": len(tbs), "file": str(p.relative_to(out)), "overwrote_refined": False, "wrote_primary": wrote,
+            "by_priority": {k: sum(1 for t in threats if t["priority"] == k) for k in ("critical", "high", "medium", "low")}}
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--force", action="store_true")
+    a = ap.parse_args()
+    print(json.dumps(run(Path(a.out).resolve(), a.force), indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -11,6 +11,7 @@ Usage:
   graph_query.py --out OUT_DIR path <src> <dst> [--kinds ...] [--max-depth 8] [--k 3]
   graph_query.py --out OUT_DIR impact <target ...> [--diff REV] [--depth 6]
   graph_query.py --out OUT_DIR taint [--source ID] [--sink ID] [--max-depth 10]
+  graph_query.py --out OUT_DIR callgraph [function|file|repo] [--repo R] [--focus X] [--depth N]
   graph_query.py --out OUT_DIR tour [name]
   graph_query.py --out OUT_DIR sql "<SELECT ...>"
   graph_query.py --out OUT_DIR cypher "<MATCH ...>"      (only when Neo4j is configured; see graph_neo4j.py)
@@ -330,6 +331,43 @@ class GraphStore:
         t = next((t for t in self.tours if t.get("name") == name), None)
         return t or {"error": f"no tour {name}"}
 
+    def callgraph(self, level="repo", repo=None, focus=None, depth=2, limit=200):
+        """Rolled-up call graph at function, file or repo level (see callgraph.py), optionally for one repo or around a focus."""
+        if level not in ("function", "file", "repo"):
+            return {"error": "level must be function, file or repo"}
+        from callgraph import compute
+        if getattr(self, "_cg_mtime", None) != self.mtime:
+            roots = {k: v for k, v in repo_roots_for_output(self.out).items() if not k.startswith("ctx")}
+            self._cg = compute({"nodes": list(self.nodes.values()), "edges": self.edges}, roots)
+            self._cg_mtime = self.mtime
+        lv = self._cg[level]
+        nodes = {n["id"]: n for n in lv["nodes"]}
+        rows = [r for r in lv["edges"] if not repo or (nodes[r["src"]].get("repo") == repo or nodes[r["dst"]].get("repo") == repo)]
+        if focus:
+            seeds = set()
+            for t in self.resolve(focus):
+                n = self.nodes.get(t, {})
+                seeds.add(t)
+                if n.get("path"):
+                    seeds.add(f"file:{n['repo']}:{n['path']}:")
+                if n.get("repo"):
+                    seeds.add(f"repo:{n['repo']}::{n['repo']}")
+            seen, frontier = set(seeds), set(seeds)
+            for _ in range(max(1, min(int(depth), 6))):
+                nxt = set()
+                for r in rows:
+                    if r["src"] in frontier and r["dst"] not in seen:
+                        nxt.add(r["dst"])
+                    if r["dst"] in frontier and r["src"] not in seen:
+                        nxt.add(r["src"])
+                seen |= nxt
+                frontier = nxt
+            rows = [r for r in rows if r["src"] in seen and r["dst"] in seen]
+        rows = rows[:limit]
+        ids = {r["src"] for r in rows} | {r["dst"] for r in rows}
+        return {"level": level, "repo": repo, "focus": focus, "stats": self._cg["stats"][level],
+                "nodes": [nodes[i] for i in sorted(ids) if i in nodes], "edges": rows, "shared_stores": self._cg["shared_stores"] if level == "repo" else []}
+
     def subgraph(self, ids=None, kinds=None, max_nodes=5000):
         kinds = set(kinds or [])
         sel = [nid for nid in (ids or self.nodes) if nid in self.nodes and (not kinds or self.nodes[nid]["kind"] in kinds)][:max_nodes]
@@ -369,6 +407,7 @@ class GraphStore:
                "path": lambda: self.path(args["src"], args["dst"], args.get("kinds"), int(args.get("max_depth", 8)), int(args.get("k", 3))),
                "impact": lambda: self.impact(args.get("targets"), args.get("diff"), int(args.get("depth", 6))),
                "taint": lambda: self.taint(args.get("source"), args.get("sink"), int(args.get("max_depth", 10))),
+               "callgraph": lambda: self.callgraph(args.get("level", "repo"), args.get("repo"), args.get("focus"), int(args.get("depth", 2)), int(args.get("limit", 200))),
                "tour": lambda: self.tour(args.get("name")), "subgraph": lambda: self.subgraph(args.get("ids"), args.get("kinds")),
                "sql": lambda: self.sql(args["query"]), "cypher": lambda: self.cypher(args["query"])}
         if op not in ops:
@@ -392,6 +431,7 @@ def main() -> int:
     ap.add_argument("--max-depth", type=int)
     ap.add_argument("--k", type=int, default=3)
     ap.add_argument("--diff")
+    ap.add_argument("--focus")
     ap.add_argument("--source")
     ap.add_argument("--sink")
     a = ap.parse_args()
@@ -405,6 +445,7 @@ def main() -> int:
         "path": {"src": p[0] if p else "", "dst": p[1] if len(p) > 1 else "", "kinds": kinds, "max_depth": a.max_depth or 8, "k": a.k},
         "impact": {"targets": p, "diff": a.diff, "depth": a.depth or 6},
         "taint": {"source": a.source, "sink": a.sink, "max_depth": a.max_depth or 10},
+        "callgraph": {"level": p[0] if p else "repo", "repo": a.repo, "focus": a.focus, "depth": a.depth or 2, "limit": a.limit if a.limit != 20 else 200},
         "tour": {"name": p[0] if p else None}, "sql": {"query": " ".join(p)}, "cypher": {"query": " ".join(p)}, "status": {},
     }
     print(json.dumps(store.dispatch(a.op, argmap.get(a.op, {})), indent=2, default=str))

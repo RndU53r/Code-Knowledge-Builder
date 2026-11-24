@@ -197,7 +197,7 @@ msgs = [{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocol
 mr = run("graph_mcp.py", inp="".join(json.dumps(m) + "\n" for m in msgs))
 resp = {r["id"]: r for r in map(json.loads, mr.stdout.splitlines())}
 check("mcp: initialize + no reply to notification", resp[1]["result"]["serverInfo"]["name"] == "ckb-graph" and len(resp) == 4)
-check("mcp: 8 read-only tools listed", len(resp[2]["result"]["tools"]) == 8)
+check("mcp: 9 read-only tools listed", len(resp[2]["result"]["tools"]) == 9)
 check("mcp: explain returns cited node", "orders/app/db.py" in resp[3]["result"]["content"][0]["text"])
 check("mcp: missing graph -> helpful error", resp[4]["result"]["isError"] and "graph build" in resp[4]["result"]["content"][0]["text"])
 

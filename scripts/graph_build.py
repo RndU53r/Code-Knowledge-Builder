@@ -3,11 +3,12 @@
 merge verified agent proposals, carry over summaries, and write graph.json + graph.sqlite.
 
 Usage:
-  graph_build.py --out OUT_DIR [--extract] [--incremental] [--structural-only]
+  graph_build.py --out OUT_DIR [--extract] [--incremental] [--structural-only] [--enrich]
 
   --extract          run graph_extract.py for every registered code repo first (ctx-* keys are skipped)
   --incremental      with --extract: re-extract only files changed since the last hash snapshot
   --structural-only  skip proposals (used by the git-commit auto-update hook)
+  --enrich           also run repo_context.py, doc_claims.py and threat_seed.py (draft threat model), then rebuild
 
 Outputs: <out>/graph/graph.json, <out>/graph/graph.sqlite, <out>/system/graph.md
 """
@@ -26,7 +27,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from ckb_common import load_json, now_iso, repo_roots_for_output  # noqa: E402
 from graph_common import (EXTRACTOR_VERSION, SCHEMA_VERSION, atomic_write, cite, graph_dir, make_edge,  # noqa: E402
-                          make_node, node_id, validate)
+                          make_node, md_safe, node_id, validate)
 
 CODE_KINDS = {"function", "method", "class"}
 
@@ -307,6 +308,20 @@ def merge_proposals(link: Linker, out: Path):
     return graph_merge.merge_into(link, out)
 
 
+def prune_superseded_drafts(link: Linker, out: Path) -> int:
+    """Once a reviewer/agent has refined system/threat-model.md (no draft marker) and contributed its own threat
+    nodes, the rule-based draft threats are superseded: drop them so the graph matches the model."""
+    md = out / "system" / "threat-model.md"
+    if not md.is_file() or "<!-- ckb:threat-seed -->" in md.read_text():
+        return 0
+    if not any(n["kind"] == "threat" and n["provenance"]["extractor"] == "llm" for n in link.nodes.values()):
+        return 0  # refined by hand without graph proposals: keep the drafts so the graph is not left without threats
+    drop = [nid for nid, n in link.nodes.items() if n["kind"] == "threat" and n["provenance"]["extractor"] == "rule"]
+    for nid in drop:
+        del link.nodes[nid]
+    return len(drop)
+
+
 def carry_over(link: Linker, out: Path):
     """Keep agent-written summaries across rebuilds (idea from Bevel's description merge; own code)."""
     ann_p = graph_dir(out) / "annotations.json"
@@ -340,7 +355,7 @@ def carry_over(link: Linker, out: Path):
         node = link.nodes[target]
         if node.get("summary_status") == "OUTDATED":
             status = "OUTDATED"
-        for k in ("summary", "tags", "layer"):
+        for k in ("summary", "tags", "layer", "summary_source"):
             if a.get(k):
                 node[k] = a[k]
         node["summary_status"] = status
@@ -404,14 +419,14 @@ def report(graph: dict, out: Path, sec: dict, props: dict, carry: dict) -> str:
         lines.append(f"| {ex} | {st['nodes_by_extractor'].get(ex, 0)} | {st['edges_by_extractor'].get(ex, 0)} |")
     eps = [n for n in graph["nodes"] if n["kind"] == "endpoint"][:40]
     lines += ["", "## Entry points (endpoints)", "", "| Endpoint | Repo | Source |", "| --- | --- | --- |"]
-    lines += [f"| {n['name'].replace('|', '/')} | {n['repo']} | `{n['citation']}` |" for n in eps] or ["| [unknown] none found | | |"]
+    lines += [f"| {md_safe(n['name'])} | {md_safe(n['repo'])} | `{n['citation']}` |" for n in eps] or ["| [unknown] none found | | |"]
     unsafe = [n for n in graph["nodes"] if n["kind"] == "sink" and not (n.get("attrs") or {}).get("safe")][:40]
     lines += ["", "## Unsafe sink candidates", "", "| Sink | Type | Reason | Source |", "| --- | --- | --- | --- |"]
-    lines += [f"| {n['name'].replace('|', '/')} | {n['attrs'].get('sink_type')} | {n['attrs'].get('reason')} | `{n['citation']}` |" for n in unsafe] \
+    lines += [f"| {md_safe(n['name'])} | {md_safe(n['attrs'].get('sink_type'))} | {md_safe(n['attrs'].get('reason'))} | `{n['citation']}` |" for n in unsafe] \
         or ["| [n/a] none detected | | | |"]
     xr = [e for e in graph["edges"] if e.get("dst_citation")][:40]
     lines += ["", "## Cross-repo edges", "", "| From | Kind | To | Confidence | Source |", "| --- | --- | --- | --- | --- |"]
-    lines += [f"| {e['src'].split(':', 2)[-1].strip(':')} | {e['kind']} | {e['dst'].split(':', 2)[-1].strip(':')} | {e['confidence']} | `{e['citation']}` |"
+    lines += [f"| {md_safe(e['src'].split(':', 2)[-1].strip(':'))} | {e['kind']} | {md_safe(e['dst'].split(':', 2)[-1].strip(':'))} | {e['confidence']} | `{e['citation']}` |"
               for e in xr] or ["| [unknown] none matched statically | | | | |"]
     lines += ["", "## Merge and carry-over", "",
               f"- Security nodes attached: {json.dumps(sec)} [inferred]",
@@ -427,6 +442,9 @@ def build(out: Path, structural_only=False) -> dict:
     link = Linker(frags, roots, out).build()
     sec = attach_security(link, out)
     props = {} if structural_only else merge_proposals(link, out)
+    pruned = prune_superseded_drafts(link, out)
+    if pruned:
+        props = {**props, "superseded_draft_threats_dropped": pruned}
     carry = carry_over(link, out)
     # drop edges whose ends vanished (e.g. removed files)
     link.edges = {k: e for k, e in link.edges.items() if e["src"] in link.nodes and e["dst"] in link.nodes}
@@ -452,12 +470,36 @@ def build(out: Path, structural_only=False) -> dict:
     atomic_write(gd / "graph.json", json.dumps(graph, indent=1))
     write_sqlite(graph, gd / "graph.sqlite")
     atomic_write(out / "system" / "graph.md", report(graph, out, sec, props, carry))
-    return {"nodes": len(nodes), "edges": len(edges), "schema_problems": probs[:20], "security": sec, "proposals": props, "carry_over": carry}
+    cg_stats = None
+    try:
+        import callgraph
+        cg_stats = callgraph.run(out)["stats"]
+    except Exception as e:  # noqa: BLE001 - call graphs are derived; never fail the graph build
+        cg_stats = {"error": f"{type(e).__name__}: {e}"}
+    return {"callgraph": cg_stats, **{"nodes": len(nodes), "edges": len(edges), "schema_problems": probs[:20], "security": sec, "proposals": props, "carry_over": carry}}
+
+
+def enrich(out: Path, structural_only=False) -> dict:
+    """Deterministic enrichment in dependency order: build, repo context + doc claims, rebuild (merges their
+    seed proposals incl. drift nodes), draft threat model, final rebuild. Each step is skipped if it has no input."""
+    steps = {}
+    build(out, structural_only)
+    import doc_claims
+    import repo_context
+    import threat_seed
+    steps["repo_context"] = repo_context.run(out)
+    steps["doc_claims"] = doc_claims.run(out)
+    build(out, structural_only)
+    steps["threat_seed"] = threat_seed.run(out)
+    res = build(out, structural_only)
+    res["enrich"] = steps
+    return res
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--enrich", action="store_true", help="also run repo_context, doc_claims and threat_seed (draft threat model) and merge their results")
     ap.add_argument("--extract", action="store_true")
     ap.add_argument("--incremental", action="store_true")
     ap.add_argument("--structural-only", action="store_true")
@@ -481,7 +523,7 @@ def main() -> int:
                 files = changed[key].get("added", []) + changed[key].get("changed", []) + changed[key].get("removed", [])
                 cmd += ["--files", *files]
             subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL)
-    res = build(out, a.structural_only)
+    res = enrich(out, a.structural_only) if a.enrich else build(out, a.structural_only)
     print(json.dumps(res, indent=2))
     return 1 if res["schema_problems"] else 0
 

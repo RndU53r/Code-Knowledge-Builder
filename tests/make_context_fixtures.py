@@ -103,4 +103,13 @@ with zipfile.ZipFile(D / "network.vsdx", "w", zipfile.ZIP_DEFLATED) as z:
 (D / "wiz-issues.csv").write_text("Issue ID,Severity,Resource,Control,Status\n"
                                   "wiz-001,Critical,arn:aws:iam::111122223333:policy/orders-app,Admin-equivalent IAM policy attached to workload,Open\n"
                                   "wiz-002,Low,gateway-sg,Security group allows ingress from internet,Resolved\n")
+# ---- more diagram/note formats
+(D / "data-flow.mmd").write_text("flowchart LR\n  GW[\"API Gateway\"] -->|HTTPS| OR[Orders service]\n  OR -->|SQL| DB[(Postgres shop)]\n  OR -->|AMQPS| MQ[(RabbitMQ)]\n  MQ --> FU[Fulfillment worker]\n")
+(D / "deploy.puml").write_text("@startuml\ncomponent \"API Gateway\" as gw\ncomponent \"Orders service\" as orders\ndatabase \"Postgres shop\" as db\ngw -> orders : HTTPS\norders --> db : SQL\n@enduml\n")
+json.dump({"elements": [{"id": "a", "type": "rectangle"}, {"id": "ta", "type": "text", "text": "Billing", "containerId": "a"},
+                        {"id": "b", "type": "rectangle"}, {"id": "tb", "type": "text", "text": "Ledger DB", "containerId": "b"},
+                        {"id": "ar", "type": "arrow", "startBinding": {"elementId": "a"}, "endBinding": {"elementId": "b"}},
+                        {"id": "tl", "type": "text", "text": "writes", "containerId": "ar"}]}, open(D / "billing.excalidraw", "w"))
+(D / "design-notes.eml").write_text("From: architect@example.com\nTo: team@example.com\nSubject: Orders design notes\nDate: Mon, 1 Jan 2026 10:00:00 +0000\nContent-Type: text/plain\n\n"
+                                    "The orders service must not be exposed publicly.\nThe gateway is the only internet-facing service.\n")
 print("wrote", sorted(p.name for p in D.iterdir()))

@@ -81,7 +81,8 @@ def check_line(obj, v: Verifier, known: set, proposed: set):
             return "node needs repo and qualname"
         return None
     k = obj.get("kind")
-    if k not in EDGE_KINDS or "llm" not in EDGE_KINDS[k]:
+    ex = obj.get("_extractor", "llm")
+    if k not in EDGE_KINDS or ex not in EDGE_KINDS[k]:
         return f"agents may not propose edge kind {k}"
     for end in ("src", "dst"):
         if obj.get(end) not in known and obj.get(end) not in proposed:
@@ -98,9 +99,10 @@ def check_line(obj, v: Verifier, known: set, proposed: set):
 
 
 def node_from(obj):
+    ex = obj.get("_extractor", "llm")
     from graph_common import node_id
     path = obj.get("path") or ""
-    n = make_node(obj["kind"], obj["repo"], path, obj["qualname"], obj.get("name") or obj["qualname"], 1, extractor="llm",
+    n = make_node(obj["kind"], obj["repo"], path, obj["qualname"], obj.get("name") or obj["qualname"], 1, extractor=ex,
                   confidence=obj.get("confidence", "medium"), label=obj.get("label", "inferred"),
                   summary=obj.get("summary"), attrs={k: safe_str(v) if isinstance(v, str) else v for k, v in (obj.get("attrs") or {}).items()} or None)
     n["citation"] = obj["citation"]
@@ -118,7 +120,7 @@ def edge_from(obj):
     label = obj.get("label", "inferred")
     if conf == "low" and label == "observed":
         label = "inferred"
-    return make_edge(obj["src"], obj["kind"], obj["dst"], obj["citation"], extractor="llm", confidence=conf, label=label,
+    return make_edge(obj["src"], obj["kind"], obj["dst"], obj["citation"], extractor=obj.get("_extractor", "llm"), confidence=conf, label=label,
                      quote=obj["quote"], dst_citation=obj.get("dst_citation"), rationale=obj.get("rationale"))
 
 
@@ -136,6 +138,9 @@ def process(out: Path, files, known: set, apply=None):
                 objs.append((i, json.loads(ln)))
             except ValueError:
                 rejected.append({"file": Path(fp).name, "line": i, "reason": "invalid JSON"})
+        # Deterministic generators (threat_seed, doc_claims) write seed-*.jsonl with extractor "rule"; everything else is "llm".
+        for _, o in objs:
+            o["_extractor"] = "rule" if (Path(fp).name.startswith("seed-") and o.get("extractor") == "rule") else "llm"
         proposed = set()
         for _, o in objs:
             if o.get("op") == "node" and o.get("kind") and o.get("repo") and o.get("qualname"):
@@ -183,6 +188,10 @@ def merge_into(link, out: Path):
             for k in ("summary", "layer"):
                 if o.get(k):
                     entry[k] = n[k] = safe_str(o[k], 600)
+            if o.get("source") and o.get("summary"):
+                entry["summary_source"] = n["summary_source"] = safe_str(o["source"], 30)
+            if o.get("tags") and entry.get("tags"):
+                o["tags"] = list(dict.fromkeys(list(entry["tags"]) + list(o["tags"])))
             if o.get("tags"):
                 entry["tags"] = n["tags"] = [safe_str(t, 40) for t in o["tags"][:12]]
             if not stale:

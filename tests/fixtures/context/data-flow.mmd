@@ -1,0 +1,5 @@
+flowchart LR
+  GW["API Gateway"] -->|HTTPS| OR[Orders service]
+  OR -->|SQL| DB[(Postgres shop)]
+  OR -->|AMQPS| MQ[(RabbitMQ)]
+  MQ --> FU[Fulfillment worker]

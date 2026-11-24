@@ -1,0 +1,8 @@
+From: architect@example.com
+To: team@example.com
+Subject: Orders design notes
+Date: Mon, 1 Jan 2026 10:00:00 +0000
+Content-Type: text/plain
+
+The orders service must not be exposed publicly.
+The gateway is the only internet-facing service.

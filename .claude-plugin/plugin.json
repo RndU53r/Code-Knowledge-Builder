@@ -1,8 +1,8 @@
 {
   "name": "ckb",
   "displayName": "Code Knowledge Builder",
-  "version": "0.3.0",
-  "description": "Turn one or more repositories, plus their architecture docs, diagrams, cloud IaC and CSPM results, into a cited knowledge graph and knowledge base (HLD/LLD, cross-repo flows, outputs and conditions, documented-vs-observed drift), with an interactive viewer, MCP server, impact and taint queries, a STRIDE threat model, scanner-ready context.md files, and a static supply-chain and prompt-injection audit. Auto mode selects everything from the code. Read-only on targets.",
+  "version": "0.4.0",
+  "description": "Turn repositories (a local folder by default, a workspace of git repos, a monorepo, or whole Azure DevOps projects, GitHub orgs and GitLab groups on main/master), plus architecture docs, diagrams, images, notes, cloud IaC and CSPM results, into a cited knowledge graph with function/file/repo call graphs, documentation-vs-code drift, a threat model, scanner-ready context.md files, and a supply-chain audit. Auto mode chooses capabilities from the environment and the code. Read-only on targets.",
   "author": {
     "name": "RndU53r",
     "url": "https://github.com/RndU53r"
@@ -11,22 +11,26 @@
   "repository": "https://github.com/RndU53r/Code-Knowledge-Builder",
   "license": "MIT",
   "keywords": [
-    "codebase-analysis",
     "architecture",
-    "threat-modeling",
-    "supply-chain-security",
-    "prompt-injection",
-    "microservices",
-    "security-context",
-    "cspm",
-    "iac",
-    "terraform",
-    "cloud-security",
     "architecture-drift",
-    "knowledge-graph",
+    "auto-mode",
+    "azure-devops",
+    "call-graph",
+    "cloud-security",
+    "codebase-analysis",
+    "cspm",
+    "documentation-drift",
+    "iac",
     "impact-analysis",
-    "taint-analysis",
+    "knowledge-graph",
     "mcp",
-    "neo4j"
+    "microservices",
+    "neo4j",
+    "prompt-injection",
+    "security-context",
+    "supply-chain-security",
+    "taint-analysis",
+    "terraform",
+    "threat-modeling"
   ]
 }

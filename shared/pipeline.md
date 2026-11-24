@@ -4,7 +4,7 @@ Every `/ckb:*` command uses these steps. Follow `shared/safety-contract.md` thro
 
 ## Auto mode
 
-`/ckb:auto`, or `--auto` on any command, runs `scripts/auto_plan.py` first. It writes `evidence/auto-plan.json`, and every step below takes its choices (sources, context, stages, parsers, graph caps) from that file instead of asking. Authorization, off-machine lookups, Neo4j writes, and executing target code are never automated.
+`/ckb:auto`, or `--auto` on any command, runs `scripts/auto_plan.py` first. It probes the environment (`env_probe.py`) and the code, expands `ado:ORG/PROJECT`, `github-org:NAME` and `gitlab-group:PATH` specs (`enumerate_sources.py`), and writes `evidence/auto-plan.json`. Every step below takes its choices (sources and branches, context, stages, parsers, parallelism, graph caps) from that file instead of asking. Branch rule: main, else master, else the repo default, unless a branch is given; a local repo on another branch is read as a read-only snapshot. After fetching, `auto_plan.py --out <out> --from-registered` finalizes the plan. Authorization, off-machine lookups (Snyk, OSV, Neo4j), Neo4j writes, and executing target code are never automated: consent items go into the one authorization question.
 
 ## P0. Settings
 
@@ -60,10 +60,10 @@ Handle any `needs_reading` items (images, scanned PDFs) with the Read tool as th
 ### P2c. Structural knowledge graph
 
 ```bash
-python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract --enrich
 ```
 
-Run this after registration and context ingestion, before the agents, so every agent can navigate with `graph_query.py` (see the `knowledge-graph` skill). In auto mode, use the backend and caps from `evidence/auto-plan.json`.
+Run this after registration and context ingestion, before the agents, so every agent can navigate with `graph_query.py` (see the `knowledge-graph` skill). `--enrich` adds, in dependency order: docstring/README/ADR/OpenAPI/CODEOWNERS context from the repos (`repo_context.py`), documentation claims checked against the code with drift (`doc_claims.py`, writes `system/documented-vs-observed.md`), and a deterministic **draft threat model** (`threat_seed.py`, writes `system/threat-model.md` with a draft marker). The build also writes the function, file and repo **call graphs** (`system/call-graphs.md`, `graph/callgraph.json`). In auto mode, use the backend and caps from `evidence/auto-plan.json`. For images and scanned PDFs (`needs_reading`), dispatch `ckb:context-reader` before this step.
 
 ## P3. Dispatch agents
 
@@ -73,6 +73,7 @@ Run this after registration and context ingestion, before the agents, so every a
 - **System stages** run after every per-repo stage has finished: `ckb:flow-tracer` (`system/data-flows.md`, `system/hld.md`, `system/outputs-and-conditions.md`), then the system supply-chain report (if any audit ran), then `ckb:threat-modeler`, then the context files (`security-context` skill).
 - **Verification:** after each stage, run `ckb:citation-verifier` on the files that stage wrote. Hand failures back to the agent that wrote them (SendMessage to it when possible, otherwise a fresh agent with the error list). Allow at most two fix rounds, then record the remaining failures in `evidence/verification.md` and report them.
 
+- **Draft threat model:** `system/threat-model.md` already exists as a rule-based draft (it carries `<!-- ckb:threat-seed -->`). The `threat-modeler` agent refines it (confirms, re-rates, or removes each threat, adds what the rules cannot see) and removes the marker. If the pipeline runs without agents (CI), the draft stays and is labelled as such. `threat_seed.py` never overwrites a refined model: it writes `threat-model.draft.md` instead.
 - **Graph merge (P3g):** after each semantic stage, run `graph_build.py --out <out>` (it merges supply-chain JSON, CSPM, and verified agent proposals), then `graph_check.py --out <out> --report`. Send rejected proposal lines (`graph/rejected.jsonl`) back to the agent that wrote them, at most two rounds, the same rule as for citations. After the threat model, dispatch `ckb:graph-curator` for summaries and tours.
 
 Give each agent a prompt with: `<out>`, the repo key(s) and roots, the `ctx-*` keys and their manifest paths, the advisory setting, the stage to run, the template to use, and "follow ${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md".

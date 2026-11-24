@@ -70,6 +70,20 @@
     sel.firstChild.value = "";
     for (const t of (G.tours || [])) { const o = el("option", t.title || t.name); o.value = t.name; sel.append(o); }
   }
+  const FULL = DATA.graph;
+  if (DATA.callgraph) {
+    $("levelbox").hidden = false;
+    for (const [lv, label] of [["repo", "Repo → repo"], ["file", "File → file"], ["function", "Function → function"]]) {
+      if (DATA.callgraph[lv] && DATA.callgraph[lv].nodes.length) { const o = el("option", label); o.value = lv; $("level").append(o); }
+    }
+    $("level").addEventListener("change", () => {
+      const lv = $("level").value; clearHL(); selected = null; $("detail").replaceChildren(el("div", "Select a node.", "mut"));
+      if (lv === "full") { load(FULL); overview(); }
+      else { const c = DATA.callgraph[lv]; load({...FULL, nodes: c.nodes, edges: c.edges, tours: FULL.tours, stats: {nodes: c.nodes.length, edges: c.edges.length}}); showAll(); }
+      alpha = 1; hud(lv === "full" ? "" : `${lv} call graph: ${c_count(lv)}`);
+    });
+  }
+  function c_count(lv) { const c = DATA.callgraph[lv]; return `${c.nodes.length} nodes, ${c.edges.length} edges (weights = number of underlying calls)`; }
   $("btn-overview").addEventListener("click", overview);
   $("btn-all").addEventListener("click", showAll);
   $("lowconf").addEventListener("change", () => { alpha = 1; });
@@ -227,7 +241,7 @@
         const st = await (await fetch(`/api/status?token=${encodeURIComponent(LIVE.token)}`, {cache: "no-store"})).json();
         if (st.generated && st.generated !== generated) {
           const g = await (await fetch(`/api/graph?token=${encodeURIComponent(LIVE.token)}`, {cache: "no-store"})).json();
-          load(g); const keep = [...visible].filter(id => byId.has(id)); visible = new Set(keep); hud("graph reloaded: " + g.generated);
+          if ($("level")) $("level").value = "full"; load(g); const keep = [...visible].filter(id => byId.has(id)); visible = new Set(keep); hud("graph reloaded: " + g.generated);
         }
       } catch (e) { hud("live server unreachable"); }
     }, 3000);

@@ -42,6 +42,18 @@ Use one key per coherent bundle (`ctx-arch` for design docs and diagrams, `ctx-c
 
 Then run the supply-chain scanner over the context root (`--root <out>/evidence/context/<key> --key <key>`). It catches agent-directed text inside documents and misconfigurations in supplied IaC.
 
+### Images, scanned PDFs and notes
+
+For `needs_reading` items, dispatch the `ckb:context-reader` agent: it views each original and writes `<file>.notes.md` in the same shapes/connectors layout the converters produce, so the next step can parse it. Emails (`.eml`), RTF, text and Markdown notes are converted directly; PlantUML, Mermaid, Excalidraw and Gliffy diagrams are parsed into shapes and connectors.
+
+### Check documentation against the code
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/doc_claims.py" --out <out>      # also run by graph_build.py --enrich
+```
+
+It extracts claims (components, connections, mTLS/TLS, encryption at rest, authentication, internal-only exposure), matches them to repos, endpoints and cloud resources, and writes `system/documented-vs-observed.md` with a verdict per claim (`consistent`, `drift`, `not verifiable statically`) and both citations. Drift becomes `drift` nodes in the graph and drafts threats. Read the table, confirm the drift rows against the code, and include it in `system/hld.md` under "Documented vs observed".
+
 ## 2. Classify what each source can prove
 
 | Source | Proves | Label when used |

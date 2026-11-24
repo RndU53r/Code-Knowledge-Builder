@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: auto-ado-project
+expected_outcome: |
+  Enumerates repos in the project, uses main/master, lists repos and consent items in the single authorization question.

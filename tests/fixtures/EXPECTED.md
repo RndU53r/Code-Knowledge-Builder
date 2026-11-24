@@ -72,3 +72,14 @@ value does not appear in any output except as `AKIA…[REDACTED]`.
 | G8 | sc_finding SC-D07 `finding_at` aws_s3_bucket.invoices |
 | G9 | cspm_finding (Prowler) `affects` aws_s3_bucket.invoices |
 | G10 | taint paths: gateway GET /orders/:id → SQL sink [inferred]; GET /admin/report → SSRF sink |
+
+## auto mode v0.4
+
+| ID | Expected |
+| --- | --- |
+| A1 | `auto_plan.py` on a workspace of git repos: one source per repo; a repo on a feature branch is planned as `snapshot` of main (checkout untouched) |
+| A2 | `ado:acme/Proj A` (mock API): enumerates repos, skips disabled/archived/forks, branch main else master, token never in output |
+| A3 | draft threat model includes: SQLi path, SSRF path, AUTH_DISABLED switch, `x-request-user` trust, plain HTTP gateway→orders, no auth on orders endpoints, unauthenticated `order.created`, requeue without DLQ, table `orders` multi-writer, public S3/GCS/Azure storage, wildcard IAM, open ingress, encryption disabled, doc drift |
+| A4 | call graphs: repo gateway→orders (http), orders→fulfillment (`event:order.created` and `spawn`), file `app/main.py`→`app/db.py`, function `create_order`→`insert_order`/`price_items`, `price_items`→Go `main` |
+| A5 | doc drift: mTLS vs `http://orders:8000`; orders "validates JWT" vs no auth; "database encrypted" vs `storage_encrypted = false`; "private VPC" vs open ingress; RabbitMQ TLS vs `amqp://` |
+| A6 | repo context: OpenAPI `summary` on `POST /orders`; README summary on `platform`; CODEOWNERS tags; ADR node; docstring summary on `price_items`; hostile README paragraph never used |

@@ -27,10 +27,13 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_RO
 
 ```bash
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract            # full
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract --enrich   # + repo context, doc claims/drift, draft threat model
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract --incremental
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_check.py" --out <out> --report              # must be 0 errors
 python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_viewer.py" --out <out>                      # graph/index.html
 ```
+
+Every build also writes the call graphs (`system/call-graphs.md`, `graph/callgraph.json`, `diagrams/callgraph-*.mmd`). Function and class summaries come from docstrings and leading comments at extraction time (`summary_source: docstring|comment`); agent annotations override them.
 
 The build merges supply-chain findings (`evidence/sc-*.json`), CSPM rows from `ctx-*` context, IaC cloud resources, and agent proposals. It writes `graph/graph.json` (the citable source of truth), `graph/graph.sqlite` (for queries), and `system/graph.md`.
 
@@ -47,6 +50,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> <op> ...
 | `neighbors <id> --depth 2 --kinds calls` | local structure |
 | `path <src> <dst>` | how A reaches B (follows calls, HTTP, queues, tables, subprocess) |
 | `impact <target...>` or `impact --diff HEAD~1` | multi-hop blast radius, plus endpoints, sinks, threats, and findings in scope |
+| `callgraph function\|file\|repo [--repo R] [--focus X] [--depth N]` | function→function, file→file or repo→repo call graph (HTTP/gRPC resolved to handlers, topics, shared tables, subprocess, imports), each edge with citations and the weakest confidence |
 | `taint [--source X] [--sink Y]` | candidate source→unsafe-sink paths (candidates: confirm each hop) |
 | `sql "SELECT ..."` | ad-hoc read-only SQL over `nodes` and `edges` |
 | `cypher "MATCH ..."` | only when Neo4j is configured (`graph_neo4j.py`) |

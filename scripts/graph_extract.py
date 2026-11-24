@@ -140,6 +140,27 @@ def env_read(call: ast.Call):
     return None
 
 
+def first_para(text: str, limit: int = 300) -> str:
+    text = re.sub(r"\s+", " ", (text or "").split("\n\n")[0]).strip()
+    return text[:limit] + ("…" if len(text) > limit else "")
+
+
+def leading_comment(lines: list[str], line: int) -> str:
+    """Comment block directly above a 1-based declaration line (//, ///, #, /** */, * lines)."""
+    i, buf = line - 2, []
+    while i >= 0 and i > line - 14:
+        s = lines[i].strip()
+        if not s and buf:
+            break
+        if s.startswith(("//", "#", "*", "/*", "*/", "---")) or s.endswith("*/"):
+            buf.append(re.sub(r"^(/\*+|\*+/|\*|///?|#+|--+)\s?", "", s).rstrip("*/ ").strip())
+            i -= 1
+            continue
+        break
+    txt = " ".join(x for x in reversed(buf) if x and not x.startswith(("@", "eslint", "nolint", "noqa", "pylint", "type:")))
+    return first_para(txt)
+
+
 def extract_python(key, rel, text) -> Frag:
     f = Frag(key, rel, "ast")
     tree = ast.parse(text)
@@ -161,9 +182,11 @@ def extract_python(key, rel, text) -> Frag:
         qual = f"{prefix}{node.name}"
         kind = "class" if isinstance(node, ast.ClassDef) else ("method" if in_class else "function")
         sig = lines[node.lineno - 1].strip() if node.lineno - 1 < len(lines) else node.name
+        doc = first_para(ast.get_docstring(node) or "")
         nid = f.node(make_node(kind, key, rel, qual, node.name, node.lineno, getattr(node, "end_lineno", node.lineno),
                                extractor="ast", signature=sig[:200], sig_hash=sig_hash(sig),
-                               tags=["test"] if TEST_PATH.search(rel) else None))
+                               tags=["test"] if TEST_PATH.search(rel) else None,
+                               summary=doc or None, summary_source="docstring" if doc else None))
         f.edge(parent_id, "contains", nid, node.lineno)
         if isinstance(node, ast.ClassDef):
             for b in node.bases:
@@ -352,8 +375,10 @@ def extract_regex(key, rel, text, lang) -> Frag:
             f.edge(ep, "routes_to", nid, line)
         else:
             sig = lines[line - 1].strip()
+            doc = leading_comment(lines, line)
             nid = f.node(make_node("function", key, rel, name, name, line, end, extractor="regex", confidence="medium",
-                                   signature=sig[:200], sig_hash=sig_hash(sig), tags=["test"] if TEST_PATH.search(rel) else None))
+                                   signature=sig[:200], sig_hash=sig_hash(sig), tags=["test"] if TEST_PATH.search(rel) else None,
+                                   summary=doc or None, summary_source="comment" if doc else None))
         f.edge(f.file_id, "contains", nid, line, conf="medium")
         owners.append((line, end, nid, name))
 

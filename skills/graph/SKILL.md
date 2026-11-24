@@ -15,7 +15,7 @@ Action: $ARGUMENTS (default `build`). Follow the `knowledge-graph` skill and `${
 
 | Action | Do |
 | --- | --- |
-| `build` | `graph_build.py --out <out> --extract` (add `--incremental` if requested or if `evidence/hashes.json` exists), then `graph_check.py --out <out> --report` and `graph_viewer.py --out <out>` |
+| `build` | `graph_build.py --out <out> --extract --enrich` (add `--incremental` if requested or if `evidence/hashes.json` exists), then `graph_check.py --out <out> --report` and `graph_viewer.py --out <out>` |
 | `view` | `graph_viewer.py --out <out>`, then tell the user the path `<out>/graph/index.html` (opens offline in any browser) |
 | `serve` | Run `graph_serve.py --out <out>` in the background and give the user the printed localhost URL. It's read-only, token-protected, and reloads live when the graph is rebuilt. |
 | `check` | `graph_check.py --out <out> --report` |

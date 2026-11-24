@@ -10,6 +10,9 @@ gitlab_base_url: https://gitlab.com
 advisory_lookup: off               # off | osv | snyk | osv,snyk : sends package names+versions off-machine
 snyk_token_env: SNYK_TOKEN         # Snyk REST API token env var (needed only for advisory_lookup: snyk)
 snyk_org_env: SNYK_ORG_ID          # Snyk org id env var
+ado_token_env: AZURE_DEVOPS_EXT_PAT # Azure DevOps PAT variable (an `az login` session is used first if present)
+auto_max_repos: 50                 # cap when /ckb:auto expands an ADO project, GitHub org or GitLab group
+include_forks: false
 graph_autoupdate: off              # on: refresh the structural graph after each git commit
 neo4j_uri_env: NEO4J_URI           # optional Neo4j you already run (env var NAMES; values never stored)
 neo4j_user_env: NEO4J_USER

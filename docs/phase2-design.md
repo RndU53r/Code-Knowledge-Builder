@@ -184,6 +184,14 @@ code-knowledge-builder/            (this repo's root)
 - **Context inputs (`--context`, `context_paths`):** architecture docs (docx, pptx, pdf, md, html), diagrams (draw.io, vsdx, svg, images), cloud IaC (Terraform AWS/Azure/GCP, CloudFormation/SAM/CDK, ARM/Bicep, Deployment Manager, k8s/Helm), and CSPM or scanner results (ASFF, Prowler, ScoutSuite, Defender, GCP SCC, Checkov, SARIF, CSV). They're converted by `scripts/ingest_context.py` into `ctx-*` citable sources. The new `context-ingest` skill and the `[documented]` label separate intent from observation, and a "Documented vs observed" drift table feeds the HLD and threat model.
 - **IaC checks** SC-D07 (public storage), SC-D08 (wildcard IAM), SC-D09 (encryption/TLS off), and multi-cloud SC-D05; the inventory lists `cloud_resources`.
 
+## Addendum (v0.4.0): smarter auto mode
+
+- `env_probe.py` (tools, logins, token names, CI, CPUs, disk) feeds a **capabilities** block in `auto_plan.py`; off-machine features become **consent items** in the one authorization question.
+- **Sources:** local default, workspace of git repos, monorepo; `ado:`, `github-org:`, `gitlab-group:` expanded by `enumerate_sources.py`. Branch rule main, else master, else default; local repos on another branch are read as a read-only `git archive` snapshot. ADO auth: az login, else PAT env var.
+- **Always-on outputs:** draft threat model (`threat_seed.py`, refined by the threat-modeler), call graphs at function, file and repo level (`callgraph.py`).
+- **Context both ways:** docs, diagrams, images, notes → claims → drift (`doc_claims.py`, `context-reader` agent); repos → summaries, READMEs, ADRs, owners, API descriptions (`repo_context.py`, docstrings at extraction).
+- New extractor `rule` for deterministic generators (threat_seed, doc_claims, repo_context), merged through the same citation verification as agent proposals.
+
 ## Addendum (v0.3.0): code knowledge graph
 
 - A cited graph: `graph/graph.json` (source of truth) and `graph/graph.sqlite` (queries). Stable IDs `kind:repo:path:qualname`. Every node and edge has a citation, an extractor (ast, tree-sitter, regex, llm, context, scanner), a confidence, and a label.

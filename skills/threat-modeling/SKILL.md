@@ -28,6 +28,10 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_RO
 
 The analysis outputs (overviews, flows, `system/data-flows.md`, HLDs, outputs-and-conditions). If they're missing, run the analysis stages first. A threat model built without flows misses inter-service trust issues. Use supply-chain findings (`repos/*/supply-chain.md`, `system/supply-chain-report.md`), if present, as threats against the build and deploy path. Pick up conditions marked `[security]` in the outputs-and-conditions files. With context (`ctx-*` keys): cloud resources from IaC become assets and boundaries; open CSPM findings are observed gaps, cited by finding row; documented controls count as mitigations only when code or IaC confirms them, and contradicted ones become drift threats. Fill in the template's "Cloud posture (CSPM) and documented-control drift" section.
 
+## Draft first, then refine
+
+`graph_build.py --enrich` (or `threat_seed.py --out <out>`) writes a deterministic draft to `system/threat-model.md` from the knowledge graph (taint paths to unsafe sinks, endpoints without authentication evidence, security switches an env var can turn off, plaintext or identity-header trust between services, unauthenticated message channels, shared tables, cloud misconfigurations from IaC and CSPM, confirmed-suspicious supply-chain findings, documentation drift, LLM use). Every draft threat is cited and marked `[draft]`. Start from it: confirm, re-rate, correct, or remove each threat after reading the cited code, add the threats the rules cannot see, and delete the `<!-- ckb:threat-seed -->` marker when the model is yours. The steps below still apply; the draft covers steps 1–5 mechanically.
+
 ## Steps
 
 1. **Scope, assets, actors.** Assets are data and capabilities worth protecting (PII and payment fields from the data models, credentials, the ability to change orders, admin functions). Actors include anonymous internet users, authenticated users, admins, other internal services, CI and build systems, third-party APIs, and the operator's LLM if one is used.

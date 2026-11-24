@@ -6,6 +6,7 @@ paths:
   /orders:
     post:
       operationId: createOrder
+      summary: Create an order, price it and publish order.created
       requestBody:
         content:
           application/json:
@@ -21,6 +22,7 @@ paths:
   /orders/{id}:
     get:
       operationId: getOrder
+      summary: Fetch one order by id
       parameters:
         - name: id
           in: path

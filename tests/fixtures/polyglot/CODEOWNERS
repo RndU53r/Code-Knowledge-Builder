@@ -1,0 +1,4 @@
+# Platform ownership (fixture)
+*            @shop/platform-team
+/orders/     @shop/core-team
+/gateway/    @shop/web-team

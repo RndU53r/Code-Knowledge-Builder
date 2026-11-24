@@ -32,7 +32,7 @@ from graph_query import GraphStore  # noqa: E402
 from graph_viewer import render  # noqa: E402
 
 LIST_ARGS = {"kinds", "targets", "ids"}
-ALLOWED_OPS = {"status", "search", "node", "explain", "neighbors", "path", "impact", "taint", "tour", "subgraph", "graph"}
+ALLOWED_OPS = {"status", "search", "node", "explain", "neighbors", "path", "impact", "taint", "tour", "subgraph", "graph", "callgraph"}
 
 
 def make_handler(store: GraphStore, token: str, port_ref: dict):
@@ -81,7 +81,9 @@ def make_handler(store: GraphStore, token: str, port_ref: dict):
                 store.refresh()
             if u.path in ("/", "/index.html"):
                 g = json.loads((store.out / "graph" / "graph.json").read_text())
-                return self._send(200, render(g, live={"token": token}).encode(), "text/html")
+                cgp = store.out / "graph" / "callgraph.json"
+                cg = json.loads(cgp.read_text()) if cgp.is_file() else None
+                return self._send(200, render(g, live={"token": token}, callgraph=cg).encode(), "text/html")
             if u.path.startswith("/api/"):
                 op = u.path[5:]
                 if op not in ALLOWED_OPS:
