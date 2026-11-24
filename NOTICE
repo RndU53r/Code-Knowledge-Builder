@@ -54,3 +54,22 @@ Third-party material
    - deterministic, LLM-free checks of generated docs
      (scripts/check_outputs.py),
    - content-hash incremental refresh (scripts/hash_index.py).
+
+3. Code-to-knowledge-graph ideas (graph layer, v0.3.0)
+
+   - "Building Knowledge Graph over a Codebase for LLM", Zimin Chen (Medium, 2024):
+     file/AST graph, graph-database querying (Cypher), data/control-flow extensions.
+     Cited as inspiration; no text reused.
+   - Bevel-Software/code-to-knowledge-graph (MPL-2.0),
+     https://github.com/Bevel-Software/code-to-knowledge-graph
+     IDEAS ONLY (no code copied): typed code-relationship edges with reference
+     locations, file-level incremental graph updates, and carrying LLM descriptions
+     across rebuilds with stale ("[OUTDATED]") marking. ckb's implementation
+     (scripts/graph_*.py) is independent and uses stable IDs.
+   - Egonex-AI/Understand-Anything (MIT, Copyright (c) 2026 Yuxiang Lin and
+     Infinite Universe, Inc.), https://github.com/Egonex-AI/Understand-Anything
+     Ideas: deterministic structure extraction followed by LLM semantics, layers and
+     guided tours, an interactive dashboard, an MCP query server, and
+     fingerprint-based incremental updates. ckb's graph export
+     (scripts/graph_export.py `ua`) produces a compatible JSON layout; no code was
+     copied. If code is adapted from it in future, its MIT notice must be added here.

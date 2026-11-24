@@ -117,6 +117,7 @@ def main() -> int:
     ap.add_argument("--ref")
     ap.add_argument("--token-env")
     ap.add_argument("--gitlab-base", default=os.environ.get("CKB_GITLAB_BASE", "https://gitlab.com"))
+    ap.add_argument("--exclude", action="append", default=[], help="glob to skip in this source (e.g. a service dir already registered separately)")
     a = ap.parse_args()
 
     src = expand_shorthand(a.source, a.gitlab_base)
@@ -138,6 +139,8 @@ def main() -> int:
         meta["scratch"] = str(scratch)
 
     meta["fetched"] = now_iso()
+    if a.exclude:
+        meta["exclude"] = a.exclude
     register_target(key, root, out, meta)
     print(json.dumps({"key": key, "root": str(root), **meta}, indent=2))
     return 0

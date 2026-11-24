@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: ask-cross-repo
+expected_outcome: |
+  Path gateway route -> http_calls orders POST /orders -> create_order -> publish_order_created -> topic order.created -> fulfillment Consume, cited.
+context:
+  scaffold_script: place-files.sh

@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: article-style-questions
+expected_outcome: |
+  Answers 3 functions (get_conn, insert_order, get_order) and app/db.py reads DATABASE_URL, via graph queries with citations.
+context:
+  scaffold_script: place-files.sh

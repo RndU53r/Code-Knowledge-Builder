@@ -2,6 +2,10 @@
 
 Every `/ckb:*` command uses these steps. Follow `shared/safety-contract.md` throughout.
 
+## Auto mode
+
+`/ckb:auto`, or `--auto` on any command, runs `scripts/auto_plan.py` first. It writes `evidence/auto-plan.json`, and every step below takes its choices (sources, context, stages, parsers, graph caps) from that file instead of asking. Authorization, off-machine lookups, Neo4j writes, and executing target code are never automated.
+
 ## P0. Settings
 
 If `.claude/code-knowledge-builder.local.md` exists in the current project, read its YAML front matter. All fields are optional:
@@ -16,6 +20,10 @@ advisory_lookup: off          # off | osv | snyk | osv,snyk (sends package names
 snyk_token_env: SNYK_TOKEN    # env vars for Snyk REST API lookups (values never printed)
 snyk_org_env: SNYK_ORG_ID
 context_paths: [./docs/architecture, ./cspm/prowler-output.json]   # extra context, always ingested
+graph_autoupdate: off         # on: structural graph refresh after git commit (PostToolUse hook)
+neo4j_uri_env: NEO4J_URI      # optional Neo4j (only if you already run it); names of env vars, never values
+neo4j_user_env: NEO4J_USER
+neo4j_password_env: NEO4J_PASSWORD
 ```
 
 When the user names an output directory in their request, it wins.
@@ -35,7 +43,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/fetch_source.py" --out <out> [--key <name
   [--scratch <scratch_dir>] [--token-env <VAR>] [--gitlab-base <url>] [--ref <branch>] <source>
 ```
 
-This clones remote sources safely (hooks off, depth 1, no submodules, no LFS) and registers every source in `<out>/evidence/targets.json` and the user registry. Registration is what lets the guard hook block execution in the target and the verifier resolve citations. Use the printed `key` as the repo key in all citations. For a monorepo with several services, register each service directory separately with `--key <service>` so citations and per-repo docs line up with services.
+This clones remote sources safely (hooks off, depth 1, no submodules, no LFS) and registers every source in `<out>/evidence/targets.json` and the user registry. Registration is what lets the guard hook block execution in the target and the verifier resolve citations. Use the printed `key` as the repo key in all citations. For a monorepo with several services, register each service directory separately with `--key <service>` so citations and per-repo docs line up with services. If you also register the monorepo root (for IaC, contracts, CI), add `--exclude '<service-dir>/**'` for each service so its code isn't indexed twice. The graph build, the scanner's graph merge, and the hash index all honour these excludes.
 
 ### P2b. Context
 
@@ -49,6 +57,14 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan_supply_chain.py" --root <out>/eviden
 
 Handle any `needs_reading` items (images, scanned PDFs) with the Read tool as the skill describes. List the `ctx-*` keys in every agent prompt below so each stage can use them.
 
+### P2c. Structural knowledge graph
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out> --extract
+```
+
+Run this after registration and context ingestion, before the agents, so every agent can navigate with `graph_query.py` (see the `knowledge-graph` skill). In auto mode, use the backend and caps from `evidence/auto-plan.json`.
+
 ## P3. Dispatch agents
 
 - **Per-repo stages** run in parallel. Send one Agent call per repo in the same message:
@@ -57,6 +73,8 @@ Handle any `needs_reading` items (images, scanned PDFs) with the Read tool as th
 - **System stages** run after every per-repo stage has finished: `ckb:flow-tracer` (`system/data-flows.md`, `system/hld.md`, `system/outputs-and-conditions.md`), then the system supply-chain report (if any audit ran), then `ckb:threat-modeler`, then the context files (`security-context` skill).
 - **Verification:** after each stage, run `ckb:citation-verifier` on the files that stage wrote. Hand failures back to the agent that wrote them (SendMessage to it when possible, otherwise a fresh agent with the error list). Allow at most two fix rounds, then record the remaining failures in `evidence/verification.md` and report them.
 
+- **Graph merge (P3g):** after each semantic stage, run `graph_build.py --out <out>` (it merges supply-chain JSON, CSPM, and verified agent proposals), then `graph_check.py --out <out> --report`. Send rejected proposal lines (`graph/rejected.jsonl`) back to the agent that wrote them, at most two rounds, the same rule as for citations. After the threat model, dispatch `ckb:graph-curator` for summaries and tours.
+
 Give each agent a prompt with: `<out>`, the repo key(s) and roots, the `ctx-*` keys and their manifest paths, the advisory setting, the stage to run, the template to use, and "follow ${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md".
 
 ## P4. Finish
@@ -64,5 +82,6 @@ Give each agent a prompt with: `<out>`, the repo key(s) and roots, the `ctx-*` k
 1. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> --report <out>`
 2. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check_outputs.py" <out>`
 3. `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/hash_index.py" snapshot --out <out>`
+   - `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_build.py" --out <out>`, then `graph_check.py --out <out> --report` (0 errors), `graph_viewer.py --out <out>`, and `graph_export.py --out <out> ua`
 4. Write or refresh `<out>/index.md` from `shared/templates/index.md`, and `<out>/evidence/citations.md` (every citation used, grouped by repo and file).
 5. Tell the user: where the outputs are, the top findings (severity, one line each, with citation), verification status, and anything left as `[unknown]` that matters.

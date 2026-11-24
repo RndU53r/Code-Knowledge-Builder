@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: auto-asks-auth
+expected_outcome: |
+  Shows plan, asks one authorization question before analysis.
+context:
+  scaffold_script: place-files.sh

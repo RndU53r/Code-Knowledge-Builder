@@ -12,12 +12,14 @@ Run everything for: $ARGUMENTS
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT}/shared/pipeline.md`.
 
-1. **P0–P2b** once for all sources and context (one authorization question; ingest any `--context` paths).
+0. With `--auto` in the arguments, follow `/ckb:auto` instead.
+1. **P0–P2c** once for all sources and context (one authorization question; ingest any `--context` paths).
 2. **Parallel per-repo wave:** in a single message, dispatch one `ckb:repo-analyzer` and one `ckb:supply-chain-auditor` per repo. They're independent.
 3. Verify each repo's files (`ckb:citation-verifier`) and fix failures.
 4. Write `system/supply-chain-report.md` (cross-repo ranking, `shared/templates/supply-chain-report.md`) → verify.
 5. **System wave, in order:** `ckb:flow-tracer` → verify → `ckb:threat-modeler` (give it the supply-chain reports too) → verify.
 6. **Context:** as in `/ckb:context`: one agent per repo for `repos/<repo>/context.md`, then `system/context.md`, using the `security-context` skill → verify.
-7. **P4** finish, and report the top risks across the threat model and supply chain, verification status, and where everything lives.
+7. **Graph:** run P3g (merge findings and proposals), then dispatch `ckb:graph-curator` (summaries plus tours) and rebuild.
+8. **P4** finish, and report the top risks across the threat model and supply chain, verification status, and where everything lives.
 
 In CI, follow the P1 CI rule in `shared/pipeline.md`. The CI templates in `ci/` pre-approve the plugin's `python3` scripts with `--allowedTools`.

@@ -10,6 +10,10 @@ gitlab_base_url: https://gitlab.com
 advisory_lookup: off               # off | osv | snyk | osv,snyk : sends package names+versions off-machine
 snyk_token_env: SNYK_TOKEN         # Snyk REST API token env var (needed only for advisory_lookup: snyk)
 snyk_org_env: SNYK_ORG_ID          # Snyk org id env var
+graph_autoupdate: off              # on: refresh the structural graph after each git commit
+neo4j_uri_env: NEO4J_URI           # optional Neo4j you already run (env var NAMES; values never stored)
+neo4j_user_env: NEO4J_USER
+neo4j_password_env: NEO4J_PASSWORD
 context_paths:                     # always ingested as context (docs, diagrams, IaC, CSPM exports)
   - ./docs/architecture
   - ./security/prowler-output.ocsf.json

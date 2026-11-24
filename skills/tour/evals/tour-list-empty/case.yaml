@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: tour-list-empty
+expected_outcome: |
+  Reports no tours yet and how to create one.
+context:
+  scaffold_script: place-files.sh

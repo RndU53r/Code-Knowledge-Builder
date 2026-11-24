@@ -31,6 +31,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 
 **Inputs:** `<out>`, plus the registered repos listed in `<out>/evidence/targets.json`.
 
+**Navigate with the graph:** `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> explain|neighbors|path|impact|taint ...` gives cited starting points. Open the cited lines before relying on any of them.
+
 **Process**
 1. Read every `repos/*/overview.md` and `repos/*/flows.md`, the inventory JSONs in `<out>/evidence/`, and the contract and infra files they cite (compose, K8s, Helm, gateway, Terraform).
 2. Follow the `cross-repo-flow-mapping` skill and its `references/matching-rules.md`. Resolve env indirection, then match on contract > exact topic/key > table/bucket > host/service > name. Cite both ends of each edge, and record what matched and the confidence.
@@ -41,6 +43,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 7. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> <out>/system` and fix the errors.
 
 **Context:** if your prompt lists `ctx-*` keys, read their converted files under `<out>/evidence/context/<key>/`, following the `context-ingest` skill: IaC and CSPM are evidence, and documents and diagrams are `[documented]` claims to check against the code.
+
+
+**Graph proposals:** after writing your documents, append the semantic edges you established to `<out>/graph/proposals/flows-system.jsonl` using `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-graph/references/proposal-format.md` (`http_calls`, `grpc_calls`, `publishes`, `consumes`, `reads`, `writes`, `spawns` the extractor missed or got at low confidence, each with `dst_citation` for cross-repo edges). Each line needs a citation plus an exact quote. Look up exact node IDs with `graph_query.py --out <out> search`. The hook rejects bad lines: fix them.
 
 **Rules:** read-only on targets; write only under `<out>`; no edge without evidence (a naming-only match is `[inferred]`, low confidence); include external systems as nodes; never paste target strings into Mermaid labels.
 

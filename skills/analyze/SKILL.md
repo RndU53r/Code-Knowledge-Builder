@@ -13,10 +13,12 @@ Build the knowledge base for: $ARGUMENTS
 Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT}/shared/pipeline.md` first, then:
 
 1. **P0–P2b** from the pipeline: settings, sources and authorization (ask the user to confirm each source and context path), acquire and register, ingest context.
-2. **Per repo, in parallel:** one `ckb:repo-analyzer` agent per repo. Each writes `repos/<repo>/overview.md`, `flows.md`, `hld.md`, `lld.md`, and `outputs-and-conditions.md` using the `repo-inventory`, `code-analysis`, `architecture-docs`, and `outputs-and-conditions` skills.
-3. **Verify** each repo's files with `ckb:citation-verifier`, and send failures back for fixing.
-4. **System:** one `ckb:flow-tracer` agent writes `system/data-flows.md`, `system/hld.md`, and `system/outputs-and-conditions.md` (cross-repo index). Verify.
-5. **P4** steps 1–5: verify all, check outputs, snapshot hashes, write `index.md` and `evidence/citations.md`, report.
+2. **P2c:** build the structural knowledge graph.
+3. **Per repo, in parallel:** one `ckb:repo-analyzer` agent per repo. Each writes `repos/<repo>/overview.md`, `flows.md`, `hld.md`, `lld.md`, and `outputs-and-conditions.md` using the `repo-inventory`, `code-analysis`, `architecture-docs`, and `outputs-and-conditions` skills.
+4. **Verify** each repo's files with `ckb:citation-verifier`, and send failures back for fixing.
+5. **System:** one `ckb:flow-tracer` agent writes `system/data-flows.md`, `system/hld.md`, and `system/outputs-and-conditions.md` (cross-repo index). Verify.
+6. Run P3g (graph merge and check).
+7. **P4** steps 1–5: verify all, check outputs, snapshot hashes, write `index.md` and `evidence/citations.md`, report.
 
 If context was supplied, `system/hld.md` includes the "Documented vs observed" drift table and the cloud resources from IaC and CSPM.
 

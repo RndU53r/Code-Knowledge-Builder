@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: tour-walk
+expected_outcome: |
+  Creates and walks tour reading cited lines.
+context:
+  scaffold_script: place-files.sh

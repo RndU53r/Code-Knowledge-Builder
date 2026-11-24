@@ -244,9 +244,46 @@ def check_write(ev: dict) -> int:
     return 0
 
 
+def check_proposal(p: Path, out_dir: Path) -> int:
+    r = subprocess.run([sys.executable or "python3", str(HERE / "graph_merge.py"), "--out", str(out_dir), "--check", str(p)],
+                       capture_output=True, text=True)
+    try:
+        rej = json.loads(r.stdout).get("rejected", [])
+    except ValueError:
+        return 0
+    if rej:
+        msg = (f"ckb graph proposal check failed for {p.name} ({len(rej)} line(s) rejected). Fix them:\n- "
+               + "\n- ".join(f"line {x.get('line')}: {x.get('reason')}" for x in rej[:25])
+               + "\nEvery proposal needs a real `repo/path:line` citation and an exact quote from that line.")
+        print(json.dumps({"decision": "block", "reason": msg}))
+    return 0
+
+
+def autoupdate(ev: dict) -> int:
+    """Opt-in (graph_autoupdate: on): structural graph refresh after a git commit. Never dispatches agents."""
+    cmd = (ev.get("tool_input") or {}).get("command", "")
+    if not re.search(r"\bgit\b[^|;&]*\b(commit|merge|cherry-pick|rebase|pull)\b", cmd):
+        return 0
+    cwd = Path(ev.get("cwd") or os.getcwd())
+    settings = cwd / ".claude" / "code-knowledge-builder.local.md"
+    if not settings.is_file() or not re.search(r"(?m)^graph_autoupdate:\s*on\b", settings.read_text()):
+        return 0
+    m = re.search(r"(?m)^output_dir:\s*(\S+)", settings.read_text())
+    out = (cwd / m.group(1)).resolve() if m else cwd / ".ckb"
+    if not (out / "graph" / "graph.json").is_file():
+        return 0
+    subprocess.Popen([sys.executable or "python3", str(HERE / "graph_build.py"), "--out", str(out), "--extract", "--incremental",
+                      "--structural-only"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    return 0
+
+
 def check_post(ev: dict) -> int:
     ti = ev.get("tool_input") or {}
     fp = ti.get("file_path")
+    if fp and fp.endswith(".jsonl") and "/graph/proposals/" in fp:
+        p = resolve(fp, Path(ev.get("cwd") or os.getcwd()))
+        out_dir = next((out for _, out in targets() if within(p, out)), None)
+        return check_proposal(p, out_dir) if out_dir else 0
     if not fp or not fp.endswith(".md"):
         return 0
     p = resolve(fp, Path(ev.get("cwd") or os.getcwd()))
@@ -286,7 +323,7 @@ def main() -> int:
     except ValueError:
         return 0
     try:
-        return {"bash": check_bash, "write": check_write, "post": check_post}.get(mode, lambda e: 0)(ev)
+        return {"bash": check_bash, "write": check_write, "post": check_post, "autoupdate": autoupdate}.get(mode, lambda e: 0)(ev)
     except Exception as e:  # noqa: BLE001 - never crash the session; report and allow
         print(f"ckb guard internal error ({type(e).__name__}): {e}", file=sys.stderr)
         return 0

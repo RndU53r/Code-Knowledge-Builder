@@ -183,3 +183,13 @@ code-knowledge-builder/            (this repo's root)
 - **Advisories:** `advisory_lookup: off | osv | snyk | osv,snyk`. Snyk uses the REST API (`SNYK_TOKEN`, `SNYK_ORG_ID`). Every registry dependency gets a `security.snyk.io` page link with no network call.
 - **Context inputs (`--context`, `context_paths`):** architecture docs (docx, pptx, pdf, md, html), diagrams (draw.io, vsdx, svg, images), cloud IaC (Terraform AWS/Azure/GCP, CloudFormation/SAM/CDK, ARM/Bicep, Deployment Manager, k8s/Helm), and CSPM or scanner results (ASFF, Prowler, ScoutSuite, Defender, GCP SCC, Checkov, SARIF, CSV). They're converted by `scripts/ingest_context.py` into `ctx-*` citable sources. The new `context-ingest` skill and the `[documented]` label separate intent from observation, and a "Documented vs observed" drift table feeds the HLD and threat model.
 - **IaC checks** SC-D07 (public storage), SC-D08 (wildcard IAM), SC-D09 (encryption/TLS off), and multi-cloud SC-D05; the inventory lists `cloud_resources`.
+
+## Addendum (v0.3.0): code knowledge graph
+
+- A cited graph: `graph/graph.json` (source of truth) and `graph/graph.sqlite` (queries). Stable IDs `kind:repo:path:qualname`. Every node and edge has a citation, an extractor (ast, tree-sitter, regex, llm, context, scanner), a confidence, and a label.
+- **Extractors:** stdlib `ast` for Python; tree-sitter for other languages if already installed; regex fallback. The linker resolves imports, calls, cross-repo HTTP, queues and tables, and subprocess→binary.
+- **Security layer:** sinks (safe or unsafe), `sc_finding` and `cspm_finding` nodes, IaC `cloud_resource` nodes, and threats and drift from agent proposals, verified by `graph_merge.py`.
+- **Queries:** GraphStore (`graph_query.py`), shared by the CLI, the `ckb-graph` MCP server, and the live viewer server. Ops: search, explain, neighbors, path, multi-hop impact, taint, tour, read-only SQL, and Cypher (optional Neo4j).
+- **Viewer:** self-contained interactive HTML with a strict CSP, plus `graph_serve.py` live mode (localhost, token, read-only).
+- **Exports:** UA JSON, Cypher, CSV, GraphML.
+- **New commands:** `/ckb:graph`, `/ckb:ask`, `/ckb:impact`, `/ckb:tour`, and `/ckb:auto` (`auto_plan.py`). New agent: graph-curator.

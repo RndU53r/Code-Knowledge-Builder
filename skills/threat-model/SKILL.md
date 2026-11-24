@@ -12,6 +12,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 
 1. Find the output dir (P0). If $ARGUMENTS names sources that aren't registered there yet, or `repos/*/flows.md` or `system/data-flows.md` are missing, run the `/ckb:analyze` steps for them first, including authorization. If no sources are registered and none are given, run P1: propose the current directory and ask for authorization.
 2. If `repos/*/supply-chain.md` exists, pass it along: build-path threats belong in the model. If `--context` paths are given, ingest them (P2b). Pass the `ctx-*` keys so CSPM findings, cloud IaC, and documented controls (and their drift) feed the model.
-3. Dispatch `ckb:threat-modeler` to write `system/threat-model.md` using the `threat-modeling` skill.
-4. Verify with `ckb:citation-verifier` and fix failures (at most two rounds).
-5. Run P4 (verify, check outputs, snapshot hashes, refresh the "Top findings" in `index.md`), then report the top five risks with their citations.
+3. Make sure the graph exists (P2c). The threat modeler navigates it and writes threat proposals.
+4. Dispatch `ckb:threat-modeler` to write `system/threat-model.md` using the `threat-modeling` skill.
+5. Run `graph_build.py` and `graph_check.py` (P3g).
+6. Verify with `ckb:citation-verifier` and fix failures (at most two rounds).
+7. Run P4 (verify, check outputs, snapshot hashes, refresh the "Top findings" in `index.md`), then report the top five risks with their citations.

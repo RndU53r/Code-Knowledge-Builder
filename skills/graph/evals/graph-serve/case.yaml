@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: graph-serve
+expected_outcome: |
+  Starts the local read-only server and returns a 127.0.0.1 URL with a token.
+context:
+  scaffold_script: place-files.sh

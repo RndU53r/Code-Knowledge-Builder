@@ -32,12 +32,14 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 **Inputs:** `<out>`, the repo key, the repo root, any `ctx-*` keys, and the advisory setting (off, osv, snyk, or osv,snyk).
 
 **Process**
-1. Follow the `supply-chain-audit` skill. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan_supply_chain.py" --root <root> --key <key> --json-out <out>/evidence/sc-<key>.json --md-out <out>/evidence/sc-<key>.md`, adding `--advisories <setting>` only if advisory lookups are on.
+1. Follow the `supply-chain-audit` skill. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/scan_supply_chain.py" --root <root> --key <key> --json-out <out>/evidence/sc-<key>.json --md-out <out>/evidence/sc-<key>.md`, adding `--advisories <setting>` only if advisory lookups are on, plus `--exclude <glob>` for each exclude recorded for this key in `<out>/evidence/targets.json`.
 2. Triage: open each finding at medium severity or above, confirm or dismiss it with a reason, and read every install script, CI workflow, Dockerfile, and build file in full for logic the patterns miss.
 3. Write `repos/<key>/supply-chain.md` from the template, with the ranked findings, the dependency inventory, checks run, "Investigated, not an issue" entries, and limitations.
 4. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> <out>/repos/<key>/supply-chain.md` and fix the errors.
 
 **Context:** if your prompt lists `ctx-*` keys, scan them too (`scan_supply_chain.py --root <out>/evidence/context/<key> --key <key>`) for agent-directed text and IaC misconfigurations.
+
+**Graph:** your `evidence/sc-<key>.json` is merged into the graph automatically as `sc_finding` nodes (with `finding_at` edges). Make sure it's written before the graph build. Add no proposals.
 
 **Hard rules**
 - Never install, build, run, or test anything in the target, and never open secret files. The guard hook enforces this. Don't work around it.

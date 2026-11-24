@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: auto-polyglot
+expected_outcome: |
+  auto_plan finds services + platform; one authorization; runs stages; LLM top10 skipped with reason.
+context:
+  scaffold_script: place-files.sh

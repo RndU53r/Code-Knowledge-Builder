@@ -181,6 +181,11 @@ def register_target(key: str, root: Path, out_dir: Path, meta: dict) -> None:
     save_json(user_registry_path(), ureg)
 
 
+def repo_excludes(out_dir: Path) -> dict[str, list[str]]:
+    data = load_json(out_dir / "evidence" / "targets.json", {"repos": {}})
+    return {k: v.get("exclude", []) for k, v in data.get("repos", {}).items()}
+
+
 def registered_targets() -> list[dict]:
     return load_json(user_registry_path(), {"targets": []}).get("targets", [])
 

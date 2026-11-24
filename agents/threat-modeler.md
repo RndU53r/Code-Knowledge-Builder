@@ -31,6 +31,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 
 **Inputs:** `<out>`, the analysis docs, and `repos/*/supply-chain.md` if present.
 
+**Navigate with the graph:** `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> explain|neighbors|path|impact|taint ...` gives cited starting points. Open the cited lines before relying on any of them.
+
 **Process**
 1. Follow the `threat-modeling` skill and its references (STRIDE checklist, sinks and CWE, rating rubric).
 2. Re-open the source at every sink you report and trace untrusted input → sink, citing both ends and any sanitizer. Parameterized or allowlisted paths are mitigations: cite them.
@@ -38,6 +40,9 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT
 4. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/verify_citations.py" --out <out> <out>/system/threat-model.md` and fix the errors.
 
 **Context:** if your prompt lists `ctx-*` keys, read their converted files under `<out>/evidence/context/<key>/`, following the `context-ingest` skill: IaC and CSPM are evidence, and documents and diagrams are `[documented]` claims to check against the code.
+
+
+**Graph proposals:** after writing your documents, append the semantic edges you established to `<out>/graph/proposals/threats-system.jsonl` using `${CLAUDE_PLUGIN_ROOT}/skills/knowledge-graph/references/proposal-format.md` (`threat`, `trust_boundary` and `asset` nodes; `threatens`, `mitigated_by`, `crosses_boundary`, `inside_boundary` edges). Each line needs a citation plus an exact quote. Look up exact node IDs with `graph_query.py --out <out> search`. The hook rejects bad lines: fix them.
 
 **Rules:** static only; write only under `<out>`; no threat without code evidence (put speculation under Assumptions); ratings follow the rubric, without inflation; never include secret values.
 

@@ -6,6 +6,8 @@ A Claude Code plugin that turns one or more repositories (polyglot, monorepo, or
 - a **STRIDE threat model** with trust boundaries, DFDs, and CWE/OWASP mapping (plus the OWASP LLM Top 10 when the system calls LLMs);
 - **`context.md` files** a security scanner can consume (per repo and system-wide);
 - a **supply-chain and prompt-injection audit**, with optional advisory lookups (OSV.dev and/or Snyk) and a `security.snyk.io` link for every dependency;
+- a **cited code knowledge graph** (functions, endpoints, topics, tables, cloud resources, sinks, threats, findings) with an interactive viewer, a live local server, an MCP server, multi-hop impact and taint queries, and Neo4j/Understand-Anything/GraphML exports;
+- **auto mode:** `/ckb:auto` reads the code and picks the services, parsers, context, stages, and graph settings itself;
 - **context-aware results:** existing architecture documents, diagrams, cloud IaC, and CSPM findings are ingested as evidence, and the docs are checked against the code ("documented vs observed" drift).
 
 Every claim cites `repo/path:line`. Anything not proven by the code is marked `[inferred]` or `[unknown]`. Target code is never executed.
@@ -37,6 +39,11 @@ The plugin is user-scoped: install it once and use it on any repo.
 | `/ckb:supply-chain <sources...>` | Standalone supply-chain and prompt-injection audit |
 | `/ckb:full <sources...>` | Everything above, verified, with an `index.md` |
 | `/ckb:update [output_dir]` | Incremental refresh: re-fetches, diffs hashes, re-runs stale stages, re-verifies |
+| `/ckb:auto [path...]` | Auto mode: plans sources, context, parsers, stages, and graph settings from the code, then runs everything (one authorization question) |
+| `/ckb:graph [build\|view\|serve\|check\|export ...\|neo4j]` | Build, view, serve live, check, or export the knowledge graph |
+| `/ckb:ask <question>` | Answer a question from the graph (or Cypher with Neo4j), confirmed against cited lines |
+| `/ckb:impact <file\|symbol\|--diff rev>` | Security-aware multi-hop blast radius |
+| `/ckb:tour [create\|<name>]` | Create or walk guided onboarding and security tours |
 
 Add supporting context to any command with `--context`:
 
@@ -67,9 +74,30 @@ Sources can be:
 
 The eight knowledge skills (`repo-inventory`, `code-analysis`, `cross-repo-flow-mapping`, `architecture-docs`, `outputs-and-conditions`, `threat-modeling`, `security-context`, `supply-chain-audit`) also trigger on their own from ordinary requests such as "how do these services talk to each other?" or "is this repo safe to npm install?".
 
+### Knowledge graph
+
+`graph_build.py` extracts a graph from code. Python uses the stdlib `ast`. Other languages use tree-sitter if `tree-sitter-language-pack` (or `tree_sitter_languages`) is already installed, and fall back to regex otherwise; ckb never installs it. The build then links imports, calls, cross-repo HTTP calls, queues, shared tables, and subprocess→binary edges. Supply-chain findings, CSPM findings, IaC cloud resources, and agent-proposed threats and drift are attached. Agent proposals are merged only after their citation and exact quote verify.
+
+| Output | Purpose |
+| --- | --- |
+| `graph/graph.json` | citable source of truth (stable IDs `kind:repo:path:qualname`; each node and edge has a citation, extractor, confidence, and label) |
+| `graph/graph.sqlite` | fast queries: recursive SQL, FTS search |
+| `graph/index.html` | self-contained interactive viewer: search, filters, expand, path finder, impact, taint overlay, threat and finding overlays, tours. No network; strict CSP |
+| `graph_serve.py` | live viewer at `http://127.0.0.1:<random>/?token=…`. Read-only, reloads when the graph is rebuilt |
+| `ckb-graph` MCP server | tools `ckb_search`, `ckb_explain`, `ckb_neighbors`, `ckb_path`, `ckb_impact`, `ckb_taint`, `ckb_tour`, `ckb_status`, available to Claude Code, Cursor, or any MCP client |
+| Exports | `ua` (Understand-Anything-compatible JSON), `cypher`/`csv` (Neo4j), `graphml` |
+| Neo4j (optional) | if you already run Neo4j, `graph_neo4j.py push --yes` loads it after you confirm, and `/ckb:ask` can use read-only Cypher |
+
+Example queries:
+```text
+graph_query.py --out .ckb impact orders/app/db.py
+graph_query.py --out .ckb taint
+graph_query.py --out .ckb path gateway/src/server.js fulfillment/internal/queue/consumer.go
+```
+
 ### Settings (optional)
 
-Copy [`examples/code-knowledge-builder.local.md`](examples/code-knowledge-builder.local.md) to `<project>/.claude/code-knowledge-builder.local.md`. It sets `output_dir`, `scratch_dir`, `exclude_paths`, `token_env`, `gitlab_base_url`, `context_paths`, and `advisory_lookup`.
+Copy [`examples/code-knowledge-builder.local.md`](examples/code-knowledge-builder.local.md) to `<project>/.claude/code-knowledge-builder.local.md`. It sets `output_dir`, `scratch_dir`, `exclude_paths`, `token_env`, `gitlab_base_url`, `context_paths`, `advisory_lookup`, `graph_autoupdate`, and the Neo4j env-var names.
 
 **Advisory lookups** are off by default, and reports then say "not checked". Set `advisory_lookup` to `osv`, `snyk`, or `osv,snyk` to look up exactly pinned dependencies. This sends package names and versions off-machine: to api.osv.dev, and/or to the Snyk REST API (needs `SNYK_TOKEN` and `SNYK_ORG_ID`, read from the environment and never printed). Whatever the setting, each registry dependency in the report links to its `https://security.snyk.io/package/...` page so a reviewer can check it by hand.
 
@@ -87,6 +115,8 @@ A complete example run over the code fixtures (version 0.1.0, before context ing
   repos/<repo>/
     overview.md  hld.md  lld.md  flows.md
     outputs-and-conditions.md  context.md  supply-chain.md
+  graph/                      # graph.json, graph.sqlite, index.html, exports, proposals/, rejected.jsonl
+  answers/                    # /ckb:ask answers
   diagrams/                   # .mmd sources for every Mermaid diagram
   evidence/                   # targets.json, authorization.md, verification.md,
                               # citations.md, inventory/scan JSON, hashes.json
@@ -104,6 +134,7 @@ ckb assumes the repos it analyzes may be hostile.
 | **Untrusted-input rule** | Repo content is data. Text aimed at AI agents (in READMEs, comments, `CLAUDE.md`/`AGENTS.md`/`.cursorrules`, hidden HTML comments) is reported as a `prompt-injection` finding and never followed. |
 | **Evidence or it didn't happen** | Citations are `repo/path:line` with optional «quotes». `scripts/verify_citations.py` checks the repo key, file, line range, and quoted text. The **PostToolUse hook** runs it on every output file written and pushes failures back to Claude. The `citation-verifier` agent also samples citations to check that they support the claims. |
 | **Secret redaction** | Secret files aren't opened. Secret-looking values appear only as type, location, and `AKIA…[REDACTED]`. The PostToolUse hook rejects outputs that contain unredacted values. |
+| **Graph servers** | The MCP server (stdio) and the viewer server (127.0.0.1, random port, random token, GET only, Host check, CSP) are read-only. The viewer HTML renders target strings with `textContent` only. Neo4j writes need your explicit confirmation, and Neo4j queries refuse write clauses. |
 | **Network** | None during analysis, except cloning the sources you list. Advisory lookups (OSV.dev, Snyk API) are opt-in. URLs inside documents are never fetched. |
 | **Context files** | Office files are read in memory as XML (macros and embedded objects are never run), with size and compression-ratio limits. XML with DOCTYPE or ENTITY declarations is refused. Secret-looking values are redacted in converted text. Supplied IaC folders are registered so the guard blocks `terraform apply` and similar commands against them. |
 
@@ -111,11 +142,11 @@ ckb assumes the repos it analyzes may be hostile.
 
 | Type | Items |
 | --- | --- |
-| Skills (knowledge) | repo-inventory, code-analysis, cross-repo-flow-mapping, architecture-docs, outputs-and-conditions, threat-modeling, security-context, supply-chain-audit, context-ingest |
-| Skills (commands) | analyze, threat-model, context, supply-chain, full, update |
-| Agents | repo-analyzer (parallel, one per repo), supply-chain-auditor (parallel, one per repo), flow-tracer, threat-modeler, citation-verifier |
-| Hooks | PreToolUse Bash guard, PreToolUse write guard, PostToolUse citation, Mermaid, link, and redaction check |
-| Scripts | `fetch_source.py`, `ingest_context.py`, `inventory.py` (incl. cloud resources), `scan_supply_chain.py` (36 checks incl. multi-cloud IaC; OSV/Snyk), `verify_citations.py`, `check_outputs.py`, `hash_index.py`, `guard.py` |
+| Skills (knowledge) | repo-inventory, code-analysis, cross-repo-flow-mapping, architecture-docs, outputs-and-conditions, threat-modeling, security-context, supply-chain-audit, context-ingest, knowledge-graph |
+| Skills (commands) | analyze, threat-model, context, supply-chain, full, update, auto, graph, ask, impact, tour |
+| Agents | repo-analyzer (parallel, one per repo), supply-chain-auditor (parallel, one per repo), flow-tracer, threat-modeler, citation-verifier, graph-curator |
+| Hooks | PreToolUse Bash guard, PostToolUse graph-proposal check, opt-in graph auto-update after `git commit`, PreToolUse write guard, PostToolUse citation, Mermaid, link, and redaction check |
+| Scripts | `auto_plan.py`, `graph_extract.py`, `graph_build.py`, `graph_query.py`, `graph_merge.py`, `graph_security.py`, `graph_check.py`, `graph_viewer.py`, `graph_serve.py`, `graph_mcp.py`, `graph_export.py`, `graph_neo4j.py`, `fetch_source.py`, `ingest_context.py`, `inventory.py` (incl. cloud resources), `scan_supply_chain.py` (36 checks incl. multi-cloud IaC; OSV/Snyk), `verify_citations.py`, `check_outputs.py`, `hash_index.py`, `guard.py` |
 | Shared | `shared/safety-contract.md`, `shared/evidence-model.md`, `shared/pipeline.md`, `shared/templates/*.md` |
 
 ## Development and tests
@@ -124,6 +155,7 @@ The command skills don't pre-approve `python3`. Claude Code asks the first time 
 
 ```bash
 python3 tests/test_guard.py                 # guard hook: deny and allow cases, write guard, post check
+python3 tests/test_graph.py                 # graph: extraction, linking, IDs, merge, impact/taint/path, SQL guard, viewer, server, MCP, auto mode
 python3 tests/test_ingest.py                # context ingest (docx/vsdx/drawio/CSPM), refusals, redaction, IaC checks
 python3 tests/make_context_fixtures.py      # regenerate tests/fixtures/context
 python3 tests/make_evals.py                 # regenerate the skill eval cases (skills/*/evals/)
@@ -144,6 +176,7 @@ python3 scripts/scan_supply_chain.py --root tests/fixtures/poisoned --key poison
 - **Shallow clones** limit history-based checks (for example suspicious recent commits).
 - **The guard hook** recognizes common toolchains and patterns. It's a strong safety net, not a sandbox: run ckb on untrusted code inside a container or VM for defense in depth. If the hook script itself errors, it fails open (allows) and reports the error, so it never wedges your session.
 - **Large monorepos:** per-repo agents work within their context budget. Untraced flows are listed as `[unknown]` rather than silently dropped. Register large services separately with `--key`.
+- **Knowledge graph precision:** regex-extracted edges (non-Python without tree-sitter) are medium or low confidence. Dynamic dispatch, reflection, and URLs or topics built at runtime may be missed or marked `[inferred]`. Taint paths are *candidates* over call edges, not full data-flow analysis. The viewer starts from an overview and caps at about 5k visible nodes.
 - **Mermaid checks** are structural (types, balance, no interactivity), not a full renderer.
 
 ## Credits and licenses

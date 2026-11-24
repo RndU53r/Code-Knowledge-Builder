@@ -57,3 +57,18 @@ value does not appear in any output except as `AKIA…[REDACTED]`.
 | C8 | azure/main.bicep `allowBlobPublicAccess: true`, `TLS1_0`, `supportsHttpsTrafficOnly: false`; Defender + Checkov CKV_AZURE_44 | public/weak-TLS storage | SC-D07/D09 |
 | C9 | gcp/main.tf `member = "allUsers"`, SCC PUBLIC_BUCKET_ACL, Checkov CKV_GCP_28 | public GCS bucket | SC-D07 |
 | C10 | whiteboard.png | needs_reading (image) | ingest manifest |
+
+## knowledge graph (polyglot repos gateway/orders/fulfillment + platform=deploy)
+
+| ID | Expected graph fact |
+| --- | --- |
+| G1 | `http_calls` gateway `route POST /orders` → `endpoint:orders::POST /orders`, with dst_citation |
+| G2 | `publishes` publish_order_created → `topic:_system::order.created` ← `consumes` fulfillment Consume |
+| G3 | `spawns` price_items → `function:fulfillment:cmd/pricing/main.go:main` (Python→Go) |
+| G4 | ≥2 `writes` edges to `table:_system::orders` (orders insert_order, fulfillment worker) |
+| G5 | `sink:orders:app/db.py:get_order.sql.1` safe=false; insert_order sink safe=true |
+| G6 | impact(orders/app/db.py) reaches gateway `GET /orders/:id` |
+| G7 | cloud_resource nodes for aws_s3_bucket.invoices, azure storage, google bucket, CFN role |
+| G8 | sc_finding SC-D07 `finding_at` aws_s3_bucket.invoices |
+| G9 | cspm_finding (Prowler) `affects` aws_s3_bucket.invoices |
+| G10 | taint paths: gateway GET /orders/:id → SQL sink [inferred]; GET /admin/report → SSRF sink |

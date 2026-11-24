@@ -1,0 +1,6 @@
+schema_version: "1.1"
+name: impact-diff
+expected_outcome: |
+  Handles non-git or no-diff gracefully (no targets) and explains.
+context:
+  scaffold_script: place-files.sh

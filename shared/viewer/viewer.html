@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="__CSP__">
+<meta name="referrer" content="no-referrer">
+<title>ckb knowledge graph</title>
+<style>__CSS__</style>
+</head>
+<body>
+<div id="app">
+  <aside id="left">
+    <h1>ckb knowledge graph</h1>
+    <div class="mut small" id="meta"></div>
+    <h2>Search</h2>
+    <input id="q" type="search" placeholder="function, endpoint, table, file…" autocomplete="off">
+    <div id="results"></div>
+    <h2>Show</h2>
+    <div class="row"><button id="btn-overview" type="button">Overview</button><button id="btn-all" type="button">All (capped)</button></div>
+    <label class="k"><input type="checkbox" id="lowconf" checked> include low-confidence edges</label>
+    <div id="kinds"></div>
+    <h2>Overlays</h2>
+    <label class="k"><input type="checkbox" id="ov-sec" checked> threats &amp; findings</label>
+    <label class="k"><input type="checkbox" id="ov-taint"> taint paths (source → unsafe sink)</label>
+    <h2>Tours</h2>
+    <select id="tours"><option value="">— choose a tour —</option></select>
+    <div id="tourbox" hidden></div>
+    <h2>Legend</h2>
+    <div class="small mut">Solid = observed · dashed = inferred · edge colour = kind · node size = connections. Every item links to a cited source location (<code>repo/path:line</code>).</div>
+  </aside>
+  <main id="stage"><canvas id="cv"></canvas><div id="hud"></div></main>
+  <aside id="detail"><div class="mut">Select a node to see its citation, provenance, edges, and security context.</div></aside>
+</div>
+<script type="application/json" id="ckb-data">__DATA__</script>
+<script>__JS__</script>
+</body>
+</html>

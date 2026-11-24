@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ckb_common import load_json, now_iso, repo_roots_for_output, save_json, walk_files  # noqa: E402
+from ckb_common import load_json, now_iso, repo_excludes, repo_roots_for_output, save_json, walk_files  # noqa: E402
 
 SUPPLY = re.compile(r"(^|/)(package(-lock)?\.json|yarn\.lock|pnpm-lock\.yaml|requirements[^/]*\.txt|pyproject\.toml|"
                     r"poetry\.lock|uv\.lock|setup\.py|go\.(mod|sum)|Cargo\.(toml|lock)|pom\.xml|[^/]*\.gradle(\.kts)?|"
@@ -42,7 +42,7 @@ def sha(p: Path) -> str:
 def snapshot(out: Path) -> dict:
     data = {"generated": now_iso(), "repos": {}}
     for key, root in repo_roots_for_output(out).items():
-        data["repos"][key] = {rel: sha(p) for p, rel in walk_files(root)}
+        data["repos"][key] = {rel: sha(p) for p, rel in walk_files(root, repo_excludes(out).get(key, []))}
     save_json(out / "evidence" / "hashes.json", data)
     return {k: len(v) for k, v in data["repos"].items()}
 
@@ -59,7 +59,9 @@ def stages_for(paths: list[str]) -> list[str]:
         if DOC.search(p):
             st.add("supply-chain")  # agent-injection checks cover docs
         else:
-            st |= {"analysis", "outputs-and-conditions", "threat-model", "context", "cross-repo-flows"}
+            st |= {"analysis", "outputs-and-conditions", "threat-model", "context", "cross-repo-flows", "graph"}
+        if SUPPLY.search(p) or INFRA.search(p):
+            st.add("graph")
     return sorted(st)
 
 
@@ -67,7 +69,7 @@ def diff(out: Path) -> dict:
     old = load_json(out / "evidence" / "hashes.json", {"repos": {}})["repos"]
     res = {}
     for key, root in repo_roots_for_output(out).items():
-        cur = {rel: sha(p) for p, rel in walk_files(root)}
+        cur = {rel: sha(p) for p, rel in walk_files(root, repo_excludes(out).get(key, []))}
         prev = old.get(key)
         if prev is None:
             res[key] = {"status": "new", "stale_stages": ["all"]}
