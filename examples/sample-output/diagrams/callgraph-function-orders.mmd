@@ -1,0 +1,18 @@
+flowchart LR
+  N1["publish_order_created"]
+  N2["Consume"]
+  N3["create_order"]
+  N4["get_conn"]
+  N5["insert_order"]
+  N6["price_items"]
+  N7["read_order"]
+  N8["get_order"]
+  N9["main"]
+  N1 -->|"event:order.created"| N2
+  N3 -->|"call"| N4
+  N3 -->|"call"| N5
+  N3 -->|"call"| N1
+  N3 -->|"call"| N6
+  N7 -->|"call"| N4
+  N7 -->|"call"| N8
+  N6 -->|"spawn"| N9

@@ -1,8 +1,8 @@
 {
   "repo": "orders",
-  "root": "<fixtures>/polyglot/orders",
-  "generated": "2026-11-23T09:56:10Z",
-  "files_scanned": 7,
+  "root": "<scratch>",
+  "generated": "2026-11-24T05:23:57Z",
+  "files_scanned": 8,
   "findings": [
     {
       "check": "SC-D03",
@@ -19,6 +19,20 @@
       "id": "ORDERS-SC-001"
     },
     {
+      "check": "SC-S08",
+      "category": "secrets",
+      "class": "risky-practice",
+      "severity": "medium",
+      "confidence": "medium",
+      "path": "app/events.py",
+      "line": 6,
+      "citation": "orders/app/events.py:6",
+      "excerpt": "RABBITMQ_URL = os.environ.get(\"RABBITMQ_URL\", \"amqp\u2026[REDACTED]rabbitmq:5672/\")",
+      "message": "credentials embedded in a URL (may be a default like guest:guest; still a hardcoded credential)",
+      "remediation": "Rotate the credential, remove it from history, and load it from a secret manager.",
+      "id": "ORDERS-SC-002"
+    },
+    {
       "check": "SC-D01",
       "category": "containers-iac",
       "class": "risky-practice",
@@ -30,7 +44,7 @@
       "excerpt": "FROM python:3.12-slim",
       "message": "base image python:3.12-slim not pinned by digest",
       "remediation": "Pin base images by digest (image@sha256:...).",
-      "id": "ORDERS-SC-002"
+      "id": "ORDERS-SC-003"
     },
     {
       "check": "SC-M02",
@@ -44,7 +58,7 @@
       "excerpt": "",
       "message": "requirements without --hash pins or a lockfile (installs are not reproducible)",
       "remediation": "Commit the ecosystem lockfile and install with the frozen/locked mode in CI.",
-      "id": "ORDERS-SC-003"
+      "id": "ORDERS-SC-004"
     }
   ],
   "dependencies": [
@@ -57,7 +71,8 @@
       "manifest": "requirements.txt",
       "line": 1,
       "citation": "orders/requirements.txt:1",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/pip/fastapi/0.111.0"
     },
     {
       "ecosystem": "pypi",
@@ -68,7 +83,8 @@
       "manifest": "requirements.txt",
       "line": 2,
       "citation": "orders/requirements.txt:2",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/pip/uvicorn/0.30.1"
     },
     {
       "ecosystem": "pypi",
@@ -79,7 +95,8 @@
       "manifest": "requirements.txt",
       "line": 3,
       "citation": "orders/requirements.txt:3",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/pip/psycopg2-binary/2.9.9"
     },
     {
       "ecosystem": "pypi",
@@ -90,7 +107,8 @@
       "manifest": "requirements.txt",
       "line": 4,
       "citation": "orders/requirements.txt:4",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/pip/pika/1.3.2"
     },
     {
       "ecosystem": "pypi",
@@ -101,14 +119,15 @@
       "manifest": "requirements.txt",
       "line": 5,
       "citation": "orders/requirements.txt:5",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/pip/pydantic/2.7.4"
     }
   ],
   "checks_run": {
-    "hidden-unicode": 7,
-    "secret-values": 7,
-    "curl-pipe-sh": 7,
-    "agent-injection": 7,
+    "hidden-unicode": 8,
+    "secret-values": 8,
+    "curl-pipe-sh": 8,
+    "agent-injection": 8,
     "dockerfile": 1,
     "pip-requirements": 1,
     "typosquat": 5,

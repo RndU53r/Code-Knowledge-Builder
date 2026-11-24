@@ -1,0 +1,61 @@
+{
+ "tours": [
+  {
+   "name": "security-review",
+   "title": "Security review: where an order request can go wrong",
+   "audience": "security reviewers",
+   "steps": [
+    {
+     "node_id": "endpoint:gateway::POST /orders",
+     "note": "Public entry. A JWT is required and the customer id comes from the token.",
+     "citation": "gateway/src/server.js:13"
+    },
+    {
+     "node_id": "function:gateway:src/auth.js:requireAuth",
+     "note": "The auth check, and the AUTH_DISABLED bypass that makes every caller admin.",
+     "citation": "gateway/src/auth.js:7"
+    },
+    {
+     "node_id": "function:gateway:src/server.js:route GET /orders/:id",
+     "note": "Any authenticated user can read any order, and errors are not handled.",
+     "citation": "gateway/src/server.js:26"
+    },
+    {
+     "node_id": "endpoint:orders::GET /orders/{order_id}",
+     "note": "Internal route with no authentication of its own.",
+     "citation": "orders/app/main.py:37"
+    },
+    {
+     "node_id": "function:orders:app/db.py:get_order",
+     "note": "String-built SQL: the injection sink reached from the previous step.",
+     "citation": "orders/app/db.py:23"
+    },
+    {
+     "node_id": "function:gateway:src/server.js:route GET /admin/report",
+     "note": "Admin-only route that fetches a caller-chosen URL (SSRF).",
+     "citation": "gateway/src/server.js:32"
+    },
+    {
+     "node_id": "function:orders:app/pricing.py:price_items",
+     "note": "Subprocess call with an argv list, so no shell injection; quantity is unbounded upstream.",
+     "citation": "orders/app/pricing.py:10"
+    },
+    {
+     "node_id": "function:orders:app/events.py:publish_order_created",
+     "note": "Event over plain AMQP with a default credential in the URL.",
+     "citation": "orders/app/events.py:6"
+    },
+    {
+     "node_id": "function:fulfillment:internal/queue/consumer.go:Consume",
+     "note": "Consumer trusts any message on the queue and requeues failures without a limit.",
+     "citation": "fulfillment/internal/queue/consumer.go:46"
+    },
+    {
+     "node_id": "table:_system::orders",
+     "note": "Shared table written by two services.",
+     "citation": "fulfillment/cmd/worker/main.go:35"
+    }
+   ]
+  }
+ ]
+}

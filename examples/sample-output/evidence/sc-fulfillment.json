@@ -1,7 +1,7 @@
 {
   "repo": "fulfillment",
-  "root": "<fixtures>/polyglot/fulfillment",
-  "generated": "2026-11-23T09:56:10Z",
+  "root": "<workspace>/fulfillment",
+  "generated": "2026-11-24T05:23:56Z",
   "files_scanned": 6,
   "findings": [
     {
@@ -31,6 +31,20 @@
       "message": "base image gcr.io/distroless/static:nonroot not pinned by digest",
       "remediation": "Pin base images by digest (image@sha256:...).",
       "id": "FULFILLMENT-SC-002"
+    },
+    {
+      "check": "SC-S05",
+      "category": "source-indicators",
+      "class": "informational",
+      "severity": "info",
+      "confidence": "low",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "fulfillment/Dockerfile:1",
+      "excerpt": "d2ffc20 init",
+      "message": "recent commit d2ffc20 (2026-11-24) touched build/CI file",
+      "remediation": "Review recent changes to build and CI files for unexpected behavior.",
+      "id": "FULFILLMENT-SC-003"
     }
   ],
   "dependencies": [
@@ -43,7 +57,8 @@
       "manifest": "go.mod",
       "line": 6,
       "citation": "fulfillment/go.mod:6",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/golang/github.com%2Flib%2Fpq/1.10.9"
     },
     {
       "ecosystem": "go",
@@ -54,7 +69,8 @@
       "manifest": "go.mod",
       "line": 7,
       "citation": "fulfillment/go.mod:7",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/golang/github.com%2Frabbitmq%2Famqp091-go/1.10.0"
     }
   ],
   "checks_run": {
@@ -70,8 +86,6 @@
     "git-hooks": 1,
     "recent-build-ci-commits": 1
   },
-  "limitations": [
-    "not a git checkout: commit history checks skipped"
-  ],
+  "limitations": [],
   "advisory_lookup": "not checked (advisory_lookup off)"
 }

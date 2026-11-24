@@ -1,0 +1,5 @@
+flowchart LR
+  N1["cmd/worker/main.go"]
+  N2["internal/queue/consumer.go"]
+  N1 -->|"import"| N2
+  N1 -.->|"call"| N2

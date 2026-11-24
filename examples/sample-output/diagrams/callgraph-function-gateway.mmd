@@ -1,0 +1,10 @@
+flowchart LR
+  N1["route GET /admin/report"]
+  N2["requireRole"]
+  N3["route GET /orders/:id"]
+  N4["read_order"]
+  N5["route POST /orders"]
+  N6["create_order"]
+  N1 -->|"call"| N2
+  N3 -->|"http"| N4
+  N5 -->|"http"| N6

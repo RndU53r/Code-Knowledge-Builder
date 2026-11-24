@@ -1,11 +1,7 @@
-# Authorization record
+# Authorization
 
-| Source | Repo key | Confirmation | Timestamp | Confirmed by |
-| --- | --- | --- | --- | --- |
-| ./polyglot/gateway | gateway | User confirmed ownership of all five sources (test fixtures) | 2026-11-23T09:55:00Z | user in chat |
-| ./polyglot/orders | orders | User confirmed ownership of all five sources (test fixtures) | 2026-11-23T09:55:00Z | user in chat |
-| ./polyglot/fulfillment | fulfillment | User confirmed ownership of all five sources (test fixtures) | 2026-11-23T09:55:00Z | user in chat |
-| ./polyglot | platform | User confirmed ownership of all five sources (test fixtures) | 2026-11-23T09:55:00Z | user in chat |
-| ./poisoned | poisoned | User confirmed ownership of all five sources (test fixtures) | 2026-11-23T09:55:00Z | user in chat |
+| Source | Confirmation | Timestamp | Confirmed by |
+| --- | --- | --- | --- |
+| gateway, orders (snapshot of main), fulfillment, platform and the context paths found in platform | User confirmed in chat they own all four repos | 2026-11-24T05:23:13Z | user in chat |
 
-Scope: static analysis only. No source was cloned; all five are local directories registered with `fetch_source.py`.
+Optional off-machine consent items: osv = no, snyk = no, neo4j = no (user answered no). Remote clone: n/a (all local).

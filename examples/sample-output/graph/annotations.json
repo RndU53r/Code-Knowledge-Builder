@@ -1,0 +1,266 @@
+{
+ "nodes": {
+  "repo:platform::platform": {
+   "repo": "platform",
+   "path": "",
+   "name": "platform",
+   "kind": "repo",
+   "summary": "Three services that talk over HTTP and a queue, plus a shared database and contract. Test data for ckb only. Never install or run it.",
+   "summary_source": "readme",
+   "sig_hash": null,
+   "tags": [
+    "owner:@shop/platform-team",
+    "owner:@shop/core-team",
+    "owner:@shop/web-team"
+   ]
+  },
+  "endpoint:gateway::POST /orders": {
+   "repo": "gateway",
+   "path": "",
+   "name": "POST /orders",
+   "kind": "endpoint",
+   "summary": "Create an order, price it and publish order.created",
+   "summary_source": "openapi",
+   "sig_hash": null
+  },
+  "endpoint:orders::POST /orders": {
+   "repo": "orders",
+   "path": "",
+   "name": "POST /orders",
+   "kind": "endpoint",
+   "summary": "Create an order, price it and publish order.created",
+   "summary_source": "openapi",
+   "sig_hash": null
+  },
+  "endpoint:gateway::GET /orders/:id": {
+   "repo": "gateway",
+   "path": "",
+   "name": "GET /orders/:id",
+   "kind": "endpoint",
+   "summary": "Fetch one order by id",
+   "summary_source": "openapi",
+   "sig_hash": null
+  },
+  "endpoint:orders::GET /orders/{order_id}": {
+   "repo": "orders",
+   "path": "",
+   "name": "GET /orders/{order_id}",
+   "kind": "endpoint",
+   "summary": "Fetch one order by id",
+   "summary_source": "openapi",
+   "sig_hash": null
+  },
+  "repo:fulfillment::fulfillment": {
+   "repo": "fulfillment",
+   "path": "",
+   "name": "fulfillment",
+   "kind": "repo",
+   "tags": [
+    "deploy:compose"
+   ],
+   "sig_hash": null
+  },
+  "repo:gateway::gateway": {
+   "repo": "gateway",
+   "path": "",
+   "name": "gateway",
+   "kind": "repo",
+   "tags": [
+    "deploy:compose",
+    "port:3000"
+   ],
+   "sig_hash": null
+  },
+  "repo:orders::orders": {
+   "repo": "orders",
+   "path": "",
+   "name": "orders",
+   "kind": "repo",
+   "tags": [
+    "deploy:compose"
+   ],
+   "sig_hash": null
+  },
+  "function:fulfillment:internal/queue/consumer.go:Consume": {
+   "repo": "fulfillment",
+   "path": "internal/queue/consumer.go",
+   "name": "Consume",
+   "kind": "function",
+   "summary": "Binds a durable queue to order.created and acks or requeues by handler result.",
+   "layer": "messaging",
+   "tags": [
+    "messaging",
+    "consumer"
+   ],
+   "sig_hash": "1b362d586890"
+  },
+  "function:fulfillment:cmd/worker/main.go:main": {
+   "repo": "fulfillment",
+   "path": "cmd/worker/main.go",
+   "name": "main",
+   "kind": "function",
+   "summary": "Worker: calls the shipping API for each event and updates order status.",
+   "layer": "integration",
+   "tags": [
+    "worker",
+    "external-call"
+   ],
+   "sig_hash": "5656b6543b24"
+  },
+  "function:fulfillment:cmd/pricing/main.go:main": {
+   "repo": "fulfillment",
+   "path": "cmd/pricing/main.go",
+   "name": "main",
+   "kind": "function",
+   "summary": "Pricing CLI: charges a flat 999 cents per unit, ignoring SKU.",
+   "layer": "domain",
+   "tags": [
+    "pricing",
+    "logic"
+   ],
+   "sig_hash": "5656b6543b24"
+  },
+  "function:gateway:src/auth.js:requireAuth": {
+   "repo": "gateway",
+   "path": "src/auth.js",
+   "name": "requireAuth",
+   "kind": "function",
+   "summary": "Verifies an HS256 JWT or, when AUTH_DISABLED is set, grants admin to everyone.",
+   "layer": "security",
+   "tags": [
+    "auth",
+    "bypass-switch"
+   ],
+   "sig_hash": "e6c8f5f8d59e"
+  },
+  "function:gateway:src/auth.js:requireRole": {
+   "repo": "gateway",
+   "path": "src/auth.js",
+   "name": "requireRole",
+   "kind": "function",
+   "summary": "Allows the request only when the token role matches.",
+   "layer": "security",
+   "tags": [
+    "authz"
+   ],
+   "sig_hash": "0431d84bda7e"
+  },
+  "function:gateway:src/server.js:route POST /orders": {
+   "repo": "gateway",
+   "path": "src/server.js",
+   "name": "route POST /orders",
+   "kind": "function",
+   "summary": "Forwards an authenticated order to orders with customer_id taken from the token.",
+   "layer": "edge",
+   "tags": [
+    "gateway",
+    "orders-call"
+   ],
+   "sig_hash": "1680b9a76dce"
+  },
+  "function:gateway:src/server.js:route GET /orders/:id": {
+   "repo": "gateway",
+   "path": "src/server.js",
+   "name": "route GET /orders/:id",
+   "kind": "function",
+   "summary": "Fetches one order from orders by id; no ownership check and no error handling.",
+   "layer": "edge",
+   "tags": [
+    "gateway",
+    "idor"
+   ],
+   "sig_hash": "cdb9172d3963"
+  },
+  "function:gateway:src/server.js:route GET /admin/report": {
+   "repo": "gateway",
+   "path": "src/server.js",
+   "name": "route GET /admin/report",
+   "kind": "function",
+   "summary": "Admin route that fetches a caller-supplied URL (SSRF sink).",
+   "layer": "edge",
+   "tags": [
+    "ssrf",
+    "admin"
+   ],
+   "sig_hash": "dd0ce8165ffc"
+  },
+  "function:orders:app/main.py:create_order": {
+   "repo": "orders",
+   "path": "app/main.py",
+   "name": "create_order",
+   "kind": "function",
+   "summary": "Prices items, inserts the order, publishes order.created, returns pending.",
+   "layer": "api",
+   "tags": [
+    "orders",
+    "write"
+   ],
+   "sig_hash": "d7c0885ef51b"
+  },
+  "function:orders:app/main.py:read_order": {
+   "repo": "orders",
+   "path": "app/main.py",
+   "name": "read_order",
+   "kind": "function",
+   "summary": "Reads one order by id with no authentication.",
+   "layer": "api",
+   "tags": [
+    "orders",
+    "read"
+   ],
+   "sig_hash": "9faf1b711e31"
+  },
+  "function:orders:app/db.py:get_order": {
+   "repo": "orders",
+   "path": "app/db.py",
+   "name": "get_order",
+   "kind": "function",
+   "summary": "Looks up an order with a string-built SQL query (injection sink).",
+   "layer": "persistence",
+   "tags": [
+    "sql",
+    "sink"
+   ],
+   "sig_hash": "86e62b891226"
+  },
+  "function:orders:app/db.py:insert_order": {
+   "repo": "orders",
+   "path": "app/db.py",
+   "name": "insert_order",
+   "kind": "function",
+   "summary": "Inserts an order row with a parameterized query.",
+   "layer": "persistence",
+   "tags": [
+    "sql",
+    "safe-pattern"
+   ],
+   "sig_hash": "ac3f3456cdf4"
+  },
+  "function:orders:app/events.py:publish_order_created": {
+   "repo": "orders",
+   "path": "app/events.py",
+   "name": "publish_order_created",
+   "kind": "function",
+   "summary": "Publishes order.created to the orders topic exchange unless PUBLISH_EVENTS is off.",
+   "layer": "messaging",
+   "tags": [
+    "messaging",
+    "amqp"
+   ],
+   "sig_hash": "7bf34b549ae2"
+  },
+  "function:orders:app/pricing.py:price_items": {
+   "repo": "orders",
+   "path": "app/pricing.py",
+   "name": "price_items",
+   "kind": "function",
+   "summary": "Runs the Go pricing binary over stdin and stdout and returns total cents.",
+   "layer": "integration",
+   "tags": [
+    "subprocess",
+    "polyglot"
+   ],
+   "sig_hash": "216c61450c92"
+  }
+ }
+}

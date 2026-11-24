@@ -1,0 +1,15 @@
+flowchart LR
+  N1["app/main.py"]
+  N2["app/db.py"]
+  N3["app/events.py"]
+  N4["internal/queue/consumer.go"]
+  N5["app/pricing.py"]
+  N6["cmd/pricing/main.go"]
+  N1 -->|"call"| N2
+  N3 -->|"event:order.created"| N4
+  N1 -->|"import"| N2
+  N1 -->|"import"| N3
+  N1 -->|"call"| N3
+  N1 -->|"import"| N5
+  N1 -->|"call"| N5
+  N5 -->|"spawn"| N6

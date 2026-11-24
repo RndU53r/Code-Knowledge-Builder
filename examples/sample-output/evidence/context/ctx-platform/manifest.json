@@ -1,0 +1,118 @@
+{
+  "key": "ctx-platform",
+  "generated": "2026-11-24T05:23:26Z",
+  "items": [
+    {
+      "source": "adr/0001-use-rabbitmq-for-order-events.md",
+      "status": "converted",
+      "kind": "document: text",
+      "file": "adr_0001-use-rabbitmq-for-order-events.md.md",
+      "original": "<workspace>/platform/docs/adr/0001-use-rabbitmq-for-order-events.md"
+    },
+    {
+      "source": "architecture.drawio",
+      "status": "converted",
+      "kind": "diagram: draw.io",
+      "file": "architecture.drawio.md",
+      "original": "<workspace>/platform/docs-architecture/architecture.drawio"
+    },
+    {
+      "source": "billing.excalidraw",
+      "status": "converted",
+      "kind": "diagram: excalidraw",
+      "file": "billing.excalidraw.md",
+      "original": "<workspace>/platform/docs-architecture/billing.excalidraw"
+    },
+    {
+      "source": "checkov.sarif",
+      "status": "converted",
+      "kind": "cspm: SARIF (Checkov)",
+      "file": "checkov.sarif.md",
+      "original": "<workspace>/platform/docs-architecture/checkov.sarif"
+    },
+    {
+      "source": "data-flow.mmd",
+      "status": "converted",
+      "kind": "diagram: mermaid",
+      "file": "data-flow.mmd.md",
+      "original": "<workspace>/platform/docs-architecture/data-flow.mmd"
+    },
+    {
+      "source": "defender-assessments.json",
+      "status": "converted",
+      "kind": "cspm: Microsoft Defender for Cloud",
+      "file": "defender-assessments.json.md",
+      "original": "<workspace>/platform/docs-architecture/defender-assessments.json"
+    },
+    {
+      "source": "deploy.puml",
+      "status": "converted",
+      "kind": "diagram: plantuml",
+      "file": "deploy.puml.md",
+      "original": "<workspace>/platform/docs-architecture/deploy.puml"
+    },
+    {
+      "source": "design-notes.eml",
+      "status": "converted",
+      "kind": "document: email notes",
+      "file": "design-notes.eml.md",
+      "original": "<workspace>/platform/docs-architecture/design-notes.eml"
+    },
+    {
+      "source": "gcp-scc-findings.json",
+      "status": "converted",
+      "kind": "cspm: GCP Security Command Center",
+      "file": "gcp-scc-findings.json.md",
+      "original": "<workspace>/platform/docs-architecture/gcp-scc-findings.json"
+    },
+    {
+      "source": "network.vsdx",
+      "status": "converted",
+      "kind": "diagram: visio",
+      "file": "network.vsdx.md",
+      "original": "<workspace>/platform/docs-architecture/network.vsdx"
+    },
+    {
+      "source": "prowler-ocsf.json",
+      "status": "converted",
+      "kind": "cspm: Prowler (OCSF)",
+      "file": "prowler-ocsf.json.md",
+      "original": "<workspace>/platform/docs-architecture/prowler-ocsf.json"
+    },
+    {
+      "source": "runbook.pdf",
+      "status": "converted",
+      "kind": "document: pdf",
+      "file": "runbook.pdf.md",
+      "original": "<workspace>/platform/docs-architecture/runbook.pdf"
+    },
+    {
+      "source": "security-design.docx",
+      "status": "converted",
+      "kind": "document: word",
+      "file": "security-design.docx.md",
+      "original": "<workspace>/platform/docs-architecture/security-design.docx"
+    },
+    {
+      "source": "securityhub-asff.json",
+      "status": "converted",
+      "kind": "cspm: AWS Security Hub (ASFF)",
+      "file": "securityhub-asff.json.md",
+      "original": "<workspace>/platform/docs-architecture/securityhub-asff.json"
+    },
+    {
+      "source": "whiteboard.png",
+      "status": "needs_reading",
+      "kind": "image",
+      "reason": "diagram/image: view it with Claude's Read tool and record shapes, connectors and boundaries",
+      "original": "<workspace>/platform/docs-architecture/whiteboard.png"
+    },
+    {
+      "source": "wiz-issues.csv",
+      "status": "converted",
+      "kind": "cspm: CSV export",
+      "file": "wiz-issues.csv.md",
+      "original": "<workspace>/platform/docs-architecture/wiz-issues.csv"
+    }
+  ]
+}

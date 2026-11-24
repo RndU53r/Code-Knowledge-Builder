@@ -1,0 +1,6 @@
+{"op": "annotate", "id": "function:orders:app/main.py:create_order", "summary": "Prices items, inserts the order, publishes order.created, returns pending.", "tags": ["orders", "write"], "layer": "api"}
+{"op": "annotate", "id": "function:orders:app/main.py:read_order", "summary": "Reads one order by id with no authentication.", "tags": ["orders", "read"], "layer": "api"}
+{"op": "annotate", "id": "function:orders:app/db.py:get_order", "summary": "Looks up an order with a string-built SQL query (injection sink).", "tags": ["sql", "sink"], "layer": "persistence"}
+{"op": "annotate", "id": "function:orders:app/db.py:insert_order", "summary": "Inserts an order row with a parameterized query.", "tags": ["sql", "safe-pattern"], "layer": "persistence"}
+{"op": "annotate", "id": "function:orders:app/events.py:publish_order_created", "summary": "Publishes order.created to the orders topic exchange unless PUBLISH_EVENTS is off.", "tags": ["messaging", "amqp"], "layer": "messaging"}
+{"op": "annotate", "id": "function:orders:app/pricing.py:price_items", "summary": "Runs the Go pricing binary over stdin and stdout and returns total cents.", "tags": ["subprocess", "polyglot"], "layer": "integration"}

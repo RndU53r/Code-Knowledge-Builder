@@ -1,7 +1,7 @@
 {
   "repo": "gateway",
-  "root": "<fixtures>/polyglot/gateway",
-  "generated": "2026-11-23T09:56:10Z",
+  "root": "<workspace>/gateway",
+  "generated": "2026-11-24T05:23:56Z",
   "files_scanned": 5,
   "findings": [
     {
@@ -17,6 +17,34 @@
       "message": "base image node:20-alpine not pinned by digest",
       "remediation": "Pin base images by digest (image@sha256:...).",
       "id": "GATEWAY-SC-001"
+    },
+    {
+      "check": "SC-S05",
+      "category": "source-indicators",
+      "class": "informational",
+      "severity": "info",
+      "confidence": "low",
+      "path": "Dockerfile",
+      "line": 1,
+      "citation": "gateway/Dockerfile:1",
+      "excerpt": "8c8444d init",
+      "message": "recent commit 8c8444d (2026-11-24) touched build/CI file",
+      "remediation": "Review recent changes to build and CI files for unexpected behavior.",
+      "id": "GATEWAY-SC-002"
+    },
+    {
+      "check": "SC-S05",
+      "category": "source-indicators",
+      "class": "informational",
+      "severity": "info",
+      "confidence": "low",
+      "path": "package.json",
+      "line": 1,
+      "citation": "gateway/package.json:1",
+      "excerpt": "8c8444d init",
+      "message": "recent commit 8c8444d (2026-11-24) touched build/CI file",
+      "remediation": "Review recent changes to build and CI files for unexpected behavior.",
+      "id": "GATEWAY-SC-003"
     }
   ],
   "dependencies": [
@@ -29,7 +57,8 @@
       "manifest": "package.json",
       "line": 7,
       "citation": "gateway/package.json:7",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/npm/express/4.19.2"
     },
     {
       "ecosystem": "npm",
@@ -40,7 +69,8 @@
       "manifest": "package.json",
       "line": 8,
       "citation": "gateway/package.json:8",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/npm/axios/1.7.2"
     },
     {
       "ecosystem": "npm",
@@ -51,7 +81,8 @@
       "manifest": "package.json",
       "line": 9,
       "citation": "gateway/package.json:9",
-      "advisory": "not checked"
+      "advisory": "not checked",
+      "snyk_url": "https://security.snyk.io/package/npm/jsonwebtoken/9.0.2"
     }
   ],
   "checks_run": {
@@ -71,8 +102,6 @@
     "git-hooks": 1,
     "recent-build-ci-commits": 1
   },
-  "limitations": [
-    "not a git checkout: commit history checks skipped"
-  ],
+  "limitations": [],
   "advisory_lookup": "not checked (advisory_lookup off)"
 }

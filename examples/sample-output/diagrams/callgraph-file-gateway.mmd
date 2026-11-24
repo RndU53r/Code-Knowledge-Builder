@@ -1,0 +1,7 @@
+flowchart LR
+  N1["src/server.js"]
+  N2["app/main.py"]
+  N3["src/auth.js"]
+  N1 -->|"http"| N2
+  N1 -->|"import"| N3
+  N1 -->|"call"| N3

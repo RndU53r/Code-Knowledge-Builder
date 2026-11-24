@@ -1,0 +1,5 @@
+{"op": "annotate", "id": "function:gateway:src/auth.js:requireAuth", "summary": "Verifies an HS256 JWT or, when AUTH_DISABLED is set, grants admin to everyone.", "tags": ["auth", "bypass-switch"], "layer": "security"}
+{"op": "annotate", "id": "function:gateway:src/auth.js:requireRole", "summary": "Allows the request only when the token role matches.", "tags": ["authz"], "layer": "security"}
+{"op": "annotate", "id": "function:gateway:src/server.js:route POST /orders", "summary": "Forwards an authenticated order to orders with customer_id taken from the token.", "tags": ["gateway", "orders-call"], "layer": "edge"}
+{"op": "annotate", "id": "function:gateway:src/server.js:route GET /orders/:id", "summary": "Fetches one order from orders by id; no ownership check and no error handling.", "tags": ["gateway", "idor"], "layer": "edge"}
+{"op": "annotate", "id": "function:gateway:src/server.js:route GET /admin/report", "summary": "Admin route that fetches a caller-supplied URL (SSRF sink).", "tags": ["ssrf", "admin"], "layer": "edge"}

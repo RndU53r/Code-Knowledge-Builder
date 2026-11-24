@@ -1,0 +1,12 @@
+flowchart LR
+  N1["gateway"]
+  N2["orders"]
+  N3["fulfillment"]
+  N4["/shipments"]
+  N5["req.query.source"]
+  N1 -->|"http"| N2
+  N3 -->|"table:orders"| N2
+  N2 -->|"event:order.created"| N3
+  N2 -->|"spawn"| N3
+  N3 -.->|"http:external"| N4
+  N1 -.->|"http:external"| N5

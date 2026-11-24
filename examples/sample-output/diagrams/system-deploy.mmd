@@ -1,7 +1,0 @@
-flowchart TB
-  IN["Ingress shop host"] --> GWD["gateway Deployment x2"]
-  GWD --> ORC["orders compose service"]
-  ORC --> DBC[("db postgres 16")]
-  ORC --> MQC[["rabbitmq 3"]]
-  FUC["fulfillment compose service"] --> DBC
-  FUC --> MQC

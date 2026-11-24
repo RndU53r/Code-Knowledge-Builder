@@ -1,45 +1,67 @@
 {
-  "out_dir": "<fixtures>/.ckb",
+  "out_dir": "<workspace>/.ckb",
   "repos": {
-    "fulfillment": {
+    "ctx-platform": {
       "dirty": null,
-      "fetched": "2026-11-23T09:55:59Z",
+      "kind": "context",
+      "revision": "context-snapshot",
+      "root": "<workspace>/.ckb/evidence/context/ctx-platform",
+      "source": "<workspace>/platform/docs, <workspace>/platform/docs-architecture"
+    },
+    "ctx-platform-src": {
+      "dirty": null,
+      "kind": "context-source",
+      "revision": "context-snapshot",
+      "root": "<workspace>/platform/docs-architecture",
+      "source": "<workspace>/platform/docs-architecture"
+    },
+    "fulfillment": {
+      "dirty": false,
+      "fetched": "2026-11-24T05:23:13Z",
       "kind": "local",
-      "revision": "unversioned",
-      "root": "<fixtures>/polyglot/fulfillment",
-      "source": "<fixtures>/polyglot/fulfillment"
+      "ref": "main",
+      "ref_source": "current",
+      "revision": "d2ffc20958106ffdb8637236344d54abca52d7d6",
+      "root": "<workspace>/fulfillment",
+      "source": "<workspace>/fulfillment",
+      "source_mode": "in-place"
     },
     "gateway": {
-      "dirty": null,
-      "fetched": "2026-11-23T09:55:59Z",
+      "dirty": false,
+      "fetched": "2026-11-24T05:23:13Z",
       "kind": "local",
-      "revision": "unversioned",
-      "root": "<fixtures>/polyglot/gateway",
-      "source": "<fixtures>/polyglot/gateway"
+      "ref": "main",
+      "ref_source": "current",
+      "revision": "8c8444d8b08d58d8ffaf65953e28eac0668cec42",
+      "root": "<workspace>/gateway",
+      "source": "<workspace>/gateway",
+      "source_mode": "in-place"
     },
     "orders": {
-      "dirty": null,
-      "fetched": "2026-11-23T09:55:59Z",
+      "checked_out_branch": "feature/wip",
+      "dirty": false,
+      "fetched": "2026-11-24T05:23:13Z",
       "kind": "local",
-      "revision": "unversioned",
-      "root": "<fixtures>/polyglot/orders",
-      "source": "<fixtures>/polyglot/orders"
+      "note": "read-only snapshot via git archive; the checkout was not touched; uncommitted work is not included",
+      "ref": "main",
+      "ref_source": "main",
+      "revision": "1de64cbb1f39f79abbc4fe3c04bc8a8d89a5dfda",
+      "root": "<scratch>",
+      "scratch": "<scratch>",
+      "snapshot_of": "<workspace>/orders",
+      "source": "<workspace>/orders",
+      "source_mode": "snapshot"
     },
     "platform": {
-      "dirty": null,
-      "fetched": "2026-11-23T09:55:59Z",
+      "dirty": false,
+      "fetched": "2026-11-24T05:23:14Z",
       "kind": "local",
-      "revision": "unversioned",
-      "root": "<fixtures>/polyglot",
-      "source": "<fixtures>/polyglot"
-    },
-    "poisoned": {
-      "dirty": null,
-      "fetched": "2026-11-23T09:55:59Z",
-      "kind": "local",
-      "revision": "unversioned",
-      "root": "<fixtures>/poisoned",
-      "source": "<fixtures>/poisoned"
+      "ref": "main",
+      "ref_source": "current",
+      "revision": "f5659b33e1f9a9f9b08bf504aced6f9d51d23e2a",
+      "root": "<workspace>/platform",
+      "source": "<workspace>/platform",
+      "source_mode": "in-place"
     }
   }
 }

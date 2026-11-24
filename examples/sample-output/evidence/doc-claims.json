@@ -1,0 +1,491 @@
+{
+ "generated": "2026-11-24T05:23:57Z",
+ "claims": [
+  {
+   "type": "control",
+   "control": "internal",
+   "scope": [
+    "API Gateway (Express)",
+    "Orders service",
+    "Fulfillment worker",
+    "RabbitMQ (TLS)",
+    "Postgres shop (encrypted)"
+   ],
+   "container": "Private VPC (no public ingress)",
+   "cite": "ctx-platform/architecture.drawio.md:13",
+   "quote": "- shape `z2`: Private VPC (no public ingress) \u00b7 style: swimlane",
+   "text": "'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (TLS), Postgres shop (encrypted))"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "RabbitMQ (TLS)"
+   ],
+   "text": "'RabbitMQ (TLS)' is documented as TLS-protected",
+   "cite": "ctx-platform/architecture.drawio.md:18",
+   "quote": "- shape `mq`: RabbitMQ (TLS) \u00b7 in: Private VPC (no public ingress) \u00b7 style: cylinder"
+  },
+  {
+   "type": "control",
+   "control": "enc-rest",
+   "scope": [
+    "Postgres shop (encrypted)"
+   ],
+   "text": "'Postgres shop (encrypted)' is documented as encrypted",
+   "cite": "ctx-platform/architecture.drawio.md:19",
+   "quote": "- shape `db`: Postgres shop (encrypted) \u00b7 in: Private VPC (no public ingress) \u00b7 style: cylinder"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Customer",
+    "API Gateway (Express)"
+   ],
+   "conn": true,
+   "text": "Customer \u2192 API Gateway (Express) documented as HTTPS",
+   "cite": "ctx-platform/architecture.drawio.md:23",
+   "quote": "- `Customer` -> `API Gateway (Express)` : HTTPS"
+  },
+  {
+   "type": "control",
+   "control": "mtls",
+   "scope": [
+    "API Gateway (Express)",
+    "Orders service"
+   ],
+   "conn": true,
+   "text": "API Gateway (Express) \u2192 Orders service documented as mTLS REST",
+   "cite": "ctx-platform/architecture.drawio.md:24",
+   "quote": "- `API Gateway (Express)` -> `Orders service` : mTLS REST"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Orders service",
+    "RabbitMQ (TLS)"
+   ],
+   "conn": true,
+   "text": "Orders service \u2192 RabbitMQ (TLS) documented as AMQPS order.created",
+   "cite": "ctx-platform/architecture.drawio.md:25",
+   "quote": "- `Orders service` -> `RabbitMQ (TLS)` : AMQPS order.created"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Fulfillment worker",
+    "Shipping API (3rd party)"
+   ],
+   "conn": true,
+   "text": "Fulfillment worker \u2192 Shipping API (3rd party) documented as HTTPS + API key",
+   "cite": "ctx-platform/architecture.drawio.md:38",
+   "quote": "- `Fulfillment worker` -> `Shipping API (3rd party)` : HTTPS + API key"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "API Gateway",
+    "Orders service"
+   ],
+   "conn": true,
+   "text": "API Gateway \u2192 Orders service documented as HTTPS",
+   "cite": "ctx-platform/data-flow.mmd.md:20",
+   "quote": "- `API Gateway` -> `Orders service` : HTTPS"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Orders service",
+    "RabbitMQ"
+   ],
+   "conn": true,
+   "text": "Orders service \u2192 RabbitMQ documented as AMQPS",
+   "cite": "ctx-platform/data-flow.mmd.md:22",
+   "quote": "- `Orders service` -> `RabbitMQ` : AMQPS"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "API Gateway",
+    "Orders service"
+   ],
+   "conn": true,
+   "text": "API Gateway \u2192 Orders service documented as HTTPS",
+   "cite": "ctx-platform/deploy.puml.md:18",
+   "quote": "- `API Gateway` -> `Orders service` : HTTPS"
+  },
+  {
+   "type": "control",
+   "control": "internal",
+   "scope": [
+    "The orders service must not be exposed publicly."
+   ],
+   "text": "The orders service must not be exposed publicly.",
+   "cite": "ctx-platform/design-notes.eml.md:12",
+   "quote": "The orders service must not be exposed publicly."
+  },
+  {
+   "type": "control",
+   "control": "mtls",
+   "scope": [
+    "*"
+   ],
+   "text": "All service-to-service traffic uses mutual TLS (mTLS) issued by the internal CA.",
+   "cite": "ctx-platform/security-design.docx.md:14",
+   "quote": "All service-to-service traffic uses mutual TLS (mTLS) issued by the internal CA."
+  },
+  {
+   "type": "control",
+   "control": "internal",
+   "scope": [
+    "The orders service is internal-only and is not reachable from the internet."
+   ],
+   "text": "The orders service is internal-only and is not reachable from the internet.",
+   "cite": "ctx-platform/security-design.docx.md:16",
+   "quote": "The orders service is internal-only and is not reachable from the internet."
+  },
+  {
+   "type": "control",
+   "control": "authn",
+   "scope": [
+    "The orders service validates the caller JWT on every request before reading or writing orders."
+   ],
+   "text": "The orders service validates the caller JWT on every request before reading or writing orders.",
+   "cite": "ctx-platform/security-design.docx.md:18",
+   "quote": "The orders service validates the caller JWT on every request before reading or writing orders."
+  },
+  {
+   "type": "control",
+   "control": "enc-rest",
+   "scope": [
+    "The database is encrypted at rest."
+   ],
+   "text": "The database is encrypted at rest.",
+   "cite": "ctx-platform/security-design.docx.md:22",
+   "quote": "The database is encrypted at rest."
+  }
+ ],
+ "connections": [
+  {
+   "from": "Customer",
+   "to": "API Gateway (Express)",
+   "label": "HTTPS",
+   "cite": "ctx-platform/architecture.drawio.md:23",
+   "quote": "- `Customer` -> `API Gateway (Express)` : HTTPS"
+  },
+  {
+   "from": "API Gateway (Express)",
+   "to": "Orders service",
+   "label": "mTLS REST",
+   "cite": "ctx-platform/architecture.drawio.md:24",
+   "quote": "- `API Gateway (Express)` -> `Orders service` : mTLS REST"
+  },
+  {
+   "from": "Orders service",
+   "to": "RabbitMQ (TLS)",
+   "label": "AMQPS order.created",
+   "cite": "ctx-platform/architecture.drawio.md:25",
+   "quote": "- `Orders service` -> `RabbitMQ (TLS)` : AMQPS order.created"
+  },
+  {
+   "from": "RabbitMQ (TLS)",
+   "to": "Fulfillment worker",
+   "label": "",
+   "cite": "ctx-platform/architecture.drawio.md:26",
+   "quote": "- `RabbitMQ (TLS)` -> `Fulfillment worker`"
+  },
+  {
+   "from": "Orders service",
+   "to": "Postgres shop (encrypted)",
+   "label": "SQL",
+   "cite": "ctx-platform/architecture.drawio.md:27",
+   "quote": "- `Orders service` -> `Postgres shop (encrypted)` : SQL"
+  },
+  {
+   "from": "Fulfillment worker",
+   "to": "Shipping API (3rd party)",
+   "label": "HTTPS + API key",
+   "cite": "ctx-platform/architecture.drawio.md:38",
+   "quote": "- `Fulfillment worker` -> `Shipping API (3rd party)` : HTTPS + API key"
+  },
+  {
+   "from": "Billing",
+   "to": "Ledger DB",
+   "label": "writes",
+   "cite": "ctx-platform/billing.excalidraw.md:17",
+   "quote": "- `Billing` -> `Ledger DB` : writes"
+  },
+  {
+   "from": "API Gateway",
+   "to": "Orders service",
+   "label": "HTTPS",
+   "cite": "ctx-platform/data-flow.mmd.md:20",
+   "quote": "- `API Gateway` -> `Orders service` : HTTPS"
+  },
+  {
+   "from": "Orders service",
+   "to": "Postgres shop",
+   "label": "SQL",
+   "cite": "ctx-platform/data-flow.mmd.md:21",
+   "quote": "- `Orders service` -> `Postgres shop` : SQL"
+  },
+  {
+   "from": "Orders service",
+   "to": "RabbitMQ",
+   "label": "AMQPS",
+   "cite": "ctx-platform/data-flow.mmd.md:22",
+   "quote": "- `Orders service` -> `RabbitMQ` : AMQPS"
+  },
+  {
+   "from": "RabbitMQ",
+   "to": "Fulfillment worker",
+   "label": "",
+   "cite": "ctx-platform/data-flow.mmd.md:23",
+   "quote": "- `RabbitMQ` -> `Fulfillment worker`"
+  },
+  {
+   "from": "API Gateway",
+   "to": "Orders service",
+   "label": "HTTPS",
+   "cite": "ctx-platform/deploy.puml.md:18",
+   "quote": "- `API Gateway` -> `Orders service` : HTTPS"
+  },
+  {
+   "from": "Orders service",
+   "to": "Postgres shop",
+   "label": "SQL",
+   "cite": "ctx-platform/deploy.puml.md:19",
+   "quote": "- `Orders service` -> `Postgres shop` : SQL"
+  },
+  {
+   "from": "Load balancer",
+   "to": "gateway",
+   "label": "",
+   "cite": "ctx-platform/network.vsdx.md:18",
+   "quote": "- `Load balancer` -> `gateway`"
+  },
+  {
+   "from": "gateway",
+   "to": "orders",
+   "label": "",
+   "cite": "ctx-platform/network.vsdx.md:19",
+   "quote": "- `gateway` -> `orders`"
+  }
+ ],
+ "rows": [
+  {
+   "claim": "'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (TLS), Postgres shop (encrypted))",
+   "doc": "ctx-platform/architecture.drawio.md:13",
+   "observed": "3 ingress rule(s) open to the internet in IaC (e.g. `sourceAddressPrefix: 'Internet'`)",
+   "evidence": [
+    "platform/deploy/azure/main.bicep:28",
+    "platform/deploy/terraform/aws/main.tf:22"
+   ],
+   "verdict": "drift",
+   "type": "internal"
+  },
+  {
+   "claim": "'RabbitMQ (TLS)' is documented as TLS-protected",
+   "doc": "ctx-platform/architecture.drawio.md:18",
+   "observed": "broker URL default uses plain `amqp://` (no TLS) in orders",
+   "evidence": [
+    "orders/app/events.py:6"
+   ],
+   "verdict": "drift",
+   "type": "tls"
+  },
+  {
+   "claim": "'Postgres shop (encrypted)' is documented as encrypted",
+   "doc": "ctx-platform/architecture.drawio.md:19",
+   "observed": "IaC disables encryption/TLS for aws_db_instance shop: `storage_encrypted = false`",
+   "evidence": [
+    "platform/deploy/terraform/aws/main.tf:30",
+    "ctx-platform/defender-assessments.json.md:16"
+   ],
+   "verdict": "drift",
+   "type": "enc-rest"
+  },
+  {
+   "claim": "API Gateway (Express) \u2192 Orders service documented as mTLS REST",
+   "doc": "ctx-platform/architecture.drawio.md:24",
+   "observed": "gateway calls orders with a plain-http default (`http://orders:8000`); no client certificate settings",
+   "evidence": [
+    "gateway/src/server.js:5",
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "drift",
+   "type": "mtls"
+  },
+  {
+   "claim": "Orders service \u2192 RabbitMQ (TLS) documented as AMQPS order.created",
+   "doc": "ctx-platform/architecture.drawio.md:25",
+   "observed": "broker URL default uses plain `amqp://` (no TLS) in orders",
+   "evidence": [
+    "orders/app/events.py:6"
+   ],
+   "verdict": "drift",
+   "type": "tls"
+  },
+  {
+   "claim": "API Gateway \u2192 Orders service documented as HTTPS",
+   "doc": "ctx-platform/data-flow.mmd.md:20",
+   "observed": "gateway calls orders with a plain-http default (`http://orders:8000`); no client certificate settings",
+   "evidence": [
+    "gateway/src/server.js:5",
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "drift",
+   "type": "tls"
+  },
+  {
+   "claim": "Orders service \u2192 RabbitMQ documented as AMQPS",
+   "doc": "ctx-platform/data-flow.mmd.md:22",
+   "observed": "broker URL default uses plain `amqp://` (no TLS) in orders",
+   "evidence": [
+    "orders/app/events.py:6"
+   ],
+   "verdict": "drift",
+   "type": "tls"
+  },
+  {
+   "claim": "API Gateway \u2192 Orders service documented as HTTPS",
+   "doc": "ctx-platform/deploy.puml.md:18",
+   "observed": "gateway calls orders with a plain-http default (`http://orders:8000`); no client certificate settings",
+   "evidence": [
+    "gateway/src/server.js:5",
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "drift",
+   "type": "tls"
+  },
+  {
+   "claim": "The orders service must not be exposed publicly.",
+   "doc": "ctx-platform/design-notes.eml.md:12",
+   "observed": "orders's endpoints are only called by other services; no ingress routes to it",
+   "evidence": [
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "consistent",
+   "type": "internal"
+  },
+  {
+   "claim": "All service-to-service traffic uses mutual TLS (mTLS) issued by the internal CA.",
+   "doc": "ctx-platform/security-design.docx.md:14",
+   "observed": "gateway calls orders with a plain-http default (`http://orders:8000`); no client certificate settings",
+   "evidence": [
+    "gateway/src/server.js:5",
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "drift",
+   "type": "mtls"
+  },
+  {
+   "claim": "The orders service is internal-only and is not reachable from the internet.",
+   "doc": "ctx-platform/security-design.docx.md:16",
+   "observed": "orders's endpoints are only called by other services; no ingress routes to it",
+   "evidence": [
+    "gateway/src/server.js:15"
+   ],
+   "verdict": "consistent",
+   "type": "internal"
+  },
+  {
+   "claim": "The orders service validates the caller JWT on every request before reading or writing orders.",
+   "doc": "ctx-platform/security-design.docx.md:18",
+   "observed": "2 of 2 endpoint(s) in orders show no authentication evidence (e.g. POST /orders)",
+   "evidence": [
+    "orders/app/main.py:25",
+    "orders/app/main.py:37"
+   ],
+   "verdict": "drift",
+   "type": "authn"
+  },
+  {
+   "claim": "The database is encrypted at rest.",
+   "doc": "ctx-platform/security-design.docx.md:22",
+   "observed": "IaC disables encryption/TLS for aws_db_instance shop: `storage_encrypted = false`",
+   "evidence": [
+    "platform/deploy/terraform/aws/main.tf:30",
+    "ctx-platform/defender-assessments.json.md:16"
+   ],
+   "verdict": "drift",
+   "type": "enc-rest"
+  },
+  {
+   "claim": "API Gateway (Express) \u2192 Orders service (mTLS REST)",
+   "doc": "ctx-platform/architecture.drawio.md:24",
+   "observed": "connection exists in code (http); this row checks existence only",
+   "evidence": [
+    "gateway/src/server.js:15",
+    "gateway/src/server.js:27"
+   ],
+   "verdict": "consistent",
+   "type": "connection"
+  },
+  {
+   "claim": "API Gateway \u2192 Orders service (HTTPS)",
+   "doc": "ctx-platform/data-flow.mmd.md:20",
+   "observed": "connection exists in code (http); this row checks existence only",
+   "evidence": [
+    "gateway/src/server.js:15",
+    "gateway/src/server.js:27"
+   ],
+   "verdict": "consistent",
+   "type": "connection"
+  },
+  {
+   "claim": "API Gateway \u2192 Orders service (HTTPS)",
+   "doc": "ctx-platform/deploy.puml.md:18",
+   "observed": "connection exists in code (http); this row checks existence only",
+   "evidence": [
+    "gateway/src/server.js:15",
+    "gateway/src/server.js:27"
+   ],
+   "verdict": "consistent",
+   "type": "connection"
+  },
+  {
+   "claim": "gateway \u2192 orders",
+   "doc": "ctx-platform/network.vsdx.md:19",
+   "observed": "connection exists in code (http); this row checks existence only",
+   "evidence": [
+    "gateway/src/server.js:15",
+    "gateway/src/server.js:27"
+   ],
+   "verdict": "consistent",
+   "type": "connection"
+  }
+ ],
+ "unmatched": [
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Customer",
+    "API Gateway (Express)"
+   ],
+   "conn": true,
+   "text": "Customer \u2192 API Gateway (Express) documented as HTTPS",
+   "cite": "ctx-platform/architecture.drawio.md:23",
+   "quote": "- `Customer` -> `API Gateway (Express)` : HTTPS"
+  },
+  {
+   "type": "control",
+   "control": "tls",
+   "scope": [
+    "Fulfillment worker",
+    "Shipping API (3rd party)"
+   ],
+   "conn": true,
+   "text": "Fulfillment worker \u2192 Shipping API (3rd party) documented as HTTPS + API key",
+   "cite": "ctx-platform/architecture.drawio.md:38",
+   "quote": "- `Fulfillment worker` -> `Shipping API (3rd party)` : HTTPS + API key"
+  }
+ ]
+}

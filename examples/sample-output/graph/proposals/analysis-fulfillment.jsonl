@@ -1,0 +1,3 @@
+{"op": "annotate", "id": "function:fulfillment:internal/queue/consumer.go:Consume", "summary": "Binds a durable queue to order.created and acks or requeues by handler result.", "tags": ["messaging", "consumer"], "layer": "messaging"}
+{"op": "annotate", "id": "function:fulfillment:cmd/worker/main.go:main", "summary": "Worker: calls the shipping API for each event and updates order status.", "tags": ["worker", "external-call"], "layer": "integration"}
+{"op": "annotate", "id": "function:fulfillment:cmd/pricing/main.go:main", "summary": "Pricing CLI: charges a flat 999 cents per unit, ignoring SKU.", "tags": ["pricing", "logic"], "layer": "domain"}

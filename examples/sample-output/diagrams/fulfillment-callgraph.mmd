@@ -1,7 +1,0 @@
-flowchart LR
-  MQ[["queue order created"]] -.-> CN["Consume"]
-  CN --> UM["json Unmarshal"]
-  UM --> CB["worker handler"]
-  CB --> SH{{"shipping API"}}
-  CB ==> DB[("orders table")]
-  CN --> AK["Ack or Nack"]

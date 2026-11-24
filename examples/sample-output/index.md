@@ -1,9 +1,9 @@
-# Knowledge base: polyglot order platform + poisoned package
+# Knowledge base: shop platform (gateway, orders, fulfillment, platform)
 
 > **ckb provenance**
-> - Sources: `gateway`, `orders`, `fulfillment`, `platform` (./polyglot), `poisoned` @ `unversioned (local)`
-> - Generated: 2026-11-23T10:00:00Z by ckb 0.1.0, stage `full`
-> - Scope: five registered local sources · Excluded: none; no secret files, binaries or symlinks found
+> - Sources: `gateway` @ `8c8444d`, `orders` @ `1de64cb` (read-only snapshot of main; checkout is on feature/wip), `fulfillment` @ `d2ffc20`, `platform` @ `f5659b3`; context `ctx-platform`
+> - Generated: 2026-11-24T05:33:07Z by ckb 0.1.0, stage `index`
+> - Scope: four local repos plus ingested architecture context · Excluded: vendored, generated, binaries, symlinks (none present)
 > - Method: static analysis only; no target code executed
 > - Verification: passed (see evidence/verification.md)
 
@@ -11,39 +11,37 @@
 
 | Area | File | Summary |
 | --- | --- | --- |
-| System HLD | [system/hld.md](system/hld.md) | gateway → orders → RabbitMQ → fulfillment, shared Postgres; edge-only auth |
-| Data flows | [system/data-flows.md](system/data-flows.md) | 10 edges (REST x2, AMQP, subprocess, shared table x2, externals), contract drift, unmatched endpoints |
-| Outputs and conditions | [system/outputs-and-conditions.md](system/outputs-and-conditions.md) | cross-repo outputs; flags `AUTH_DISABLED`, `PUBLISH_EVENTS` |
-| Threat model | [system/threat-model.md](system/threat-model.md) | 16 STRIDE threats; SQLi and CI pwn-request critical |
-| Scanner context | [system/context.md](system/context.md) | sinks with verdicts and scanner focus |
-| Supply-chain report | [system/supply-chain-report.md](system/supply-chain-report.md) | 47 findings; all 21 confirmed-suspicious in poisoned |
+| System HLD | [system/hld.md](system/hld.md) | components, zones, cloud resources, documented vs observed |
+| Data flows | [system/data-flows.md](system/data-flows.md) | 8 edges across REST, AMQP, subprocess, shared table |
+| Outputs and conditions | [system/outputs-and-conditions.md](system/outputs-and-conditions.md) | response, event, DB write and their conditions |
+| Threat model | [system/threat-model.md](system/threat-model.md) | refined: 27 threats after review, 6 added |
+| Scanner context | [system/context.md](system/context.md) | nine-section brief for scanners |
+| Supply-chain report | [system/supply-chain-report.md](system/supply-chain-report.md) | 0 critical, 6 high, 8 medium, 6 low; 1 prompt-injection item |
+| Call graphs | [system/call-graphs.md](system/call-graphs.md) | function, file and repo call graphs |
+| Documented vs observed | [system/documented-vs-observed.md](system/documented-vs-observed.md) | 11 drift rows |
+| Knowledge graph | [system/graph.md](system/graph.md) | graph/index.html is the viewer |
 
 ## Repos
 
 | Repo | Role | Languages | Overview |
 | --- | --- | --- | --- |
-| gateway | public API, JWT auth, proxy | JavaScript | [overview](repos/gateway/overview.md) |
-| orders | order service, pricing subprocess, events | Python | [overview](repos/orders/overview.md) |
-| fulfillment | queue worker and pricing CLI | Go | [overview](repos/fulfillment/overview.md) |
-| platform | monorepo root: contracts, deploy, CI | YAML/JSON | [overview](repos/platform/overview.md), [supply chain](repos/platform/supply-chain.md) |
-| poisoned | hostile npm package (test fixture) | JavaScript | [overview](repos/poisoned/overview.md) |
+| gateway | public edge | JavaScript | [overview](repos/gateway/overview.md) |
+| orders | order API | Python | [overview](repos/orders/overview.md) |
+| fulfillment | worker and pricing CLI | Go | [overview](repos/fulfillment/overview.md) |
+| platform | IaC, contracts, docs | none (IaC) | [overview](repos/platform/overview.md) |
 
 ## Top findings
 
 | # | Finding | Severity | Confidence | Where |
 | --- | --- | --- | --- | --- |
-| 1 | SQL injection in orders read path, reachable via gateway (T1) | critical | high | `orders/app/db.py:23` |
-| 2 | CI pwn request: `pull_request_target` + PR head checkout + script injection + secret echo (T13) | critical | high | `poisoned/.github/workflows/pr-label.yml:11` |
-| 3 | Install/commit-time RCE: postinstall, husky hook, eval of encoded payload, host beacon (T14) | critical (supply chain) | high | `poisoned/package.json:5` `poisoned/scripts/setup.js:5` |
-| 4 | Prompt injection aimed at AI agents in 4 files (T15) | critical (supply chain) | high | `poisoned/README.md:10` |
-| 5 | SSRF in admin report (T2) | high | high | `gateway/src/server.js:32` |
-| 6 | `AUTH_DISABLED` grants admin to all callers (T3) | high | high | `gateway/src/auth.js:8` |
-| 7 | IDOR on order reads; unhandled rejection can crash gateway (T4, T5) | high | high / medium | `gateway/src/server.js:27` |
-| 8 | Unauthenticated internal channels: orders API and broker events (T6, T7) | high | medium | `orders/app/main.py:19` |
+| 1 | Public invoice bucket (T-04) | critical | high | `platform/deploy/terraform/aws/main.tf:8` |
+| 2 | SQL injection in order lookup (T-14) | high | high | `orders/app/db.py:23` |
+| 3 | orders has no authentication (T-29) | high | high | `orders/app/main.py:25` |
+| 4 | Any user can read any order (T-33) | high | high | `gateway/src/server.js:27` |
+| 5 | Negative quantity gives negative total (T-34) | high | high | `fulfillment/cmd/pricing/main.go:23` |
 
 ## Evidence
 
 - Citation index: [evidence/citations.md](evidence/citations.md)
 - Verification report: [evidence/verification.md](evidence/verification.md)
 - Authorization record: [evidence/authorization.md](evidence/authorization.md)
-- Diagram sources: `diagrams/*.mmd` (16 files); targets: `evidence/targets.json`; hashes: `evidence/hashes.json`

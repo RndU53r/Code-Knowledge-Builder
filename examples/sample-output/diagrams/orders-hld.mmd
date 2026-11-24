@@ -1,6 +1,0 @@
-flowchart LR
-  GW["gateway"] -->|"REST"| API["orders API"]
-  API --> PR["pricing adapter"]
-  PR -->|"subprocess"| BIN["pricing (Go)"]
-  API ==>|"SQL"| DB[("Postgres shop")]
-  API -.->|"AMQP order.created"| MQ[["RabbitMQ orders"]]

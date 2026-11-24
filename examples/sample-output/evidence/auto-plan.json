@@ -1,0 +1,393 @@
+{
+  "sources": [
+    {
+      "key": "fulfillment",
+      "path": "<workspace>/fulfillment",
+      "kind": "local",
+      "languages": {
+        "go": 3
+      },
+      "git": {
+        "git": true,
+        "toplevel": "<workspace>/fulfillment",
+        "checked_out_branch": "main",
+        "branches": [
+          "main"
+        ],
+        "ref": "main",
+        "ref_source": "main",
+        "source_mode": "in-place",
+        "note": "checked out on main"
+      },
+      "evidence": [
+        "fulfillment/go.mod:1"
+      ],
+      "fetch_args": [
+        "--key",
+        "fulfillment",
+        "<workspace>/fulfillment"
+      ]
+    },
+    {
+      "key": "gateway",
+      "path": "<workspace>/gateway",
+      "kind": "local",
+      "languages": {
+        "javascript": 2
+      },
+      "git": {
+        "git": true,
+        "toplevel": "<workspace>/gateway",
+        "checked_out_branch": "main",
+        "branches": [
+          "main"
+        ],
+        "ref": "main",
+        "ref_source": "main",
+        "source_mode": "in-place",
+        "note": "checked out on main"
+      },
+      "evidence": [
+        "gateway/package.json:1"
+      ],
+      "fetch_args": [
+        "--key",
+        "gateway",
+        "<workspace>/gateway"
+      ]
+    },
+    {
+      "key": "orders",
+      "path": "<workspace>/orders",
+      "kind": "local",
+      "languages": {
+        "python": 5
+      },
+      "git": {
+        "git": true,
+        "toplevel": "<workspace>/orders",
+        "checked_out_branch": "feature/wip",
+        "branches": [
+          "feature/wip",
+          "main"
+        ],
+        "ref": "main",
+        "ref_source": "main",
+        "source_mode": "snapshot",
+        "note": "checked out on feature/wip; reading a read-only snapshot of main (checkout untouched; uncommitted work excluded)"
+      },
+      "evidence": [
+        "orders/requirements.txt:1"
+      ],
+      "fetch_args": [
+        "--key",
+        "orders",
+        "<workspace>/orders"
+      ]
+    },
+    {
+      "key": "platform",
+      "path": "<workspace>/platform",
+      "kind": "local",
+      "languages": {},
+      "git": {
+        "git": true,
+        "toplevel": "<workspace>/platform",
+        "checked_out_branch": "main",
+        "branches": [
+          "main"
+        ],
+        "ref": "main",
+        "ref_source": "main",
+        "source_mode": "in-place",
+        "note": "checked out on main"
+      },
+      "evidence": [],
+      "fetch_args": [
+        "--key",
+        "platform",
+        "<workspace>/platform"
+      ]
+    }
+  ],
+  "workspaces": [
+    {
+      "path": "<workspace>",
+      "repos": [
+        "fulfillment",
+        "gateway",
+        "orders",
+        "platform"
+      ],
+      "note": "folder of git repos: each is a source"
+    }
+  ],
+  "context": [
+    {
+      "path": "<workspace>/platform/docs/adr/0001-use-rabbitmq-for-order-events.md",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs/adr/0001-use-rabbitmq-for-order-events.md"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/architecture.drawio",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/architecture.drawio"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/billing.excalidraw",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/billing.excalidraw"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/checkov.sarif",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/checkov.sarif"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/data-flow.mmd",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/data-flow.mmd"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/defender-assessments.json",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/defender-assessments.json"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/deploy.puml",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/deploy.puml"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/design-notes.eml",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/design-notes.eml"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/gcp-scc-findings.json",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/gcp-scc-findings.json"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/network.vsdx",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/network.vsdx"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/prowler-ocsf.json",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/prowler-ocsf.json"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/runbook.pdf",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/runbook.pdf"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/security-design.docx",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/security-design.docx"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/securityhub-asff.json",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/securityhub-asff.json"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/whiteboard.png",
+      "kind": "architecture doc/diagram/notes",
+      "evidence": "docs-architecture/whiteboard.png"
+    },
+    {
+      "path": "<workspace>/platform/docs-architecture/wiz-issues.csv",
+      "kind": "cspm/scanner export",
+      "evidence": "docs-architecture/wiz-issues.csv"
+    }
+  ],
+  "context_sources_registered": [],
+  "parsers": {
+    "go": "regex",
+    "javascript": "regex",
+    "python": "ast"
+  },
+  "capabilities": {
+    "parsers": {
+      "go": {
+        "chosen": "regex",
+        "why": "tree-sitter not installed: regex fallback"
+      },
+      "javascript": {
+        "chosen": "regex",
+        "why": "tree-sitter not installed: regex fallback"
+      },
+      "python": {
+        "chosen": "ast",
+        "why": "stdlib ast"
+      }
+    },
+    "pdf": {
+      "chosen": "pdftotext",
+      "why": "poppler installed"
+    },
+    "images": {
+      "chosen": "read-tool",
+      "why": "images and scanned PDFs are described by Claude (context-reader agent)"
+    },
+    "git": {
+      "available": true,
+      "version": "git version 2.54.0 (Apple Git-157)"
+    },
+    "parallelism": {
+      "chosen": 4,
+      "why": "10 CPUs, 4 source(s)"
+    },
+    "ci_mode": {
+      "chosen": false,
+      "provider": null
+    },
+    "interactive": false,
+    "remote": {
+      "github": {
+        "token_present": false
+      },
+      "gitlab": {
+        "token_present": false
+      },
+      "azure_devops": {
+        "auth": "anonymous",
+        "why": "no az login or PAT: public projects only"
+      }
+    },
+    "scratch_free_gb": 533.1
+  },
+  "stages": {
+    "inventory": {
+      "run": true,
+      "why": "always"
+    },
+    "code_analysis": {
+      "run": true,
+      "why": "always"
+    },
+    "cross_repo_flows": {
+      "run": true,
+      "why": "4 service(s); broker=True; http_client=True",
+      "evidence": [
+        "go.mod:7",
+        "internal/queue/consumer.go:7",
+        "requirements.txt:4",
+        "app/events.py:4",
+        "cmd/worker/main.go:28",
+        "package.json:8"
+      ]
+    },
+    "outputs_and_conditions": {
+      "run": true,
+      "why": "always"
+    },
+    "knowledge_graph": {
+      "run": true,
+      "why": "always (structural graph before agents)"
+    },
+    "call_graphs": {
+      "run": true,
+      "why": "always: function, file and repo call graphs from the knowledge graph",
+      "levels": [
+        "function",
+        "file",
+        "repo"
+      ]
+    },
+    "repo_context": {
+      "run": true,
+      "why": "always: docstrings, READMEs, ADRs, API descriptions enrich the graph and context.md"
+    },
+    "supply_chain": {
+      "run": true,
+      "why": "manifests/CI present",
+      "evidence": []
+    },
+    "cloud_layer": {
+      "run": true,
+      "why": "3 IaC file(s)",
+      "evidence": [
+        "deploy/azure/main.bicep",
+        "deploy/terraform/aws/main.tf",
+        "deploy/terraform/gcp/main.tf"
+      ]
+    },
+    "context_ingest": {
+      "run": true,
+      "why": "16 doc/diagram/note/scan file(s)",
+      "evidence": [
+        "docs/adr/0001-use-rabbitmq-for-order-events.md",
+        "docs-architecture/architecture.drawio",
+        "docs-architecture/billing.excalidraw",
+        "docs-architecture/checkov.sarif",
+        "docs-architecture/data-flow.mmd",
+        "docs-architecture/defender-assessments.json",
+        "docs-architecture/deploy.puml",
+        "docs-architecture/design-notes.eml"
+      ]
+    },
+    "context_from_docs": {
+      "run": true,
+      "why": "doc_claims maps documented components/controls onto the graph and records drift candidates"
+    },
+    "threat_model": {
+      "run": true,
+      "why": "always: deterministic draft (threat_seed.py), then the threat-modeler agent refines it"
+    },
+    "owasp_llm_top10": {
+      "run": false,
+      "why": "no LLM SDK detected",
+      "evidence": []
+    },
+    "security_context": {
+      "run": true,
+      "why": "always"
+    },
+    "tours": {
+      "run": true,
+      "count": 1,
+      "why": "44 files"
+    }
+  },
+  "graph": {
+    "impact_depth": 6,
+    "taint_max_depth": 10,
+    "viewer_node_cap": 5000,
+    "backend": "auto",
+    "tree_sitter": "not installed (regex for non-Python)"
+  },
+  "consent": [
+    {
+      "id": "osv",
+      "what": "OSV.dev vulnerability lookups for exactly pinned dependencies",
+      "sends": "package names + versions to api.osv.dev",
+      "default": "no",
+      "preconsented": false
+    }
+  ],
+  "branch_rule": "main, else master, else the repo default, unless a branch is given; local repos on another branch are read as a read-only snapshot",
+  "skipped": [],
+  "warnings": [],
+  "second_pass": null,
+  "advisory_lookup": "off",
+  "not_automated": [
+    "authorization question (one question for all sources, context paths and consent items)",
+    "off-machine lookups (Snyk, OSV, Neo4j) without a yes",
+    "Neo4j writes",
+    "executing target code"
+  ],
+  "stats": {
+    "files": 44,
+    "languages": {
+      "go": 3,
+      "javascript": 2,
+      "python": 5
+    },
+    "services": 4,
+    "python_services": 1
+  }
+}
