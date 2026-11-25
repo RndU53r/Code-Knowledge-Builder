@@ -1,0 +1,149 @@
+{
+ "repo": "fulfillment",
+ "kind": "service",
+ "primary_kind": "service",
+ "secondary_kinds": [],
+ "role_counts": {
+  "build": 2,
+  "generated": 1,
+  "core": 3
+ },
+ "core_files": [
+  {
+   "path": "internal/queue/consumer.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "cmd/pricing/main.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "low",
+   "signals": [
+    "no entry-point, I/O or helper signal; default"
+   ],
+   "fan_in": 0
+  },
+  {
+   "path": "cmd/worker/main.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 0
+  }
+ ],
+ "utility_files": [],
+ "n_core": 3,
+ "n_test": 0,
+ "entry_points": [
+  {
+   "kind": "consumer",
+   "name": "consume order.created",
+   "handler": "Consume",
+   "auth": "n/a",
+   "exposure": "internal (trigger)",
+   "sources": [
+    "message_body"
+   ],
+   "citation": "fulfillment/internal/queue/consumer.go:30",
+   "label": "observed",
+   "protocol": ""
+  }
+ ],
+ "sources": [
+  {
+   "type": "cli_arg",
+   "where": "main",
+   "detail": "flag.Bool(",
+   "count": 2,
+   "citation": "fulfillment/cmd/pricing/main.go:15"
+  },
+  {
+   "type": "stdin",
+   "where": "main",
+   "detail": "os.Stdin",
+   "count": 1,
+   "citation": "fulfillment/cmd/pricing/main.go:18"
+  },
+  {
+   "type": "message_body",
+   "where": "Consume",
+   "detail": "m.Body",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:39"
+  }
+ ],
+ "sinks": [
+  {
+   "type": "sql",
+   "cwe": "CWE-89",
+   "verdict": "safe pattern",
+   "where": "main",
+   "reason": "parameterized",
+   "reached_from": [],
+   "citation": "fulfillment/cmd/worker/main.go:35",
+   "confidence": "medium"
+  }
+ ],
+ "resources": [],
+ "iac_findings": [
+  {
+   "check": "SC-D01",
+   "severity": "low",
+   "message": "base image golang:1.22 not pinned by digest",
+   "citation": "fulfillment/Dockerfile:1"
+  },
+  {
+   "check": "SC-D01",
+   "severity": "low",
+   "message": "base image gcr.io/distroless/static:nonroot not pinned by digest",
+   "citation": "fulfillment/Dockerfile:6"
+  }
+ ],
+ "pipelines": [],
+ "pipeline_findings": [],
+ "deployment": [
+  {
+   "workload": "fulfillment",
+   "deployed_in": "fulfillment",
+   "kind": "dockerfile",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": null,
+   "identity": null,
+   "env_names": 0,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "fulfillment/Dockerfile:1"
+  },
+  {
+   "workload": "fulfillment",
+   "deployed_in": "platform",
+   "kind": "compose-service",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": null,
+   "identity": null,
+   "env_names": 3,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "platform/docker-compose.yml:13"
+  }
+ ],
+ "deploy_controls": [],
+ "generated": "2026-11-25T22:12:20Z"
+}

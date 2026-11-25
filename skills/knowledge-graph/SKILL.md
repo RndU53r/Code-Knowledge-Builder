@@ -52,6 +52,7 @@ python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> <op> ...
 | `impact <target...>` or `impact --diff HEAD~1` | multi-hop blast radius, plus endpoints, sinks, threats, and findings in scope |
 | `callgraph function\|file\|repo [--repo R] [--focus X] [--depth N]` | function→function, file→file or repo→repo call graph (HTTP/gRPC resolved to handlers, topics, shared tables, subprocess, imports), each edge with citations and the weakest confidence |
 | `taint [--source X] [--sink Y]` | candidate source→unsafe-sink paths from endpoints, consumers, cron jobs, CLI commands and taint sources (candidates: confirm each hop) |
+| `agents [--repo R]` | agents, skills, commands, hooks and tools with what each calls and is called by (plugin repos and agent frameworks in code) |
 | `roles [--repo R] [--role core\|utility\|test\|iac\|pipeline...]` | repo kinds and file roles with the signals behind each label (core/utility are inferred) |
 | `entrypoints [--repo R] [--kinds endpoint,consumer,cron_job,cli_command]` | every entry point with its handler, the taint sources it reads and the unsafe sinks reachable from it |
 | `sql "SELECT ..."` | ad-hoc read-only SQL over `nodes` and `edges` |

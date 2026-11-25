@@ -6,6 +6,7 @@
 | look up a command, its arguments and what it writes | [Command reference](commands.md) |
 | understand what `/ckb:auto` decides for you, and how to steer it | [Auto mode](auto-mode.md) |
 | find a file in the `.ckb/` output and know how far to trust it | [Output reference](outputs.md) |
+| see which languages and frameworks are supported and how deeply | [Language support](languages.md) |
 | fix something that doesn't work | [Troubleshooting](troubleshooting.md) |
 | know exactly what ckb will and won't do to your repos, tokens and machine | [Security model](security-model.md) |
 | understand how the pieces fit together | [Architecture](architecture.md) |

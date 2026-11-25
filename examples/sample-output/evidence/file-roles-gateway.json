@@ -1,0 +1,68 @@
+{
+ "repo": "gateway",
+ "repo_kind": {
+  "repo_kind": "service",
+  "secondary_kinds": [],
+  "signals": [
+   "application share 60%",
+   "4 endpoint"
+  ],
+  "confidence": "high"
+ },
+ "role_counts": {
+  "build": 2,
+  "generated": 1,
+  "core": 2
+ },
+ "entry_points": {
+  "endpoint": 4
+ },
+ "files": [
+  {
+   "path": "Dockerfile",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "package-lock.json",
+   "role": "generated",
+   "confidence": "high",
+   "signals": [
+    "generated file name/lockfile"
+   ]
+  },
+  {
+   "path": "package.json",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "src/auth.js",
+   "role": "core",
+   "lang": "javascript",
+   "confidence": "medium",
+   "signals": [
+    "reached from an entry point"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "src/server.js",
+   "role": "core",
+   "lang": "javascript",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 0
+  }
+ ],
+ "truncated": false,
+ "note": "core/utility are [inferred]; signals show why. Path and content rules decide the other roles."
+}

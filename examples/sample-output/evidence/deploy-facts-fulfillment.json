@@ -1,0 +1,25 @@
+{
+ "repo": "fulfillment",
+ "workloads": [
+  {
+   "name": "fulfillment",
+   "kind": "dockerfile",
+   "source": "dockerfile",
+   "images": [],
+   "ports": [],
+   "env": [],
+   "build": ".",
+   "security": {
+    "run_as_root": false
+   },
+   "healthcheck": false,
+   "exposure": {
+    "kind": "none"
+   },
+   "citation": "fulfillment/Dockerfile:1",
+   "app_repo": "fulfillment",
+   "resolved_by": "name"
+  }
+ ],
+ "controls": []
+}

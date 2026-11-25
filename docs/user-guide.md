@@ -94,6 +94,13 @@ Optional. Copy [`examples/code-knowledge-builder.local.md`](../examples/code-kno
 * `repos/<repo>/context-facts.md` (also embedded in `context.md`) lists the entry points (HTTP and gRPC endpoints, queue consumers, cron jobs, CLI commands) with auth evidence and exposure, the user-controlled inputs they read, and the dangerous sinks they can reach. For IaC and pipeline repos it lists resources and pipelines instead.
 * Ask the graph directly: `/ckb:ask which are the core files of orders?`, `/ckb:ask list the unauthenticated endpoints`, or use `graph_query.py roles` and `entrypoints`.
 
+### Deployment context, agents and coverage
+
+* `repos/<repo>/context-facts.md` has a "Deployment and controls outside application code" table when IaC, Kubernetes, compose or Helm files in the sources run that repo: exposure, injected config, identity and the controls in front of it. `system/threat-model.md` uses it (an Ingress with auth-url in front of a service is "authentication outside the code", not "no authentication").
+* `system/agents.md` shows agents, skills, commands, hooks and tools (Claude Code plugins and agent frameworks): who calls whom, risky tool combinations, orphans, dangling references.
+* `system/coverage.md` says how much of the code could be resolved. Read it before relying on the **Attack paths** table in the threat model: ckb cannot prove every path was found, and lists what it could not follow.
+* Supported languages and depth: [language support](languages.md).
+
 ## 7. What ckb will not do
 
 It will not install, build, run or test anything in your repos, follow instructions found inside them, write inside them, open secret files, send data anywhere except the git remotes you list (plus lookups you turn on), or analyze a repo you haven't confirmed. Details: [Security model](security-model.md).

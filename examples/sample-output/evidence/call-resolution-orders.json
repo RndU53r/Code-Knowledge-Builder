@@ -1,0 +1,77 @@
+{
+ "repo": "orders",
+ "summary": {
+  "calls": 35,
+  "resolved": 6,
+  "external": 16,
+  "ambiguous": 0,
+  "dynamic": 0,
+  "unresolved": 13,
+  "resolved_pct": 62.9
+ },
+ "by_language": {
+  "py": {
+   "external": 16,
+   "unresolved": 13,
+   "resolved": 6
+  }
+ },
+ "top_unresolved": [
+  {
+   "name": "conn.cursor",
+   "count": 2,
+   "citation": "orders/app/db.py:13"
+  },
+  {
+   "name": "cur.execute",
+   "count": 2,
+   "citation": "orders/app/db.py:14"
+  },
+  {
+   "name": "conn.commit",
+   "count": 1,
+   "citation": "orders/app/db.py:18"
+  },
+  {
+   "name": "cur.fetchone",
+   "count": 1,
+   "citation": "orders/app/db.py:24"
+  },
+  {
+   "name": "int",
+   "count": 1,
+   "citation": "orders/app/main.py:10"
+  },
+  {
+   "name": "str",
+   "count": 1,
+   "citation": "orders/app/main.py:30"
+  },
+  {
+   "name": "len",
+   "count": 1,
+   "citation": "orders/app/main.py:27"
+  },
+  {
+   "name": "i.model_dump",
+   "count": 1,
+   "citation": "orders/app/main.py:29"
+  },
+  {
+   "name": "ch.exchange_declare",
+   "count": 1,
+   "citation": "orders/app/events.py:17"
+  },
+  {
+   "name": "ch.basic_publish",
+   "count": 1,
+   "citation": "orders/app/events.py:24"
+  },
+  {
+   "name": "RuntimeError",
+   "count": 1,
+   "citation": "orders/app/pricing.py:12"
+  }
+ ],
+ "note": "resolved = an in-repo target was found; external = a library call (see calls_lib edges); ambiguous = several candidates; dynamic = receiver is an arbitrary expression; unresolved = no candidate. None of these are silently dropped."
+}

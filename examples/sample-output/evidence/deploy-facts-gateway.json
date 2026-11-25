@@ -1,0 +1,25 @@
+{
+ "repo": "gateway",
+ "workloads": [
+  {
+   "name": "gateway",
+   "kind": "dockerfile",
+   "source": "dockerfile",
+   "images": [],
+   "ports": [],
+   "env": [],
+   "build": ".",
+   "security": {
+    "run_as_root": false
+   },
+   "healthcheck": false,
+   "exposure": {
+    "kind": "none"
+   },
+   "citation": "gateway/Dockerfile:1",
+   "app_repo": "gateway",
+   "resolved_by": "name"
+  }
+ ],
+ "controls": []
+}

@@ -12,6 +12,7 @@ Usage:
   graph_query.py --out OUT_DIR impact <target ...> [--diff REV] [--depth 6]
   graph_query.py --out OUT_DIR taint [--source ID] [--sink ID] [--max-depth 10]
   graph_query.py --out OUT_DIR callgraph [function|file|repo] [--repo R] [--focus X] [--depth N]
+  graph_query.py --out OUT_DIR agents [--repo R]
   graph_query.py --out OUT_DIR roles [--repo R] [--role core|utility|test|iac|pipeline|...] [--limit N]
   graph_query.py --out OUT_DIR entrypoints [--repo R] [--kinds endpoint,consumer,cron_job,cli_command] [--limit N]
   graph_query.py --out OUT_DIR tour [name]
@@ -39,7 +40,7 @@ from graph_common import graph_dir, resolve_out  # noqa: E402
 DEPENDENCY_REVERSE = {"calls", "imports", "routes_to", "http_calls", "grpc_calls", "spawns", "inherits", "implements",
                       "overrides", "uses_type", "references", "tested_by_rev"}
 SECURITY_KINDS = {"endpoint", "sink", "threat", "sc_finding", "cspm_finding", "trust_boundary", "drift", "taint_source"}
-TAINT_FORWARD = {"routes_to", "calls", "http_calls", "grpc_calls", "spawns", "reaches_sink", "flows_to", "publishes", "consumes", "contains"}
+TAINT_FORWARD = {"routes_to", "calls", "http_calls", "grpc_calls", "spawns", "reaches_sink", "flows_to", "publishes", "consumes", "contains", "references", "dispatches", "invokes", "ffi"}
 
 
 class GraphStore:
@@ -296,7 +297,7 @@ class GraphStore:
         return res
 
     def taint(self, source=None, sink=None, max_depth=10, limit=25):
-        order = {"endpoint": 0, "consumer": 1, "cli_command": 1, "cron_job": 1, "taint_source": 2}
+        order = {"endpoint": 0, "consumer": 1, "cli_command": 1, "cron_job": 1, "agent": 1, "command": 1, "taint_source": 2}
         srcs = self.resolve(source) if source else sorted((nid for nid, n in self.nodes.items() if n["kind"] in order), key=lambda x: order[self.nodes[x]["kind"]])
         seen_paths = set()
         sinks = set(self.resolve(sink)) if sink else {nid for nid, n in self.nodes.items()
@@ -377,6 +378,23 @@ class GraphStore:
             if len(out) >= limit:
                 break
         return {"entrypoints": out, "note": "sink reachability is a candidate path over the call graph, not proven dataflow"}
+
+    def agents(self, repo=None, limit=200):
+        """Agents, skills, commands, hooks and tools with what each calls and is called by (agent_graph.py)."""
+        kinds = {"agent", "skill", "command", "hook", "mcp_tool"}
+        rows = []
+        for nid, n in sorted(self.nodes.items(), key=lambda kv: (kv[1]["kind"], kv[1]["name"])):
+            if n["kind"] not in kinds or (repo and n.get("repo") != repo):
+                continue
+            calls = sorted({self.nodes[e["dst"]]["name"] if e["dst"] in self.nodes else e["dst"] for e in self.forward_edges(nid) if e["kind"] in ("dispatches", "invokes")})
+            by = sorted({self.nodes[e["src"]]["name"] for e in self.in_adj.get(nid, []) if e["kind"] in ("dispatches", "invokes") and e["src"] in self.nodes})
+            rows.append({**self.brief(nid), "tools": (n.get("attrs") or {}).get("tools", []), "calls": calls, "called_by": by, "framework": (n.get("attrs") or {}).get("framework")})
+            if len(rows) >= limit:
+                break
+        return {"agents": rows, "note": "static text matching; see system/agents.md for orphans, dangling references and risk flags"}
+
+    def forward_edges(self, nid):
+        return [e for e, _ in ((e, None) for e in self.out_adj.get(nid, []))]
 
     def tour(self, name=None):
         if not self.tours:
@@ -466,6 +484,7 @@ class GraphStore:
                "callgraph": lambda: self.callgraph(args.get("level", "repo"), args.get("repo"), args.get("focus"), int(args.get("depth", 2)), int(args.get("limit", 200))),
                "roles": lambda: self.roles(args.get("repo"), args.get("role"), int(args.get("limit", 200))),
                "entrypoints": lambda: self.entrypoints(args.get("repo"), args.get("kinds"), int(args.get("limit", 100))),
+               "agents": lambda: self.agents(args.get("repo"), int(args.get("limit", 200))),
                "tour": lambda: self.tour(args.get("name")), "subgraph": lambda: self.subgraph(args.get("ids"), args.get("kinds")),
                "sql": lambda: self.sql(args["query"]), "cypher": lambda: self.cypher(args["query"])}
         if op not in ops:
@@ -507,6 +526,7 @@ def main() -> int:
         "callgraph": {"level": p[0] if p else "repo", "repo": a.repo, "focus": a.focus, "depth": a.depth or 2, "limit": a.limit if a.limit != 20 else 200},
         "roles": {"repo": a.repo, "role": a.role, "limit": a.limit if a.limit != 20 else 200},
         "entrypoints": {"repo": a.repo, "kinds": kinds, "limit": a.limit if a.limit != 20 else 100},
+        "agents": {"repo": a.repo, "limit": a.limit if a.limit != 20 else 200},
         "tour": {"name": p[0] if p else None}, "sql": {"query": " ".join(p)}, "cypher": {"query": " ".join(p)}, "status": {},
     }
     print(json.dumps(store.dispatch(a.op, argmap.get(a.op, {})), indent=2, default=str))

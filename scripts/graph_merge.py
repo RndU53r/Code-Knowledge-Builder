@@ -34,7 +34,8 @@ from verify_citations import CITE, Verifier  # noqa: E402
 
 # Node kinds an agent may add (structural code nodes come only from extractors).
 LLM_NODE_KINDS = {"threat", "trust_boundary", "asset", "drift", "service", "external", "contract_op", "doc_section",
-                  "queue", "topic", "table", "bucket", "cache", "endpoint", "consumer", "taint_source"}
+                  "queue", "topic", "table", "bucket", "cache", "endpoint", "consumer", "taint_source",
+                  "agent", "skill", "command", "hook", "mcp_tool"}
 assert LLM_NODE_KINDS <= NODE_KINDS
 
 
@@ -120,8 +121,10 @@ def edge_from(obj):
     label = obj.get("label", "inferred")
     if conf == "low" and label == "observed":
         label = "inferred"
+    attrs = obj.get("attrs")
+    extra = {"attrs": {str(k)[:40]: (safe_str(v, 160) if isinstance(v, str) else v) for k, v in attrs.items() if isinstance(v, (str, int, float, bool, list))}} if isinstance(attrs, dict) else {}
     return make_edge(obj["src"], obj["kind"], obj["dst"], obj["citation"], extractor=obj.get("_extractor", "llm"), confidence=conf, label=label,
-                     quote=obj["quote"], dst_citation=obj.get("dst_citation"), rationale=obj.get("rationale"))
+                     quote=obj["quote"], dst_citation=obj.get("dst_citation"), rationale=obj.get("rationale"), **extra)
 
 
 def process(out: Path, files, known: set, apply=None):

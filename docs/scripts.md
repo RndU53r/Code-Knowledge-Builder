@@ -128,7 +128,8 @@ Backends (provenance recorded on every node/edge):
   ast          Python files via the stdlib `ast` module (always available)
   tree-sitter  other languages, only if `tree_sitter_language_pack` or `tree_sitter_languages` is already
                installed (ckb never installs it); falls back to regex on any error
-  regex        everything else (JS/TS, Go, Java, ...): function spans, routes, calls, env, SQL, queues
+  regex        every other language, driven by the per-language specs in lang_specs.py: declarations and class spans, typed receivers,
+               calls, imports, inheritance, routes, sources, sinks, env, SQL, queues (tree-sitter is only used for languages without a spec)
 
 Writes <out>/graph/fragments/<key>/<sha256-of-path>.json, one per source file, containing nodes, edges
 (intra-file, resolved) and refs (cross-file references the linker resolves in graph_build.py).
@@ -201,6 +202,54 @@ Actions SC-C01..C05 and GitLab CI):
   PF05 secret-like variable echoed
 
 Writes <out>/evidence/pipeline-facts-<repo>.json. Heuristic, line-based (no YAML parser); results are [inferred].
+```
+
+### `deploy_facts.py`
+
+```text
+Deployment, configuration and controls outside application code, from IaC, containers, Kubernetes, compose and gateway config.
+Reads files only; never runs a deployment tool or contacts a cluster.
+
+Usage:
+  deploy_facts.py --out OUT_DIR [--repo KEY]
+
+Per repo that holds deployment content it records, with citations:
+  workloads   compose services, Kubernetes Deployment/StatefulSet/DaemonSet/Job/CronJob, Helm values and templates, ECS task
+              definitions, Lambda functions, Dockerfiles: image, ports, injected environment (name + where the value comes from;
+              literal values only for non-secret names), identity (service account / IAM role), replicas, security context
+  exposure    Service type, Ingress hosts and TLS, load balancers and listeners, security-group rules, API gateway routes
+  controls    gateway/ingress authentication (authorizers, auth-url, oauth2-proxy), WAF, mTLS / mesh policy, NetworkPolicy,
+              private endpoints, rate limits and IP allowlists, TLS settings, secret stores
+Each workload is linked to the application repo it runs (image name, build context, chart name, name equality) when that repo is
+registered. Writes evidence/deploy-facts-<repo>.json and graph/proposals/seed-deploy.jsonl (service nodes, `deploys` and
+`configured_by` edges, extractor "rule"). Line-based and heuristic: results are [inferred].
+```
+
+### `agent_graph.py`
+
+```text
+Agent, skill, command, hook and tool graph for every registered repo. Reads files only; never runs an agent or a tool.
+
+Usage:
+  agent_graph.py --out OUT_DIR [--repo KEY]
+
+Two kinds of repo are understood:
+
+  Claude Code plugins / agent definitions   agents/*.md, skills/*/SKILL.md, commands/*.md (and the .claude/ equivalents),
+      hooks/hooks.json, .mcp.json, plugin.json. Nodes: agent, skill, command, hook, mcp_tool. Edges: `dispatches`
+      (command/skill/agent -> agent/skill/command: `ns:name` tokens, "follow the X skill", `/ns:name`, Agent/Skill in the
+      tool list), `invokes` (-> a script file via ${CLAUDE_PLUGIN_ROOT}/scripts/x.py, a hook -> its script). References
+      are resolved against the name index of the repo, so a token that is not an agent/skill/command (for example an HTML
+      comment marker) never becomes an edge; HTML comments are ignored.
+  Agent frameworks in code                  LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, Claude Agent SDK, MCP servers
+      (FastMCP, server.tool), tool/function registrations. Nodes: agent, mcp_tool. Edges: `dispatches` agent -> agent
+      (graph edges, handoffs, group chats, sub-agents), `invokes` agent -> the tool function it registers.
+
+Writes
+  <out>/graph/proposals/seed-agents.jsonl   nodes and edges (extractor "rule"), verified by graph_merge.py like any proposal
+  <out>/evidence/agent-graph-<repo>.json    nodes, edges, tools per agent, orphans, dangling references
+  <out>/system/agents.md                    agents/skills/commands/tools, who calls whom, risk flags, orphans and dangling names
+Static text matching: edges are `observed` where the text is explicit and medium confidence where the name is resolved from prose.
 ```
 
 ## Graph
@@ -298,6 +347,24 @@ Levels
 
 Every row keeps the citations of the edges it summarizes and the weakest confidence along the way.
 Writes <out>/graph/callgraph.json, <out>/system/call-graphs.md, <out>/diagrams/callgraph-*.mmd.
+```
+
+### `coverage_report.py`
+
+```text
+How completely ckb resolved the code, so gaps are visible instead of silent. Reads the graph and evidence only.
+
+Usage:
+  coverage_report.py --out OUT_DIR
+
+Per repo and language it reports: files by extractor, call-resolution counts (resolved / external library / ambiguous / dynamic /
+unresolved, with the top unresolved names), entry points, the functions reachable from an entry point over calls, references,
+route/handler, agent dispatch and FFI edges versus the ones that are NOT (dead code, library API, or reached only through dynamic
+dispatch), classes nothing instantiates or references, dynamic-dispatch hotspots (reflection, eval, getattr, dynamic require,
+DI lookups) with citations, and how many unsafe sinks no entry point reaches (dormant) versus how many are reached.
+
+Writes <out>/system/coverage.md and <out>/evidence/coverage.json. Static analysis cannot prove "all paths": this report says how much
+was resolved and where the blind spots are. The threat model reads it to downgrade confidence and to list hotspots as unknown risk.
 ```
 
 ### `threat_seed.py`
@@ -410,6 +477,7 @@ Usage:
   graph_query.py --out OUT_DIR impact <target ...> [--diff REV] [--depth 6]
   graph_query.py --out OUT_DIR taint [--source ID] [--sink ID] [--max-depth 10]
   graph_query.py --out OUT_DIR callgraph [function|file|repo] [--repo R] [--focus X] [--depth N]
+  graph_query.py --out OUT_DIR agents [--repo R]
   graph_query.py --out OUT_DIR roles [--repo R] [--role core|utility|test|iac|pipeline|...] [--limit N]
   graph_query.py --out OUT_DIR entrypoints [--repo R] [--kinds endpoint,consumer,cron_job,cli_command] [--limit N]
   graph_query.py --out OUT_DIR tour [name]
@@ -580,3 +648,4 @@ Imported by the scripts above; not run directly.
 * `graph_common.py`: Shared definitions for the ckb knowledge graph: schema, IDs, validation, safe strings.
 * `graph_security.py`: Security layer for the ckb knowledge graph (imported by graph_build.py).
 * `graph_patterns.py`: Entry-point, taint-source and sink patterns for the regex extractor (every language except the Python AST path).
+* `lang_specs.py`: Per-language parsing specs for the regex extractor: declarations, class spans, calls, imports, variable types, inheritance.

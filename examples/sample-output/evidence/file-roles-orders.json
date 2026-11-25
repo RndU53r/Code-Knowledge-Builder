@@ -1,0 +1,91 @@
+{
+ "repo": "orders",
+ "repo_kind": {
+  "repo_kind": "service",
+  "secondary_kinds": [],
+  "signals": [
+   "application share 90%",
+   "2 endpoint"
+  ],
+  "confidence": "high"
+ },
+ "role_counts": {
+  "build": 1,
+  "docs": 1,
+  "other": 1,
+  "core": 4
+ },
+ "entry_points": {
+  "endpoint": 2
+ },
+ "files": [
+  {
+   "path": "Dockerfile",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "requirements.txt",
+   "role": "docs",
+   "confidence": "high",
+   "signals": [
+    "documentation"
+   ]
+  },
+  {
+   "path": "app/__init__.py",
+   "role": "other",
+   "sub": "unparsed",
+   "lang": "python",
+   "confidence": "low",
+   "signals": [
+    "no graph node (empty file or language without an extractor)"
+   ]
+  },
+  {
+   "path": "app/db.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "app/events.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "app/main.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 0
+  },
+  {
+   "path": "app/pricing.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  }
+ ],
+ "truncated": false,
+ "note": "core/utility are [inferred]; signals show why. Path and content rules decide the other roles."
+}

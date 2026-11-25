@@ -81,7 +81,7 @@
   const FULL = DATA.graph;
   if (DATA.callgraph) {
     $("levelbox").hidden = false;
-    for (const [lv, label] of [["repo", "Repo → repo"], ["file", "File → file"], ["function", "Function → function"]]) {
+    for (const [lv, label] of [["repo", "Repo → repo"], ["file", "File → file"], ["function", "Function → function"], ["class", "Class → class"], ["library", "Library calls"]]) {
       if (DATA.callgraph[lv] && DATA.callgraph[lv].nodes.length) { const o = el("option", label); o.value = lv; $("level").append(o); }
     }
     $("level").addEventListener("change", () => {

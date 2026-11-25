@@ -10,7 +10,9 @@ Everything ckb writes goes under the output directory (default `<target>/.ckb`).
     data-flows.md                   cross-repo edges (REST/gRPC/queues/shared stores/contracts/polyglot) + sequence diagrams
     call-graphs.md                  function→function, file→file, repo→repo call graphs with citations + Mermaid
     outputs-and-conditions.md       cross-repo outputs and conditions that affect more than one repo
-    threat-model.md                 STRIDE threat model (draft first, then refined)
+    threat-model.md                 STRIDE threat model (draft first, then refined) with attack paths, deployment context, library reachability, agent threats and a coverage section
+    coverage.md                     how much was resolved and where the blind spots are
+    agents.md                       agents, skills, commands, hooks and tools: who calls whom, risk flags, orphans, dangling references
     documented-vs-observed.md       what your documents claim vs what the code/IaC shows, per claim
     context.md                      system-level scanner context (9 sections + front matter)
     supply-chain-report.md          cross-repo ranking of supply-chain and injection findings
@@ -49,6 +51,10 @@ Everything ckb writes goes under the output directory (default `<target>/.ckb`).
     file-roles-<repo>.json          every file with its role, signals, confidence and fan-in, plus the repo kind
     pipeline-facts-<repo>.json      CI/CD pipelines: triggers, runners, secrets (names), third-party code, deploy steps, findings PF01-PF05
     context-facts-<repo>.json       the rows behind context-facts.md (machine-readable)
+    call-resolution-<repo>.json     calls resolved / library / ambiguous / dynamic / unresolved per language, top unresolved names with citations
+    deploy-facts-<repo>.json        workloads, exposure, injected config (names; secret values never stored), identities, controls outside the code, repo links
+    agent-graph-<repo>.json         agents, skills, commands, hooks, tools, their edges, orphans, dangling references, risk flags
+    coverage.json                   resolution, reachability, dynamic-dispatch hotspots and dormant sinks per repo
     context/ctx-*/                  converted documents, diagrams, scan exports (each cited as ctx-*/file:line)
     hashes.json                     content hashes used by /ckb:update
 ```
@@ -89,3 +95,10 @@ Nodes (files, functions, endpoints, topics, tables, env vars, cloud resources, s
 * **Repo kind**: `application`, `service`, `library`, `iac`, `cicd-pipeline`, `gitops-config`, `docs`, `tooling`, `config` or `mixed` (primary plus secondary kinds). It decides which tables `context-facts.md` contains: entry points, sources and sinks for code repos; provisioned resources and exposure for IaC and GitOps repos; pipelines with triggers, runners, secrets, third-party code and deploy gates for CI/CD repos.
 * **Facts blocks in `context.md`** sit between `<!-- ckb:facts:begin ... -->` and `<!-- ckb:facts:end -->`. Do not edit them; re-run `context_facts.py` and re-embed. `check_outputs.py` (F1) flags a block that was edited or is stale.
 * Source-to-sink links are **candidate paths** over the call graph, not proven dataflow. Entry points and sinks outside Python are regex-based (confidence `medium` or `low`).
+
+## Call resolution, deployment context, agents and coverage
+
+* **Call resolution** (`evidence/call-resolution-<repo>.json`): every call reference is classified as resolved, library (external package, also an edge `calls_lib` with the API names), ambiguous, dynamic (receiver is an arbitrary expression) or unresolved. The percentages and the top unresolved names are the honest measure of how complete the call graph is.
+* **Deployment context** (`evidence/deploy-facts-<repo>.json`, the "Deployment and controls outside application code" block in `context.md`): where each workload runs, how it is exposed (Ingress host, LoadBalancer, open security group), what is injected (environment names and where values come from), its identity, and the controls in front of it (ingress auth, WAF, NetworkPolicy, mesh policy). It changes the threat model: authentication outside the code is annotated, not reported as missing; a public workload with nothing in front of it is rated up; deployed toggle values replace code defaults.
+* **Agents** (`system/agents.md`): static text matching of frontmatter, hook and MCP configuration, prose references resolved against a name index, and framework signatures in code. Edges are `[inferred]` unless the text is explicit.
+* **Coverage** (`system/coverage.md`): read it before trusting the attack paths. Low resolution or many dynamic-dispatch hotspots mean paths are likely missing.

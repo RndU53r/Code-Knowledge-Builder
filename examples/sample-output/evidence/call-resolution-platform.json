@@ -1,0 +1,15 @@
+{
+ "repo": "platform",
+ "summary": {
+  "calls": 0,
+  "resolved": 0,
+  "external": 0,
+  "ambiguous": 0,
+  "dynamic": 0,
+  "unresolved": 0,
+  "resolved_pct": null
+ },
+ "by_language": {},
+ "top_unresolved": [],
+ "note": "resolved = an in-repo target was found; external = a library call (see calls_lib edges); ambiguous = several candidates; dynamic = receiver is an arbitrary expression; unresolved = no candidate. None of these are silently dropped."
+}

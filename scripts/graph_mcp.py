@@ -40,6 +40,8 @@ TOOLS = [
     {"name": "ckb_callgraph", "op": "callgraph", "description": "Call graph rolled up at function, file or repo level (HTTP/gRPC, topics, shared tables, subprocess, imports), optionally for one repo or around a focus node. Every edge carries citations and confidence.",
      "inputSchema": {"type": "object", "properties": {"level": {"type": "string", "enum": ["function", "file", "repo"]}, "repo": {"type": "string"},
                                                       "focus": {"type": "string"}, "depth": {"type": "integer"}, "limit": {"type": "integer"}, **OUT_PROP}}},
+    {"name": "ckb_agents", "op": "agents", "description": "Agents, skills, commands, hooks and tools (Claude Code plugins and agent frameworks in code) with what each calls and is called by. Static text matching.",
+     "inputSchema": {"type": "object", "properties": {"repo": {"type": "string"}, "limit": {"type": "integer"}, **OUT_PROP}}},
     {"name": "ckb_roles", "op": "roles", "description": "Repo kinds (application, service, library, iac, cicd-pipeline, gitops-config, mixed) and file roles (core, utility, test, fixture, iac, pipeline, generated, ...). core/utility are inferred; each row lists its signals.",
      "inputSchema": {"type": "object", "properties": {"repo": {"type": "string"}, "role": {"type": "string"}, "limit": {"type": "integer"}, **OUT_PROP}}},
     {"name": "ckb_entrypoints", "op": "entrypoints", "description": "Entry points (HTTP/gRPC endpoints, queue consumers, cron jobs, CLI commands) with handler, taint sources read and unsafe sinks reachable from each. Reachability is a candidate path, not proven dataflow.",

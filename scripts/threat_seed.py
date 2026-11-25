@@ -39,7 +39,7 @@ RANK = {"low": 1, "medium": 2, "high": 3}
 INV = {1: "low", 2: "medium", 3: "high"}
 AUTH_RX = re.compile(r"(?i)(require_?auth|requires?_?login|login_required|authenticate|authorize|authorized|jwt|bearer|oauth|\bauth\b|current_?user|get_current|"
                      r"depends\(.*(user|auth|token)|verify_?token|check_?permission|has_?role|require_?role|@secured|@preauthorize|@rolesallowed|isauthenticated|passport\.|session\.user|"
-                     r"\[authorize|before_action\s*:\s*authenticate|authenticate_user!|->middleware\(\s*['\"](auth|can|verified)|auth:(api|sanctum)|@useguards|permission_classes|"
+                     r"authori[sz]ation|auth\w*(middleware|guard|layer|filter|interceptor)|\[authorize|before_action\s*:\s*authenticate|authenticate_user!|->middleware\(\s*['\"](auth|can|verified)|auth:(api|sanctum)|@useguards|permission_classes|"
                      r"isauthenticated|requires_auth|verify_jwt|jwt_required|@permission_required|@loginrequired|hasauthority|hasrole|\.authorizerequests|\.authenticated\(\))")
 CLASS_AUTH_RX = re.compile(r"(?i)(before_action\s*:\s*authenticate|@PreAuthorize|\[Authorize[\](]|@UseGuards|->middleware\(\s*['\"]auth|permission_classes|@Secured|@RolesAllowed|authenticate_user!|\.authenticated\(\))")
 ANON_RX = re.compile(r"(?i)(\[AllowAnonymous\]|skip_before_action\s*:\s*authenticate|@PermitAll|permitAll\(\)|@Public\(\)|AllowAny)")
@@ -54,14 +54,18 @@ CWE = {"sql": ("CWE-89", "A03:2021 Injection"), "command": ("CWE-78", "A03:2021 
        "code": ("CWE-94", "A03:2021 Injection"), "deserialization": ("CWE-502", "A08:2021 Software and Data Integrity Failures"),
        "template": ("CWE-1336", "A03:2021 Injection"), "xss": ("CWE-79", "A03:2021 Injection"), "path": ("CWE-22", "A01:2021 Broken Access Control"),
        "redirect": ("CWE-601", "A01:2021 Broken Access Control"), "nosql": ("CWE-943", "A03:2021 Injection"), "ldap": ("CWE-90", "A03:2021 Injection"),
-       "xpath": ("CWE-643", "A03:2021 Injection"), "xxe": ("CWE-611", "A05:2021 Security Misconfiguration")}
+       "xpath": ("CWE-643", "A03:2021 Injection"), "xxe": ("CWE-611", "A05:2021 Security Misconfiguration"),
+       "memory": ("CWE-787", "A06:2021 Vulnerable and Outdated Components"), "format": ("CWE-134", "A03:2021 Injection"),
+       "tls": ("CWE-295", "A02:2021 Cryptographic Failures"), "unsafe_code": ("CWE-119", "A04:2021 Insecure Design")}
 SINK_TITLE = {"sql": "SQL injection", "command": "COMMAND injection", "ssrf": "SSRF injection", "code": "CODE injection", "deserialization": "DESERIALIZATION injection",
               "template": "Template injection", "xss": "Cross-site scripting", "path": "Path traversal", "redirect": "Open redirect", "nosql": "NoSQL injection",
-              "ldap": "LDAP injection", "xpath": "XPath injection", "xxe": "XML external entity processing"}
+              "ldap": "LDAP injection", "xpath": "XPath injection", "xxe": "XML external entity processing", "memory": "Memory-unsafe operation",
+              "format": "Format string", "tls": "Disabled TLS verification", "unsafe_code": "Unsafe code block"}
 SINK_STRIDE = {"sql": "Tampering / Information disclosure", "deserialization": "Tampering / Information disclosure", "command": "Elevation of privilege",
                "code": "Elevation of privilege", "template": "Elevation of privilege", "xss": "Spoofing / Information disclosure", "path": "Information disclosure / Tampering",
                "redirect": "Spoofing", "nosql": "Tampering / Information disclosure", "ldap": "Tampering / Information disclosure", "xpath": "Information disclosure",
-               "xxe": "Information disclosure", "ssrf": "Information disclosure"}
+               "xxe": "Information disclosure", "ssrf": "Information disclosure", "memory": "Elevation of privilege", "format": "Information disclosure",
+               "tls": "Spoofing / Information disclosure", "unsafe_code": "Elevation of privilege"}
 SINK_CONTROL = {"sql": "Use parameterized queries / ORM bindings; validate id formats.", "command": "Avoid shells; pass argument arrays; allowlist inputs.",
                 "ssrf": "Allowlist destination hosts; block link-local/metadata addresses; do not take URLs from requests.",
                 "code": "Remove eval/exec on inputs; use safe parsers.", "deserialization": "Use safe formats (JSON) and type allowlists.",
@@ -69,7 +73,9 @@ SINK_CONTROL = {"sql": "Use parameterized queries / ORM bindings; validate id fo
                 "path": "Resolve and check the final path stays under an allowed base directory; use generated file ids, not client paths.",
                 "redirect": "Redirect only to allowlisted or relative targets.", "nosql": "Validate operator-free input types; use typed query builders.",
                 "ldap": "Escape filter and DN values or use parameterized LDAP APIs.", "xpath": "Use parameterized XPath or escape values.",
-                "xxe": "Disable DTDs and external entities in the parser."}
+                "xxe": "Disable DTDs and external entities in the parser.", "memory": "Use bounded APIs (snprintf, strncpy, std::string) and validate lengths.",
+                "format": "Pass untrusted data as an argument, never as the format string.", "tls": "Keep certificate and hostname verification on.",
+                "unsafe_code": "Keep unsafe blocks minimal, audited and covered by tests."}
 CLOUD_CHECK = {"SC-D07": ("CWE-284", "Information disclosure", "Public cloud storage or service", "Block public access; require authenticated access",
                           "A01:2021 Broken Access Control", "high", "high"),
                "SC-D08": ("CWE-269", "Elevation of privilege", "Wildcard IAM permissions", "Replace wildcard actions with least-privilege, resource-scoped permissions",
@@ -108,6 +114,16 @@ class Ctx:
         for e in self.store.edges:
             if e["kind"] == "routes_to":
                 self.handler.setdefault(e["src"], []).append(e["dst"])
+        self.deploy, self.deploy_all = {}, {}  # app repo -> workloads that run it; deploy repo -> its facts
+        for p in sorted((out / "evidence").glob("deploy-facts-*.json")):
+            try:
+                d = json.loads(p.read_text())
+            except ValueError:
+                continue
+            self.deploy_all[d["repo"]] = d
+            for w in d.get("workloads", []):
+                if w.get("app_repo"):
+                    self.deploy.setdefault(w["app_repo"], []).append({**w, "deploy_repo": d["repo"]})
 
     def lines(self, repo: str, path: str):
         key = (repo, path)
@@ -139,7 +155,27 @@ class Ctx:
     def file_text(self, repo: str, path: str) -> str:
         return "\n".join(self.lines(repo, path))
 
+    def repo_of_entry(self, node_id: str) -> str:
+        n = self.nodes.get(node_id, {})
+        return n.get("repo") if n.get("repo") not in (None, "_system", "") else (n.get("citation", "").split("/", 1)[0])
+
+    def external_auth(self, endpoint_id: str):
+        """An authentication control outside the code (gateway/ingress auth, mesh policy, API gateway authorizer) in front of the workload that runs this endpoint."""
+        for w in self.deploy.get(self.repo_of_entry(endpoint_id), []):
+            for ctl in w.get("external_controls", []):
+                if ctl["kind"] in ("gateway-auth", "mesh-auth", "jwt-auth", "mtls"):
+                    return {**ctl, "workload": w["name"]}
+        return None
+
     def exposure(self, endpoint_id: str) -> tuple[str, str]:
+        ws = self.deploy.get(self.repo_of_entry(endpoint_id), [])
+        pub = [w for w in ws if (w.get("exposure") or {}).get("public")]
+        if pub:
+            ex = pub[0]["exposure"]
+            via = ("ingress " + ", ".join(ex.get("hosts", [])[:2])) if ex.get("hosts") else ex.get("kind", "public")
+            return "public", f"deployed as {pub[0]['name']} ({via}; {ex.get('citation') or pub[0]['citation']})"
+        if ws and all((w.get("exposure") or {}).get("kind") in ("cluster-internal", "none") for w in ws):
+            return "internal", f"deployed as {ws[0]['name']} with no public Service/Ingress ({ws[0]['citation']})"
         callers = [e for e in self.in_http.get(endpoint_id, []) if self.nodes.get(e["src"], {}).get("repo") != self.nodes[endpoint_id].get("repo")]
         if callers:
             names = sorted({self.nodes[e["src"]]["repo"] for e in callers if e["src"] in self.nodes})
@@ -177,18 +213,20 @@ def rule_taint(c: Ctx, threats):
         src = c.nodes[p["source"]["id"]]
         if src["kind"] == "endpoint":
             exp, why = c.exposure(src["id"])
+        elif src["kind"] in ("agent", "command"):
+            exp, why = "internal", "LLM-directed agent: its input and tool arguments can be shaped by untrusted text"
         elif src["kind"] == "consumer":
             exp, why = "internal", "message consumer"
         elif src["kind"] in ("cli_command", "cron_job"):
             exp, why = "internal", "local command or scheduled job"
         else:
             exp, why = "internal", "input read inside a handler"
-        lik = "high" if exp == "public-candidate" and p["label"] == "observed-path" else "medium"
+        lik = "high" if exp in ("public-candidate", "public") and p["label"] == "observed-path" else "medium"
         safe = safe_by.get((stype, sink["repo"]), [])
         hop_cites = [h["citation"] for h in p["hops"]][:6]
         add(threats, component=f"{src['name']} → {sink['name']}", stride=SINK_STRIDE.get(stype, "Information disclosure"),
             title=f"{SINK_TITLE.get(stype, stype)} path from {src['name']} to an unsafe sink",
-            cwe=CWE[stype][0], owasp=CWE[stype][1], likelihood=lik, impact="high",
+            cwe=CWE[stype][0], owasp=CWE[stype][1] + ("; OWASP LLM Top 10: LLM05 improper output handling, LLM06 excessive agency" if src["kind"] in ("agent", "command") else ""), likelihood=lik, impact="high",
             evidence=[sink["citation"]] + hop_cites[:2], primary=sink["citation"], target=sink["id"],
             mitigations=[f"A safe pattern exists elsewhere in {sink['repo']}: `{s['citation']}` ({(s.get('attrs') or {}).get('reason')})" for s in safe[:1]],
             gaps=f"{(sink.get('attrs') or {}).get('reason', 'unsafe construction')}; endpoint exposure: {exp} ({why}). Taint is a candidate path: confirm the input reaches the sink.",
@@ -260,9 +298,18 @@ def rule_auth(c: Ctx, threats):
         if n_added >= 25:
             break
         exp, why = c.exposure(ep["id"])
+        ext = c.external_auth(ep["id"])
+        if ext:
+            add(threats, component=ep["name"], stride="Spoofing / Elevation of privilege", title=f"Authentication for {ep['name']} lives outside the application code ({ext['kind']})",
+                cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="low", impact="medium", evidence=[ep["citation"], ext["citation"]], primary=ep["citation"],
+                target=hs[0] if hs else ep["id"], mitigations=[f"{ext['kind']} on workload {ext['workload']}: {ext['detail']} ({ext['citation']})"],
+                gaps="No authentication was found in the code. An external control provides it at the edge; confirm it covers this route, that internal callers cannot bypass it, and that the service rejects requests that did not pass through it.",
+                control="Defence in depth: verify the identity assertion in the service as well (signed token), and block direct access to the workload.", label="inferred", confidence="medium")
+            n_added += 1
+            continue
         reaches_sink = any(e["kind"] == "reaches_sink" for h in hs for e in c.store.out_adj.get(h, []))
         add(threats, component=ep["name"], stride="Spoofing / Elevation of privilege", title=f"No authentication evidence on {ep['name']}",
-            cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="high" if exp == "public-candidate" else "medium",
+            cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="high" if exp in ("public-candidate", "public") else "medium",
             impact="high" if reaches_sink else "medium", evidence=[ep["citation"]], primary=ep["citation"], target=hs[0] if hs else ep["id"],
             gaps=f"No auth middleware, decorator, or role check found on the route or its handler chain (exposure: {exp}: {why}). Global middleware or gateway-level auth would not be seen here.",
             control="Authenticate and authorize in the service itself (do not rely on network position); deny by default.", confidence="medium")
@@ -275,11 +322,161 @@ def rule_switches(c: Ctx, threats):
             continue
         line = c.line(n["citation"]) or ""
         users = [e["src"] for e in c.store.in_adj.get(n["id"], []) if e["kind"] == "reads_env"]
-        add(threats, component=f"{n['repo']} env {n['name']}", stride="Elevation of privilege", title=f"Security control can be switched off by environment variable {n['name']}",
-            cwe="CWE-1188", owasp="A05:2021 Security Misconfiguration", likelihood="medium", impact="high", evidence=[n["citation"]], primary=n["citation"],
+        dep = [e for e in c.store.out_adj.get(n["id"], []) if e["kind"] == "configured_by"]
+        dval = next(((e.get("attrs") or {}).get("value"), e["citation"]) for e in dep[:1]) if dep and (dep[0].get("attrs") or {}).get("value") is not None else None
+        on = bool(dval and str(dval[0]).strip().lower() in ("true", "1", "yes", "on") and re.search(r"(?i)DISABLE|SKIP|BYPASS|INSECURE|DEBUG|NO_|ALLOW_ALL|TRUST_ALL", n["name"]))
+        add(threats, component=f"{n['repo']} env {n['name']}", stride="Elevation of privilege",
+            title=f"Security control is switched off in deployment by {n['name']}={dval[0]}" if on else f"Security control can be switched off by environment variable {n['name']}",
+            cwe="CWE-1188", owasp="A05:2021 Security Misconfiguration", likelihood="high" if on else "medium", impact="high", evidence=[n["citation"]] + ([dval[1]] if dval else []), primary=n["citation"],
             target=users[0] if users else None,
-            gaps=f"`{safe_str(line, 120)}` toggles a protection; a mis-set variable in any environment disables it. Default: see the cited line.",
+            gaps=(f"`{safe_str(line, 120)}` toggles a protection. Deployed value: `{dval[0]}` ({dval[1]})." if dval else f"`{safe_str(line, 120)}` toggles a protection; a mis-set variable in any environment disables it. Default: see the cited line."),
             control="Remove the bypass from production builds, or fail closed and alert when it is set outside local development.", label="observed", confidence="high")
+
+
+def rule_deploy(c: Ctx, threats):
+    """Threats from deployment facts: secrets in env, elevated privileges, missing network policy, public workloads without any authentication
+    control, plain-HTTP listeners."""
+    for drepo, d in sorted(c.deploy_all.items()):
+        has_np = any(x["kind"] == "network-policy" for x in d.get("controls", []))
+        for w in d.get("workloads", []):
+            cite = w["citation"]
+            secrets = [e for e in w.get("env", []) if SECRET_ENV.search(e["name"]) and e["source"] == "literal"]
+            if secrets:
+                add(threats, component=f"{drepo} workload {w['name']}", stride="Information disclosure", title=f"Secret-like variable set as a literal in deployment config ({w['name']}: {', '.join(e['name'] for e in secrets[:3])})",
+                    cwe="CWE-798", owasp="A07:2021 Identification and Authentication Failures", likelihood="high", impact="high", evidence=[cite], primary=cite, target=None,
+                    gaps="The value is committed with the deployment definition (visible to anyone who can read the repo or the cluster spec).", control="Inject from a secret store (secretKeyRef, Key Vault, Secrets Manager) and rotate the value.", label="observed", confidence="high")
+            sec = w.get("security") or {}
+            flags = [k for k in ("privileged", "host_network", "host_path", "run_as_root") if sec.get(k)]
+            if flags:
+                add(threats, component=f"{drepo} workload {w['name']}", stride="Elevation of privilege", title=f"Workload {w['name']} runs with elevated privileges ({', '.join(flags)})",
+                    cwe="CWE-250", owasp="A05:2021 Security Misconfiguration", likelihood="medium", impact="high", evidence=[cite], primary=cite, target=None,
+                    gaps="A compromise of the container gives the attacker the node or root inside the container.", control="Drop privileges, run as non-root, avoid host namespaces and hostPath mounts.", label="observed", confidence="high")
+            if w["source"] == "kubernetes" and not has_np and not w.get("network_policy") and w["kind"] in ("Deployment", "StatefulSet", "DaemonSet"):
+                add(threats, component=f"{drepo} workload {w['name']}", stride="Lateral movement / Information disclosure", title=f"No NetworkPolicy restricts traffic to or from {w['name']}",
+                    cwe="CWE-284", owasp="A05:2021 Security Misconfiguration", likelihood="medium", impact="medium", evidence=[cite], primary=cite, target=None,
+                    gaps="No NetworkPolicy was found in this repo; the cluster may apply a default-deny elsewhere.", control="Add default-deny ingress/egress and allow only the required peers.", confidence="low")
+            app = w.get("app_repo")
+            ex = w.get("exposure") or {}
+            if app and ex.get("public") and not w.get("external_controls") and any(n["kind"] == "endpoint" and c.repo_of_entry(n["id"]) == app and not has_auth_evidence(c, n) and not HEALTH_RX.search((n.get("attrs") or {}).get("path", ""))
+                                                                                  for n in c.nodes.values()):
+                add(threats, component=f"{app} (deployed as {w['name']})", stride="Spoofing / Elevation of privilege", title=f"Publicly exposed workload {w['name']} has no authentication control in code or in front of it",
+                    cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="high", impact="high", evidence=[ex.get("citation") or cite, cite], primary=ex.get("citation") or cite, target=None,
+                    gaps=f"Exposure: {ex.get('kind')} ({', '.join(ex.get('hosts', [])[:2]) or ex.get('service_type') or 'public'}). No gateway authorizer, ingress auth, mesh policy or in-code check was found for its endpoints.",
+                    control="Put authentication at the edge (gateway/ingress/mesh) and in the service; deny by default.", label="inferred", confidence="medium")
+        for ctl in d.get("controls", []):
+            if ctl["kind"] == "listener" and ctl.get("insecure"):
+                add(threats, component=f"{drepo} listener {ctl['scope']}", stride="Information disclosure / Tampering", title=f"HTTP listener without a redirect to HTTPS ({ctl['scope']})",
+                    cwe="CWE-319", owasp="A02:2021 Cryptographic Failures", likelihood="medium", impact="medium", evidence=[ctl["citation"]], primary=ctl["citation"], target=None,
+                    gaps="Plain HTTP is accepted at the load balancer.", control="Redirect HTTP to HTTPS or remove the listener.", label="observed", confidence="high")
+            if ctl["kind"] == "gateway-no-auth":
+                add(threats, component=f"{drepo} API gateway route {ctl['scope']}", stride="Spoofing", title=f"API Gateway route {ctl['scope']} has no authorizer",
+                    cwe="CWE-306", owasp="A07:2021 Identification and Authentication Failures", likelihood="high", impact="medium", evidence=[ctl["citation"]], primary=ctl["citation"], target=None,
+                    gaps="Authorization is NONE for this method/route.", control="Attach an authorizer (IAM, Cognito, JWT, Lambda).", label="observed", confidence="high")
+
+
+def _evidence_json(c: Ctx, pattern: str):
+    for p in sorted((c.out / "evidence").glob(pattern)):
+        try:
+            yield json.loads(p.read_text())
+        except ValueError:
+            continue
+
+
+def rule_agents(c: Ctx, threats):
+    """OWASP LLM Top 10 threats grounded in the agent graph: excessive agency, tools no hook guards, broken control chains."""
+    hooks = [n for n in c.nodes.values() if n["kind"] == "hook"]
+    covered = set()
+    for h in hooks:
+        for tool in re.split(r"[|,]", (h.get("attrs") or {}).get("matcher", "") or ""):
+            covered.add(tool.strip())
+    for d in _evidence_json(c, "agent-graph-*.json"):
+        for f in d.get("risk_flags", []):
+            if f["reads_untrusted"]:
+                add(threats, component=f"{d['repo']} {f['kind']} {f['node']}", stride="Elevation of privilege / Tampering", title=f"{f['kind'].capitalize()} {f['node']} can read untrusted content and also use {', '.join(f['risky_tools'])}",
+                    cwe="CWE-1427", owasp="OWASP LLM Top 10: LLM01 prompt injection, LLM06 excessive agency", likelihood="medium", impact="high", evidence=[f["citation"]], primary=f["citation"], target=None,
+                    gaps="Text it reads (repo files, web pages, tool output) can carry instructions; with write, shell or network tools those instructions become actions.",
+                    control="Give reading agents no write/shell/network tools; split them from the agent that acts, and require approval for destructive actions.", label="inferred", confidence="medium")
+            unguarded = [t for t in f["risky_tools"] if t not in covered and not any(t in x for x in covered)]
+            if unguarded and hooks:
+                add(threats, component=f"{d['repo']} {f['kind']} {f['node']}", stride="Elevation of privilege", title=f"Tool(s) {', '.join(unguarded)} used by {f['node']} are not covered by any hook",
+                    cwe="CWE-693", owasp="OWASP LLM Top 10: LLM06 excessive agency", likelihood="medium", impact="medium", evidence=[f["citation"]], primary=f["citation"], target=None,
+                    gaps=f"Hooks guard: {', '.join(sorted(x for x in covered if x)) or 'nothing'}.", control="Add a PreToolUse hook for these tools or remove them from the agent.", label="inferred", confidence="medium")
+        for dg in d.get("dangling", [])[:5]:
+            add(threats, component=f"{d['repo']} control chain", stride="Repudiation / false assurance", title=f"Reference to a missing agent, skill or command: {dg['ref']}",
+                cwe="CWE-1059", owasp="OWASP LLM Top 10: LLM06 excessive agency", likelihood="low", impact="low", evidence=[dg["citation"]], primary=dg["citation"], target=None,
+                gaps="A step that should dispatch another agent or skill points at a name that does not exist, so that control silently does not run.", control="Fix the name or remove the step.", label="observed", confidence="high")
+
+
+def rule_library(c: Ctx, threats):
+    """Dependencies with advisories or risky sources, rated by whether the code actually calls them (calls_lib edges)."""
+    called = defaultdict(list)
+    for e in c.store.edges:
+        if e["kind"] == "calls_lib" and e["dst"] in c.nodes:
+            called[(c.nodes[e["dst"]].get("repo"), c.nodes[e["dst"]]["name"].lower())].append(e)
+    for d in _evidence_json(c, "sc-*.json"):
+        repo = d.get("repo")
+        for dep in d.get("dependencies", []):
+            adv = dep.get("advisories") or []
+            if not adv:
+                continue
+            nm = str(dep.get("name", "")).lower()
+            hits = called.get((repo, nm)) or called.get((repo, nm.split("/")[-1])) or []
+            ids = ", ".join(a if isinstance(a, str) else str(a.get("id", "")) for a in adv[:3])
+            apis = sorted({x for e in hits for x in (e.get("attrs") or {}).get("apis", [])})[:5]
+            cite = (hits[0]["citation"] if hits else f"{repo}/{dep.get('path', dep.get('manifest', ''))}:{dep.get('line', 1)}")
+            add(threats, component=f"{repo} dependency {dep.get('name')}", stride="Tampering / Elevation of privilege",
+                title=(f"Vulnerable dependency {dep.get('name')} is called by the code ({', '.join(apis) or 'API not resolved'})" if hits else f"Vulnerable dependency {dep.get('name')} is declared but no call into it was resolved"),
+                cwe="CWE-1395", owasp="A06:2021 Vulnerable and Outdated Components", likelihood="high" if hits else "low", impact="high" if hits else "medium", evidence=[cite], primary=cite, target=None,
+                gaps=f"Advisories: {ids}. " + ("The code calls it, so the advisory is reachable until shown otherwise." if hits else "No call was resolved: it may be used only by tests, transitively, or through dynamic loading (see the coverage report)."),
+                control="Upgrade to a fixed version; if the vulnerable API is unused, record that decision.", label="observed" if hits else "inferred", confidence="medium")
+
+
+def rule_coverage(c: Ctx, threats):
+    """What static analysis could not see: dynamic-dispatch hotspots and unsafe sinks no entry point reaches are listed as unknown risk, never silence."""
+    cov = next(_evidence_json(c, "coverage.json"), None)
+    if not cov:
+        return
+    hot = [(repo, h) for repo, v in cov["repos"].items() for h in v.get("dynamic_hotspots", [])][:5]
+    for repo, h in hot:
+        add(threats, component=f"{repo} dynamic dispatch", stride="Tampering", title=f"Dynamic dispatch at {h['citation'].split('/', 1)[1]} ({h['what']}) is invisible to the call graph",
+            cwe="CWE-470", owasp="A03:2021 Injection", likelihood="low", impact="medium", evidence=[h["citation"]], primary=h["citation"], target=None,
+            gaps="A path that goes through reflection, eval or a dynamic lookup cannot be followed statically; review whether attacker-influenced data picks the target.",
+            control="Replace dynamic lookup with an allowlist of targets; validate names against it.", label="inferred", confidence="low")
+    for repo, v in cov["repos"].items():
+        for s_ in v.get("dormant_sinks", [])[:3]:
+            add(threats, component=f"{repo} {s_['name']}", stride="Information disclosure / Tampering", title=f"Unsafe sink not reached by any entry point (dormant): {s_['name']}",
+                cwe="CWE-1164", owasp="A04:2021 Insecure Design", likelihood="low", impact="medium", evidence=[s_["citation"]], primary=s_["citation"], target=None,
+                gaps="No entry point reaches it statically; it becomes live if a caller is added or reached dynamically.", control="Remove dead code or fix the sink before it is wired up.", label="inferred", confidence="low")
+
+
+def attack_paths(c: Ctx, limit: int = 12):
+    """Entry point -> ... -> sink paths over every edge kind (calls, class/object calls, references, library, agents, FFI, HTTP, queues, spawns),
+    ranked by exposure, controls, confidence and the coverage of the repos crossed."""
+    cov = next(_evidence_json(c, "coverage.json"), {"repos": {}})
+    rows = []
+    for p in c.store.taint(max_depth=14, limit=400)["paths"]:
+        src, sink = c.nodes[p["source"]["id"]], c.nodes[p["sink"]["id"]]
+        if p["sink_type"] not in CWE:
+            continue
+        if src["kind"] == "endpoint":
+            exp, _ = c.exposure(src["id"])
+            ext = c.external_auth(src["id"])
+        else:
+            exp, ext = "internal", None
+        base = {"public": 3, "public-candidate": 2, "internal": 1}.get(exp, 1)
+        score = base * 2 - (1 if ext else 0) + (2 if p["label"] == "observed-path" else 1) + (1 if p["sink_type"] in ("sql", "command", "code", "deserialization") else 0)
+        names = [c.nodes.get(p["source"]["id"], {}).get("name", "?")] + [c.nodes[h["dst"]]["name"] if h["dst"] in c.nodes else h["dst"] for h in p["hops"]]
+        repos = []
+        for h in p["hops"]:
+            r_ = c.nodes.get(h["dst"], {}).get("repo")
+            if r_ and r_ not in repos and r_ != "_system":
+                repos.append(r_)
+        cov_pct = min([(cov["repos"].get(r_, {}).get("call_resolution") or {}).get("resolved_pct", 100) or 100 for r_ in (repos or [src.get("repo")])] or [100])
+        rows.append({"score": score, "entry": src["name"], "kind": src["kind"], "exposure": exp, "control": f"{ext['kind']}" if ext else "-", "hops": " → ".join(f"{n}" for n in names[:7]) + (" → …" if len(names) > 7 else ""),
+                     "via": ", ".join(sorted({h["kind"] for h in p["hops"]})), "sink": f"{p['sink_type']} ({CWE[p['sink_type']][0]})", "confidence": p["label"], "repos": ", ".join(repos) or src.get("repo", ""),
+                     "coverage": cov_pct, "citation": sink["citation"]})
+    rows.sort(key=lambda r: -r["score"])
+    return rows[:limit]
 
 
 def rule_trust(c: Ctx, threats):
@@ -505,7 +702,7 @@ def boundaries(c: Ctx):
             add_tb(f"TB-broker-{c.nodes[e['dst']]['name']}", f"message broker topic {c.nodes[e['dst']]['name']}", "messaging", e["citation"], e["src"])
         elif e["kind"] in ("reads", "writes") and c.nodes.get(e["dst"], {}).get("kind") == "table":
             add_tb(f"TB-data-{c.nodes[e['dst']]['name']}", f"data store: table {c.nodes[e['dst']]['name']}", "data", e["citation"], e["src"])
-    pub = [n for n in c.nodes.values() if n["kind"] == "endpoint" and c.exposure(n["id"])[0] == "public-candidate"]
+    pub = [n for n in c.nodes.values() if n["kind"] == "endpoint" and c.exposure(n["id"])[0] in ("public-candidate", "public")]
     if pub:
         p = sorted(pub, key=lambda n: n["citation"])[0]
         add_tb("TB-internet", "internet → public-facing endpoints (candidates)", "internet", p["citation"], (c.handler.get(p["id"]) or [p["id"]])[0])
@@ -562,7 +759,7 @@ def dfd(c: Ctx) -> str:
     names = {n["id"]: n["name"] for n in cg["repo"]["nodes"]}
     pub = set()
     for n in c.nodes.values():
-        if n["kind"] == "endpoint" and c.exposure(n["id"])[0] == "public-candidate":
+        if n["kind"] == "endpoint" and c.exposure(n["id"])[0] in ("public-candidate", "public"):
             pub.add(n["repo"])
     ids, groups = {}, {"internet": [], "internal": [], "third": []}
     for r in rows:
@@ -641,6 +838,19 @@ def render(c: Ctx, threats, tbs, prop_lines) -> str:
             hits += [t for t in threats if t["cwe"] == "CWE-798"]
         L.append(f"| {area} | " + (f"{len(hits)} draft threat(s): " + ", ".join(h['id'] for h in hits[:6]) if hits else "none detected by the rules [inferred]") + " | " + (" ".join(f"`{h['primary']}`" for h in hits[:2]) if hits else "[n/a]") + " |")
     L += ["| LLM (OWASP LLM Top 10) | " + ("LLM SDK imported: see LLM entries" if any(t['owasp'].startswith('OWASP LLM') for t in threats) else "no LLM SDK detected") + " | " + (next((f"`{t['primary']}`" for t in threats if t['owasp'].startswith('OWASP LLM')), "[n/a]")) + " |"]
+    aps = attack_paths(c)
+    L += ["", "## Attack paths", "",
+          "Entry point to sink over every resolved edge kind (calls, class and object calls, references, library calls, agent dispatch, FFI, HTTP, queues, spawns). Exposure comes from deployment facts when present; a control in front of the entry point lowers the rank; coverage is the resolved-call percentage of the repos crossed. Paths are candidates, not proven dataflow. [inferred]", "",
+          "| # | Entry point | Exposure | Control in front | Path | Via | Sink | Evidence | Repos | Coverage | Source |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+    L += [f"| {i} | {esc(r['entry'])} | {r['exposure']} | {r['control']} | {esc(r['hops'])} | {r['via']} | {r['sink']} | {r['confidence']} | {esc(r['repos'])} | {r['coverage']}% | `{r['citation']}` |" for i, r in enumerate(aps, 1)] or ["| - | [unknown] no entry-to-sink path found | | | | | | | | | |"]
+    cov = next(_evidence_json(c, "coverage.json"), None)
+    L += ["", "## Analysis coverage and blind spots", ""]
+    if cov:
+        L += ["| Repo | Calls resolved or library | Entry points | Functions no entry point reaches | Dynamic-dispatch hotspots | Dormant unsafe sinks |", "| --- | --- | --- | --- | --- | --- |"]
+        L += [f"| {esc(r_)} | {((v.get('call_resolution') or {}).get('resolved_pct') if (v.get('call_resolution') or {}).get('resolved_pct') is not None else '[n/a]')}{'%' if (v.get('call_resolution') or {}).get('resolved_pct') is not None else ''} | {v['entry_points']} | {v['unreachable_count']} | {len(v['dynamic_hotspots'])} | {len(v['dormant_sinks'])} |" for r_, v in cov["repos"].items()]
+        L += ["", "Low coverage lowers confidence in every path above; see `system/coverage.md` for the unresolved names and hotspots. Static analysis cannot prove that every path was found. [inferred]"]
+    else:
+        L += ["[unknown] no coverage report was generated (run `coverage_report.py`)."]
     L += ["", "## Prioritized risks", ""]
     L += [f"{i}. **{t['id']}** ({t['priority']}): {esc(t['title'])}: `{t['primary']}`" for i, t in enumerate(threats[:10], 1)] or ["[unknown] none"]
     L += ["", "## Assumptions", "", "- Exposure labels are inferred from the call graph (an endpoint nobody else calls is a public candidate); confirm against ingress/gateway configuration. [inferred]",
@@ -652,7 +862,7 @@ def render(c: Ctx, threats, tbs, prop_lines) -> str:
 def run(out: Path, force=False) -> dict:
     c = Ctx(out)
     threats = []
-    for rule in (rule_taint, rule_auth, rule_switches, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_pipeline, rule_drift, rule_llm):
+    for rule in (rule_taint, rule_auth, rule_switches, rule_deploy, rule_agents, rule_library, rule_coverage, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_pipeline, rule_drift, rule_llm):
         rule(c, threats)
     tbs = boundaries(c)
     md = render(c, threats, tbs, 0)

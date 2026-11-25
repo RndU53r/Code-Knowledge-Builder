@@ -28,6 +28,8 @@ def arg_kind(arg: str, lang: str = "") -> str:
     a = (arg or "").strip()
     if not a:
         return "variable"
+    if re.match(r"^&?(?:format!|String::from\(.*\)\s*\+|\w+\.to_string\(\)\s*\+)", a):
+        return "inline"
     m = re.match(r'^(?:@|\$|f|r|b|F)?("""|\'\'\'|"|\'|`)', a)
     if not m:
         return "variable"
@@ -148,6 +150,27 @@ def _java_entries(lines):
         if m:
             spec = re.search(r'cron\s*=\s*"([^"]+)"', m.group(1) or "") or re.search(r"(fixed(?:Rate|Delay)\s*=\s*[\w.]+)", m.group(1) or "")
             out.append(_entry("cron_job", i, f"schedule {spec.group(1) if spec else 'unspecified'}"))
+            continue
+        m = re.search(r"@Controller\(\s*\"([^\"]*)\"\s*\)", ln)  # Micronaut/Quarkus-style class prefix
+        if m and _next_is_class(lines, i - 1) is not None:
+            prefix = m.group(1)
+            continue
+        m = re.search(r"@(Get|Post|Put|Patch|Delete)\(\s*(?:value\s*=\s*)?\"([^\"]*)\"", ln)
+        if m:
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {join_path(prefix, m.group(2))}", method=m.group(1).upper(), path=join_path(prefix, m.group(2))))
+            continue
+        m = re.search(r"@WebServlet\(\s*(?:urlPatterns\s*=\s*|value\s*=\s*)?\{?\s*\"([^\"]+)\"", ln)
+        if m:
+            prefix = m.group(1)
+            continue
+        m = re.search(r"\bvoid\s+do(Get|Post|Put|Delete)\s*\(\s*(?:final\s+)?HttpServletRequest", ln)
+        if m:
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {join_path(prefix, '')}", method=m.group(1).upper(), path=join_path(prefix, "")))
+            continue
+        m = re.search(r"\b(?:router|r)\.(get|post|put|patch|delete)\(\s*\"([^\"]+)\"\s*\)\.handler\(\s*([\w:.]+)", ln)
+        if m:
+            h = m.group(3).split("::")[-1].split(".")[-1]
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {m.group(2)}", method=m.group(1).upper(), path=m.group(2), handler=h, defer=True, near=False))
     return out
 
 
@@ -211,7 +234,7 @@ def _cs_entries(lines):
     return out
 
 
-RB_SINATRA = re.compile(r"^\s*(get|post|put|patch|delete|options|head)\s+['\"](/[^'\"]*)['\"].*\b(?:do|\{)\s*(\|.*\|)?\s*$")
+RB_SINATRA = re.compile(r"^\s*(get|post|put|patch|delete|options|head)\s+['\"](/?[^'\"]*)['\"].*\b(?:do|\{)\s*(\|.*\|)?\s*$")
 RB_VERB = re.compile(r"^\s*(get|post|put|patch|delete|match|any)\s+['\"]?:?([\w/:.\-*]+)['\"]?(.*)$")
 RB_TO = re.compile(r"(?:to:|=>)\s*['\"](\w+(?:/\w+)*)#(\w+)['\"]")
 RB_RES = re.compile(r"^\s*resources?\s+:(\w+)(?:\s*,\s*(.*))?")
@@ -228,7 +251,12 @@ def _rb_entries(rel, lines):
         if not is_routes:
             m = RB_SINATRA.match(ln)
             if m:
-                out.append(_entry("endpoint", i, f"{m.group(1).upper()} {m.group(2)}", method=m.group(1).upper(), path=m.group(2), inline=True))
+                out.append(_entry("endpoint", i, f"{m.group(1).upper()} {join_path('', m.group(2))}", method=m.group(1).upper(), path=join_path("", m.group(2)), inline=True))
+                continue
+            m = re.match(r"^\s*include\s+Sidekiq::(?:Worker|Job)\b", ln)
+            if m:
+                cls = next((re.match(r"^\s*class\s+(\w+)", lines[j]).group(1) for j in range(i - 2, max(-1, i - 6), -1) if re.match(r"^\s*class\s+\w+", lines[j])), "worker")
+                out.append(_entry("consumer", i, f"consume job {cls}", queue=cls, proto="sidekiq", handler="perform", near=True))
             continue
         ind = _indent(ln)
         pfx = g.at(ind, ln)
@@ -299,6 +327,33 @@ def _php_entries(lines):
         m = PHP_CRON.search(ln)
         if m:
             out.append(_entry("cron_job", i, f"schedule {m.group(2).strip()[:40]}"))
+            continue
+        m = re.search(r"\badd_action\(\s*['\"]wp_ajax(?:_nopriv)?_(\w+)['\"]\s*,\s*(?:['\"]([\w:]+)['\"]|\[[^,\]]+,\s*['\"](\w+)['\"]\s*\])", ln)
+        if m:
+            h = m.group(2) or m.group(3)
+            out.append(_entry("endpoint", i, f"POST /wp-admin/admin-ajax.php?action={m.group(1)}", method="POST", path=f"/wp-admin/admin-ajax.php?action={m.group(1)}", handler=h.split("::")[-1], defer=True, near=False))
+            continue
+        m = re.search(r"\bregister_rest_route\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]\s*,\s*(.*)", ln)
+        if m:
+            tail = " ".join(lines[i - 1:i + 6])
+            vm = re.search(r"['\"]methods['\"]\s*=>\s*['\"]?(?:WP_REST_Server::)?([A-Za-z]+)", tail)
+            hm = re.search(r"['\"]callback['\"]\s*=>\s*(?:['\"]([\w:]+)['\"]|\[[^,\]]+,\s*['\"](\w+)['\"]\s*\])", tail)
+            meth = {"READABLE": "GET", "CREATABLE": "POST", "EDITABLE": "PUT", "DELETABLE": "DELETE"}.get((vm.group(1) if vm else "").upper(), (vm.group(1) if vm else "ANY").upper())
+            path = join_path("wp-json/" + m.group(1), m.group(2))
+            out.append(_entry("endpoint", i, f"{meth} {path}", method=meth, path=path, handler=(hm.group(1) or hm.group(2)).split("::")[-1] if hm else None, defer=bool(hm), near=False))
+            continue
+        m = re.search(r"\$\w+->(get|post|put|patch|delete)\(\s*['\"](/[^'\"]*)['\"]\s*,\s*(.*)", ln)  # Slim
+        if m:
+            hm = re.search(r"\[\s*[\w\\]+::class\s*,\s*['\"](\w+)['\"]\s*\]|['\"][\w\\]+:(\w+)['\"]", m.group(3))
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {m.group(2)}", method=m.group(1).upper(), path=m.group(2), handler=(hm.group(1) or hm.group(2)) if hm else None,
+                              defer=bool(hm), inline=not hm and "function" in m.group(3), near=False))
+            continue
+        m = re.search(r"Route::(?:api)?[Rr]esource\(\s*['\"]([\w./-]+)['\"]\s*,\s*([\w\\]+)::class", ln)
+        if m:
+            base = join_path(pfx, m.group(1))
+            for meth_, suffix, act in (("GET", "", "index"), ("POST", "", "store"), ("GET", "/{id}", "show"), ("PUT", "/{id}", "update"), ("DELETE", "/{id}", "destroy")):
+                out.append(_entry("endpoint", i, f"{meth_} {base}{suffix}", method=meth_, path=base + suffix, handler=act, defer=True, near=False, controller=m.group(2).split("\\")[-1]))
+            continue
     return out
 
 
@@ -343,7 +398,7 @@ def _js_entries(rel, lines):
         m = JS_ROUTE.search(ln)
         if m and m.group(1) not in JS_RECV_SKIP:
             meth = m.group(2).upper() if m.group(2) != "all" else "ANY"
-            out.append(_entry("endpoint", i, f"{meth} {m.group(3)}", method=meth, path=m.group(3), inline=True))
+            out.append(_entry("endpoint", i, f"{meth} {m.group(3)}", method=meth, path=m.group(3), inline=True, recv=m.group(1)))
             continue
         m = JS_ROUTE_CHAIN.search(ln)
         if m:
@@ -373,6 +428,21 @@ def _js_entries(rel, lines):
         if m:
             q = m.group(1) or m.group(2)
             out.append(_entry("consumer", i, f"consume {q}", queue=q, proto="bull"))
+    mounts = {}
+    for ln in lines:  # app.use('/api', router) in the same file prefixes the router's routes
+        mm_ = re.search(r"\.use\(\s*['\"]([^'\"]+)['\"]\s*,\s*(?:[\w$.]+\s*,\s*)*([A-Za-z_$][\w$]*)\s*\)", ln)
+        if mm_:
+            mounts[mm_.group(2)] = mm_.group(1)
+    for e in out:
+        if e["kind"] == "endpoint" and e.get("recv") in mounts:
+            e["path"] = join_path(mounts[e["recv"]], e["path"])
+            e["name"] = f"{e['method']} {e['path']}"
+    for i, ln in enumerate(lines, 1):  # tRPC procedures
+        m = re.match(r"^\s*(\w+)\s*:\s*(?:\w+\.)*(?:publicProcedure|protectedProcedure|procedure|authedProcedure)\b", ln)
+        if m:
+            tail = " ".join(lines[i - 1:i + 6])
+            meth = "POST" if re.search(r"\.mutation\(", tail) else "GET"
+            out.append(_entry("endpoint", i, f"{meth} /trpc/{m.group(1)}", method=meth, path=f"/trpc/{m.group(1)}", proto="trpc", near=False, enclosing=True))
     # Next.js file-based routing
     mm = re.match(r"^(?:src/)?(pages/api|app)/(.*)\.(?:[jt]sx?)$", rel)
     if mm:
@@ -433,7 +503,125 @@ def _go_entries(lines):
     return out
 
 
+RS_ATTR = re.compile(r"#\[(get|post|put|patch|delete|head|options)\(\s*\"([^\"]*)\"")
+RS_AXUM = re.compile(r"\.route\(\s*\"([^\"]+)\"\s*,\s*(.*)")
+RS_VERB = re.compile(r"\b(get|post|put|patch|delete|any|head|options)\(\s*([\w:]+)\s*\)")
+RS_ACTIX = re.compile(r"(?:web::resource\(\s*\"([^\"]+)\"\s*\)\s*)?\.route\(\s*(?:\"([^\"]+)\"\s*,\s*)?web::(get|post|put|patch|delete)\(\)\s*\.to\(\s*([\w:]+)")
+RS_WARP = re.compile(r"warp::path!?\(\s*\"([^\"]+)\"")
+
+
+def _rust_entries(lines):
+    out = []
+    for i, ln in enumerate(lines, 1):
+        if len(ln) > 400:
+            continue
+        m = RS_ATTR.search(ln)
+        if m:
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {m.group(2)}", method=m.group(1).upper(), path=m.group(2)))
+            continue
+        m = RS_AXUM.search(ln)
+        if m:
+            for vm in RS_VERB.finditer(m.group(2)):
+                meth = vm.group(1).upper() if vm.group(1) != "any" else "ANY"
+                out.append(_entry("endpoint", i, f"{meth} {m.group(1)}", method=meth, path=m.group(1), handler=vm.group(2).split("::")[-1], defer=True, near=False))
+            continue
+        m = RS_ACTIX.search(ln)
+        if m and (m.group(1) or m.group(2)):
+            path = m.group(1) or m.group(2)
+            out.append(_entry("endpoint", i, f"{m.group(3).upper()} {path}", method=m.group(3).upper(), path=path, handler=m.group(4).split("::")[-1], defer=True, near=False))
+            continue
+        m = RS_WARP.search(ln)
+        if m:
+            tail = " ".join(lines[i - 1:i + 3])
+            vm = re.search(r"warp::(get|post|put|patch|delete)\(\)", tail)
+            hm = re.search(r"\.(?:and_then|map|then)\(\s*([\w:]+)\s*\)", tail)
+            meth = vm.group(1).upper() if vm else "ANY"
+            out.append(_entry("endpoint", i, f"{meth} /{m.group(1).strip('/')}", method=meth, path="/" + m.group(1).strip("/"), handler=hm.group(1).split("::")[-1] if hm else None, defer=bool(hm), near=False))
+            continue
+        if re.search(r"#\[derive\([^)]*\bParser\b", ln) or re.search(r"\bCommand::new\(\s*\"([^\"]+)\"\s*\)\s*\.(?:about|version|arg|subcommand)", ln):
+            out.append(_entry("cli_command", i, "command " + (re.search(r"Command::new\(\s*\"([^\"]+)\"", ln) or [None, "clap"])[1]))
+            continue
+        m = re.search(r"\bJob::new(?:_async|_repeated)?\(\s*\"([^\"]+)\"", ln)
+        if m:
+            out.append(_entry("cron_job", i, f"schedule {m.group(1)}"))
+            continue
+        m = re.search(r"\bservice_fn\(\s*([\w:]+)\s*\)", ln)
+        if m:
+            out.append(_entry("endpoint", i, f"ANY lambda/{m.group(1).split('::')[-1]}", method="ANY", path="/lambda", handler=m.group(1).split("::")[-1], defer=True, near=False, proto="lambda"))
+        m = re.match(r"^\s*impl\s+(\w+)\s+for\s+(\w+)", ln)
+        if m and any("async_trait" in lines[j] for j in range(max(0, i - 3), i)) and m.group(1)[0].isupper() and m.group(1) not in ("Drop", "Display", "Debug", "Clone"):
+            depth = 0
+            for j in range(i - 1, min(len(lines), i + 400)):
+                depth += lines[j].count("{") - lines[j].count("}")
+                fm = re.match(r"^\s*async\s+fn\s+(\w+)", lines[j])
+                if fm:
+                    out.append(_entry("endpoint", j + 1, f"GRPC /{m.group(1)}/{fm.group(1)}", method="GRPC", path=f"/{m.group(1)}/{fm.group(1)}", proto="grpc", handler=fm.group(1)))
+                if j > i - 1 and depth <= 0:
+                    break
+    return out
+
+
+SW_VAPOR = re.compile(r"\.(get|post|put|patch|delete)\(\s*((?:\"[^\"]*\"\s*,\s*)*\"[^\"]*\")(?:\s*,\s*use:\s*(.*))?\)\s*$")
+
+
+def _swift_entries(lines):
+    out = []
+    for i, ln in enumerate(lines, 1):
+        if len(ln) > 400:
+            continue
+        m = SW_VAPOR.search(ln)
+        if m:
+            segs = re.findall(r"\"([^\"]*)\"", m.group(2))
+            path = "/" + "/".join(x.strip("/") for x in segs if x.strip("/"))
+            h = None
+            if m.group(3):
+                rest = m.group(3).strip()
+                while "(" in rest:
+                    rest = re.sub(r"\([^()]*\)", "", rest)
+                hm = re.findall(r"(\w+)\s*$", rest)
+                h = hm[-1] if hm else None
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {path}", method=m.group(1).upper(), path=path, handler=h, defer=bool(h), near=False,
+                              enclosing=not h))
+    return out
+
+
+KT_ROUTE = re.compile(r"^\s*(get|post|put|patch|delete|head|options)\s*\(\s*\"([^\"]*)\"\s*\)\s*\{")
+SC_PATH = re.compile(r"\bpath(?:Prefix)?\(\s*\"([^\"]+)\"\s*\)")
+SC_H4 = re.compile(r"case\s+(?:\w+\s*@\s*)?(GET|POST|PUT|PATCH|DELETE)\s*->\s*Root((?:\s*/\s*(?:\"[^\"]*\"|\w+))*)")
+
+
+def _kt_scala_entries(lang, lines):
+    out = []
+    for i, ln in enumerate(lines, 1):
+        if len(ln) > 400:
+            continue
+        m = KT_ROUTE.match(ln)
+        if m:
+            out.append(_entry("endpoint", i, f"{m.group(1).upper()} {m.group(2) or '/'}", method=m.group(1).upper(), path=m.group(2) or "/", near=False, enclosing=True))
+            continue
+        if lang == "scala":
+            m = SC_PATH.search(ln)
+            if m:
+                tail = " ".join(lines[i - 1:i + 4])
+                vm = re.search(r"\b(get|post|put|patch|delete)\b\s*[{(]", tail)
+                meth = vm.group(1).upper() if vm else "ANY"
+                out.append(_entry("endpoint", i, f"{meth} /{m.group(1).strip('/')}", method=meth, path="/" + m.group(1).strip("/"), near=False, enclosing=True))
+                continue
+            m = SC_H4.search(ln)
+            if m:
+                segs = [x.strip().strip('"') if x.strip().startswith('"') else "{p}" for x in re.split(r"/", m.group(2)) if x.strip()]
+                path = "/" + "/".join(segs)
+                out.append(_entry("endpoint", i, f"{m.group(1)} {path}", method=m.group(1), path=path, near=False, enclosing=True))
+    return out
+
+
 def find_entries(lang: str, rel: str, lines: list[str]) -> list[dict]:
+    if lang == "rust":
+        return _rust_entries(lines)
+    if lang == "swift":
+        return _swift_entries(lines)
+    if lang in ("kotlin", "scala"):
+        return _kt_scala_entries(lang, lines) + _java_entries(lines)
     if lang in ("java", "kotlin", "scala"):
         return _java_entries(lines)
     if lang == "csharp":
@@ -469,7 +657,8 @@ SOURCES = {
         ("message_body", re.compile(r"\b(?:d|msg|delivery|m)\.Body\b")),
     ],
     "java": [
-        ("http_param", re.compile(r"@(RequestParam|PathVariable|RequestBody|RequestHeader|CookieValue|ModelAttribute|QueryParam|PathParam|FormParam|HeaderParam|MatrixParam)\b|"
+        ("http_param", re.compile(r"\bcall\.(?:receive\w*|parameters|request\.(?:queryParameters|headers))|\bentity\(as\[|\bparameters?\(|\bformFields?\(|"
+                                  r"@(RequestParam|PathVariable|RequestBody|RequestHeader|CookieValue|ModelAttribute|QueryParam|PathParam|FormParam|HeaderParam|MatrixParam|Body|Header|QueryValue|PathVariable)\b|"
                                   r"\.getParameter\(|\.getHeader\(|\.getInputStream\(\)|\.getReader\(\)|\.getCookies\(\)|\.getQueryString\(\)")),
         ("stdin", re.compile(r"\bSystem\.in\b")),
         ("file_read", re.compile(r"\bFiles\.(readAllLines|readString|readAllBytes|newInputStream|lines)\(|new FileInputStream\(|new FileReader\(")),
@@ -495,9 +684,16 @@ SOURCES = {
         ("file_read", re.compile(r"\b(file_get_contents|fopen|file)\(\s*\$")),
     ],
     "rust": [
-        ("http_param", re.compile(r"\b(web::(Query|Json|Path|Form)|Query<|Json<|Path<|Form<)")),
-        ("cli_arg", re.compile(r"\benv::args\(")),
+        ("http_param", re.compile(r"\b(web::(Query|Json|Path|Form)|Query<|Json<|Path<|Form<|State<|Multipart|HttpRequest|CookieJar|TypedHeader)")),
+        ("cli_arg", re.compile(r"\benv::args\(|\bClap::parse\b|\bArgs::parse\(")),
         ("stdin", re.compile(r"\bstdin\(\)")),
+        ("file_read", re.compile(r"\bfs::read(?:_to_string)?\(|\bFile::open\(")),
+    ],
+    "swift": [
+        ("http_param", re.compile(r"\breq\.(?:content|query|parameters|headers|body|cookies)\b|\brequest\.(?:content|query|parameters|headers|body)\b")),
+        ("cli_arg", re.compile(r"\bCommandLine\.arguments\b")),
+        ("stdin", re.compile(r"\breadLine\(")),
+        ("file_read", re.compile(r"\bString\(contentsOfFile:|\bFileManager\.default\.contents\(")),
     ],
 }
 SOURCES["typescript"] = SOURCES["javascript"]
@@ -566,6 +762,19 @@ SINK_RULES = [
     (L("ruby"), re.compile(r"\bredirect_to\s+(?P<arg>[^\n]*)"), "redirect", "dyn", "redirect"),
     (L("php"), re.compile(r"\bheader\(\s*(?P<arg>[\"']Location:[^)]*)"), "redirect", "dyn", "redirect"),
     (L("go"), re.compile(r"\bhttp\.Redirect\(\s*[^,]+,\s*[^,]+,\s*(?P<arg>[^,)]*)"), "redirect", "dyn", "redirect"),
+    # --- Rust
+    (L("rust"), re.compile(r"\bCommand::new\(\s*\"(?:sh|bash|cmd|powershell)\"\s*\)\s*\.args?\(\s*\[?\s*\"-c\"\s*,\s*(?P<arg>[^)\]]*)|\bCommand::new\(\s*(?P<arg2>[^)]*)\)"), "command", "dyn", "process execution"),
+    (L("rust"), re.compile(r"\b(?:sqlx::query(?:_as|_scalar)?|diesel::sql_query|sql_query|\.execute|\.prepare)\(\s*(?P<arg>&?format!\(.*|[^)]*)"), "sql", "sql", "SQL call"),
+    (L("rust"), re.compile(r"\breqwest::(?:blocking::)?(?:get|Client::new\(\)\.get|Client::new\(\)\.post)\(\s*(?P<arg>[^)]*)|\.(?:get|post|put|delete)\(\s*(?P<arg2>[^)]*)\)\s*\.send"), "ssrf", "dynlit", "outbound request"),
+    (L("rust"), re.compile(r"\b(?:File::open|File::create|fs::read_to_string|fs::read|fs::write|fs::remove_file|fs::read_dir)\(\s*(?P<arg>[^)]*)"), "path", "dyn", "file access"),
+    (L("rust"), re.compile(r"\bunsafe\s*\{"), "unsafe_code", "unsafe", "unsafe block (manual memory safety)"),
+    # --- Swift
+    (L("swift"), re.compile(r"\bsqlite3_exec\(\s*[^,]+,\s*(?P<arg>[^,)]*)|\.(?:execute|query|raw)\(\s*(?P<arg2>\"[^)]*\\\(|[^)]*)\)"), "sql", "sql", "SQL call"),
+    (L("swift"), re.compile(r"\bProcess\(\)|\bNSTask\b|\bposix_spawn\(|\bsystem\(\s*(?P<arg>[^)]*)"), "command", "unsafe", "process execution"),
+    (L("swift"), re.compile(r"\bURL\(string:\s*(?P<arg>[^)]*)\)|\bURLRequest\(url:\s*(?P<arg2>[^)]*)\)"), "ssrf", "dynlit", "outbound request"),
+    (L("swift"), re.compile(r"\bcontentsOfFile:\s*(?P<arg>[^),]*)|\bFileManager\.default\.(?:contents|removeItem|createFile)\(\s*(?:atPath:\s*)?(?P<arg2>[^),]*)"), "path", "dyn", "file access"),
+    (L("swift"), re.compile(r"\bloadHTMLString\(\s*(?P<arg>[^,)]*)|\bevaluateJavaScript\(\s*(?P<arg2>[^,)]*)"), "xss", "dyn", "HTML/JS loaded into a web view"),
+    (L("swift"), re.compile(r"\bNSKeyedUnarchiver\.unarchiveObject\(|\bunarchiveTopLevelObjectWithData\("), "deserialization", "unsafe", "insecure unarchiving"),
     # --- XSS / template output
     (ALL_JS, re.compile(r"\.innerHTML\s*=|\.outerHTML\s*=|\bdangerouslySetInnerHTML\b|\bdocument\.write(?:ln)?\(|\bv-html\b|\bbypassSecurityTrust\w+\(|\$\([^)]*\)\.html\("), "xss", "unsafe", "raw HTML output"),
     (L("csharp"), re.compile(r"\bHtml\.Raw\(|\bnew\s+HtmlString\("), "xss", "unsafe", "raw HTML output"),

@@ -1,0 +1,74 @@
+{
+ "repo": "platform",
+ "repo_kind": {
+  "repo_kind": "iac",
+  "secondary_kinds": [],
+  "signals": [
+   "iac share 67%",
+   "gitops-config share 17%"
+  ],
+  "confidence": "high"
+ },
+ "role_counts": {
+  "build": 1,
+  "iac": 5
+ },
+ "entry_points": {},
+ "files": [
+  {
+   "path": "docker-compose.yml",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "azure/main.bicep",
+   "role": "iac",
+   "sub": "bicep",
+   "confidence": "high",
+   "signals": [
+    "infrastructure-as-code extension"
+   ]
+  },
+  {
+   "path": "cloudformation/queue.yaml",
+   "role": "iac",
+   "sub": "cloudformation",
+   "confidence": "high",
+   "signals": [
+    "CloudFormation template"
+   ]
+  },
+  {
+   "path": "k8s/gateway.yaml",
+   "role": "iac",
+   "sub": "kubernetes",
+   "confidence": "high",
+   "signals": [
+    "infrastructure/deployment path"
+   ]
+  },
+  {
+   "path": "terraform/aws/main.tf",
+   "role": "iac",
+   "sub": "terraform",
+   "confidence": "high",
+   "signals": [
+    "infrastructure-as-code extension"
+   ]
+  },
+  {
+   "path": "terraform/gcp/main.tf",
+   "role": "iac",
+   "sub": "terraform",
+   "confidence": "high",
+   "signals": [
+    "infrastructure-as-code extension"
+   ]
+  }
+ ],
+ "truncated": false,
+ "note": "core/utility are [inferred]; signals show why. Path and content rules decide the other roles."
+}

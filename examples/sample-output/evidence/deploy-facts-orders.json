@@ -1,0 +1,25 @@
+{
+ "repo": "orders",
+ "workloads": [
+  {
+   "name": "orders",
+   "kind": "dockerfile",
+   "source": "dockerfile",
+   "images": [],
+   "ports": [],
+   "env": [],
+   "build": ".",
+   "security": {
+    "run_as_root": true
+   },
+   "healthcheck": false,
+   "exposure": {
+    "kind": "none"
+   },
+   "citation": "orders/Dockerfile:1",
+   "app_repo": "orders",
+   "resolved_by": "name"
+  }
+ ],
+ "controls": []
+}

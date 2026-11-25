@@ -1,0 +1,227 @@
+{
+ "repo": "platform",
+ "workloads": [
+  {
+   "name": "gateway",
+   "kind": "compose-service",
+   "source": "compose",
+   "images": [],
+   "build": "../gateway",
+   "ports": [
+    3000
+   ],
+   "published_ports": [
+    3000
+   ],
+   "env": [
+    {
+     "name": "ORDERS_URL",
+     "source": "literal",
+     "line": 6,
+     "value": "http://orders:8000"
+    },
+    {
+     "name": "JWT_SECRET",
+     "source": "variable",
+     "line": 7
+    }
+   ],
+   "env_file": null,
+   "security": {
+    "privileged": false,
+    "run_as_root": false
+   },
+   "exposure": {
+    "kind": "host-ports",
+    "published": [
+     3000
+    ],
+    "public": true
+   },
+   "citation": "platform/docker-compose.yml:2",
+   "app_repo": "gateway",
+   "resolved_by": "build context"
+  },
+  {
+   "name": "orders",
+   "kind": "compose-service",
+   "source": "compose",
+   "images": [],
+   "build": "../orders",
+   "ports": [],
+   "published_ports": [],
+   "env": [
+    {
+     "name": "DATABASE_URL",
+     "source": "literal",
+     "line": 11,
+     "value": "postgresql://orders@db:5432/shop"
+    },
+    {
+     "name": "RABBITMQ_URL",
+     "source": "literal",
+     "line": 12,
+     "value": "amqp://rabbitmq:5672/"
+    }
+   ],
+   "env_file": null,
+   "security": {
+    "privileged": false,
+    "run_as_root": false
+   },
+   "exposure": {
+    "kind": "none",
+    "published": [],
+    "public": false
+   },
+   "citation": "platform/docker-compose.yml:8",
+   "app_repo": "orders",
+   "resolved_by": "build context"
+  },
+  {
+   "name": "fulfillment",
+   "kind": "compose-service",
+   "source": "compose",
+   "images": [],
+   "build": "../fulfillment",
+   "ports": [],
+   "published_ports": [],
+   "env": [
+    {
+     "name": "DATABASE_URL",
+     "source": "literal",
+     "line": 16,
+     "value": "postgresql://fulfillment@db:5432/shop"
+    },
+    {
+     "name": "RABBITMQ_URL",
+     "source": "literal",
+     "line": 17,
+     "value": "amqp://rabbitmq:5672/"
+    },
+    {
+     "name": "SHIPPING_API_URL",
+     "source": "literal",
+     "line": 18,
+     "value": "https://api.shipping.example.com"
+    }
+   ],
+   "env_file": null,
+   "security": {
+    "privileged": false,
+    "run_as_root": false
+   },
+   "exposure": {
+    "kind": "none",
+    "published": [],
+    "public": false
+   },
+   "citation": "platform/docker-compose.yml:13",
+   "app_repo": "fulfillment",
+   "resolved_by": "build context"
+  },
+  {
+   "name": "db",
+   "kind": "compose-service",
+   "source": "compose",
+   "images": [
+    "postgres:16"
+   ],
+   "build": null,
+   "ports": [],
+   "published_ports": [],
+   "env": [],
+   "env_file": null,
+   "security": {
+    "privileged": false,
+    "run_as_root": false
+   },
+   "exposure": {
+    "kind": "none",
+    "published": [],
+    "public": false
+   },
+   "citation": "platform/docker-compose.yml:19"
+  },
+  {
+   "name": "rabbitmq",
+   "kind": "compose-service",
+   "source": "compose",
+   "images": [
+    "rabbitmq:3-management"
+   ],
+   "build": null,
+   "ports": [],
+   "published_ports": [],
+   "env": [],
+   "env_file": null,
+   "security": {
+    "privileged": false,
+    "run_as_root": false
+   },
+   "exposure": {
+    "kind": "none",
+    "published": [],
+    "public": false
+   },
+   "citation": "platform/docker-compose.yml:21"
+  },
+  {
+   "name": "gateway",
+   "kind": "Deployment",
+   "source": "kubernetes",
+   "namespace": null,
+   "images": [
+    "registry.example.com/shop/gateway:1.0.0"
+   ],
+   "ports": [
+    3000
+   ],
+   "env": [
+    {
+     "name": "ORDERS_URL",
+     "source": "literal",
+     "line": 18,
+     "value": "http://orders:8000"
+    }
+   ],
+   "env_from": [],
+   "service_account": null,
+   "replicas": 2,
+   "security": {
+    "privileged": false,
+    "host_network": false,
+    "host_path": false,
+    "run_as_non_root": false,
+    "run_as_root": false,
+    "limits": false
+   },
+   "citation": "platform/k8s/gateway.yaml:2",
+   "exposure": {
+    "kind": "none",
+    "service_type": null,
+    "hosts": [],
+    "tls": false,
+    "public": false,
+    "citation": null
+   },
+   "external_controls": [],
+   "app_repo": "gateway",
+   "resolved_by": "image"
+  }
+ ],
+ "controls": [
+  {
+   "kind": "open-ingress",
+   "scope": "gateway",
+   "detail": "open to the internet on 3000",
+   "citation": "platform/terraform/aws/main.tf:16"
+  },
+  {
+   "kind": "open-ingress",
+   "scope": "admin",
+   "detail": "open to the internet",
+   "citation": "platform/terraform/gcp/main.tf:13"
+  }
+ ]
+}

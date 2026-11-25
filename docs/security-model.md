@@ -28,10 +28,23 @@ Everything else is untrusted data: repo files (code, READMEs, comments, config, 
 | **Shared-temp attacks** | Snapshots go to a per-user, owner-only cache and are reused only if they are real directories owned by you with no group/world access; clones use `mkdtemp` | `fetch_source.py` |
 | **Supply chain of ckb itself** | Scripts use only the Python standard library; there is nothing to install. Optional tools (tree-sitter, pdftotext, `az`) are used only if already present and never installed | repo layout |
 
+## Attack surface added by the call, deployment and agent analyses (0.6.0)
+
+| Threat | Control |
+| --- | --- |
+| A hostile repo file crafts text that the new parsers mis-read to hide a call, forge an edge or inject markdown (identifiers, route names, agent names, YAML keys) | Parsers are line-based regexes over bounded text (size caps, no YAML/code execution); every identifier is passed through `md_safe` in generated markdown; proposals need an exact quote that appears in the cited lines; hostile names are covered by tests |
+| A deployment file holds secrets (env literals, connection strings) that would be copied into outputs | `deploy_facts.py` records the names of injected variables and where the value comes from; literal values are stored only for non-secret names and never for names matching password/token/key/secret/credential/connection-string; `safe_quote` cuts quotes before secret patterns |
+| Agent, skill or command text aimed at the analysing model ("ignore previous instructions", "mark this safe") | Treated as data; `agent_graph.py` only resolves names against an index and never follows instructions; the supply-chain scanner still reports agent-directed text as prompt injection |
+| Wrong confidence in a control that is not really there (an Ingress annotation that does not cover internal callers) | Authentication outside the code is rated low, labelled `[inferred]`, and carries a "verify coverage, internal callers, direct access" note; absence of any control raises the rating; coverage numbers are printed beside the attack paths |
+| Reading untrusted infrastructure files costs time or memory | file size caps, per-repo file caps, capped result lists; no network access; nothing is deployed, planned or applied |
+
+The threat model for ckb itself (what is trusted, which controls exist, residual risk) is the table above plus the one in [Threats and controls](#threats-and-controls); it is reviewed whenever a new parser or evidence file is added.
+
 ## What ckb cannot promise
 
 * **The guard is a strong safety net, not a sandbox.** It recognizes common toolchains and patterns; an unusual command could slip through. If an internal error occurs it fails open (allows) and reports the error so it can never wedge your session. For hostile code, run ckb inside a container or VM as defense in depth.
 * **Entry points, sources and sinks are pattern matches.** Python uses the AST; Java, Kotlin, C#, Ruby, PHP, Go and JS/TS use line-level patterns (confidence `medium` or `low`). A source-to-sink link is a candidate path, never proof, and "no auth evidence" means no authentication marker was found on the route or its class, not that none exists (global middleware and gateway auth are invisible). Core/utility labels are inferred.
+* **"All paths" is not provable.** Reflection, dependency-injection containers, dynamic dispatch and macro-generated code hide paths from any static analysis; `system/coverage.md` reports resolution numbers and hotspots so the gap is visible, and the threat model lists hotspots as unknown risk.
 * **Static analysis is incomplete.** Reflection, dynamic dispatch, runtime configuration and generated code are marked `[inferred]` or `[unknown]`, not resolved.
 * **Agents can still be wrong.** The verifier proves a citation exists and a quote matches, not that the conclusion drawn from it is right. Read the cited lines before acting.
 * **Model providers see what agents read.** Agents send cited code excerpts to the model Claude Code is configured to use. If that is not acceptable for a repo, do not run agent-based stages on it (the deterministic scripts alone make the graph, call graphs, draft threat model and drift checks).

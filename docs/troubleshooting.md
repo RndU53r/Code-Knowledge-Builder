@@ -63,6 +63,13 @@ The PreToolUse guard denies install/build/run/test commands, shell writes and gi
 | MCP tools say "no graph" | Set `CKB_OUT` to your output directory, or run from the project folder that contains `.ckb/` |
 | Neo4j push refused | `graph_neo4j.py push` needs `--yes` after you confirm; plain-http URLs to non-local hosts are refused (use https) |
 
+## Call graph and coverage
+
+* **Few call edges / low resolved percentage:** open `system/coverage.md` and `evidence/call-resolution-<repo>.json`. Typical causes: dynamic dispatch (reflection, DI containers, `getattr`), generated code, or a language construct the spec does not parse. The names listed under "top unresolved" show where to look.
+* **A library call is missing:** `calls_lib` edges need an import or a typed receiver that resolves to an external class; a dynamically built name will not.
+* **Deployment facts are empty:** the deployment files must be inside a registered source (an infra repo or a `deploy/` directory); workloads are linked to the application repo by image name, build context, chart name or name equality.
+* **Agent graph shows no edges:** references are resolved against agent/skill/command names found in the sources; a plugin's namespace comes from `.claude-plugin/plugin.json`.
+
 ## CI
 
 * In CI (`CI=true`) the authorization question is skipped and recorded as `ci-implicit`; off-machine lookups stay off unless `advisory_lookup` is set.

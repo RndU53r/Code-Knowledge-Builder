@@ -17,20 +17,30 @@ from __future__ import annotations
 
 import argparse
 import json
+import posixpath
 import re
 import sqlite3
 import subprocess
 import sys
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from ckb_common import load_json, now_iso, repo_roots_for_output  # noqa: E402
+from lang_specs import pkg_of  # noqa: E402
 from graph_common import (EXTRACTOR_VERSION, SCHEMA_VERSION, atomic_write, cite, graph_dir, make_edge,  # noqa: E402
                           make_node, md_safe, node_id, validate)
 
 CODE_KINDS = {"function", "method", "class"}
+
+
+def path_py(path: str) -> bool:
+    return path.endswith(".py")
+
+
+def lang_of(path: str, r: dict) -> str:
+    return r.get("lang") or ("python" if path.endswith(".py") else "")
 
 
 def load_fragments(out: Path, repos: dict) -> list[dict]:
@@ -54,6 +64,8 @@ class Linker:
         self.defs_by_name = defaultdict(list)   # (repo, name) -> [node ids]
         self.file_defs = defaultdict(dict)       # (repo, path) -> {name: id}
         self.go_module = {}
+        self._jsons = {}
+        self._dircache = {}
         for f in frags:
             self.by_file[(f["repo"], f["path"])] = f
             for n in f["nodes"]:
@@ -110,13 +122,35 @@ class Linker:
             self.add_edge(make_edge(parent, "contains", fid, cite(repo, path, 1)))
 
     # ------------------------------------------------------------ imports
+    def _suffix_files(self, repo, suffixes):
+        out = []
+        for (rp, p) in self.by_file:
+            if rp == repo and any(p == sfx or p.endswith("/" + sfx) for sfx in suffixes):
+                out.append(p)
+        return out
+
+    def _repo_json(self, repo, name):
+        key = (repo, name)
+        if key not in self._jsons:
+            val = {}
+            root = self.repos.get(repo)
+            fp = Path(root) / name if root else None
+            if fp and fp.is_file():
+                try:
+                    val = json.loads(re.sub(r"(?m)^\s*//.*$|/\*.*?\*/", "", fp.read_text(errors="replace"), flags=re.S))
+                except ValueError:
+                    val = {}
+            self._jsons[key] = val
+        return self._jsons[key]
+
     def resolve_import(self, f, r) -> str | None:
         repo, path = f["repo"], f["path"]
         mod = r.get("module") or ""
         lang = r.get("lang") or ("python" if path.endswith(".py") else "")
         cands = []
+        here = Path(path).parent
         if path.endswith(".py"):
-            base = Path(path).parent
+            base = here
             level = r.get("level") or 0
             if level:
                 for _ in range(level - 1):
@@ -129,27 +163,134 @@ class Linker:
             else:
                 stem = Path(*mod.split(".")) if mod else None
                 if stem:
-                    cands += [str(stem) + ".py", str(stem / "__init__.py"), str(Path(path).parent / stem) + ".py"]
-        elif lang in ("javascript", "typescript") and mod.startswith("."):
-            stem = (Path(path).parent / mod)
-            norm = str(Path(*[p for p in stem.parts if p != "."]))
-            parts = []
-            for p in norm.split("/"):
-                if p == ".." and parts:
-                    parts.pop()
-                elif p != "..":
-                    parts.append(p)
-            s = "/".join(parts)
-            cands += [s, s + ".js", s + ".ts", s + ".tsx", s + ".mjs", s + "/index.js", s + "/index.ts"]
+                    cands += [str(stem) + ".py", str(stem / "__init__.py"), str(here / stem) + ".py"]
+        elif lang in ("javascript", "typescript"):
+            bases = []
+            if mod.startswith("."):
+                bases.append(str(here / mod))
+            else:  # tsconfig baseUrl / paths aliases
+                ts = self._repo_json(repo, "tsconfig.json").get("compilerOptions", {}) or {}
+                base_url = ts.get("baseUrl", ".")
+                for pat, targets in (ts.get("paths") or {}).items():
+                    star = pat.endswith("*")
+                    if (star and mod.startswith(pat[:-1])) or mod == pat:
+                        rest = mod[len(pat) - 1:] if star else ""
+                        for t in targets:
+                            bases.append(str(Path(base_url) / (t[:-1] + rest if t.endswith("*") else t)))
+                if ts.get("baseUrl"):
+                    bases.append(str(Path(base_url) / mod))
+            for b0 in bases:
+                parts = []
+                for p in Path(b0).as_posix().split("/"):
+                    if p == ".." and parts:
+                        parts.pop()
+                    elif p not in ("..", ".", ""):
+                        parts.append(p)
+                s_ = "/".join(parts)
+                cands += [s_] + [s_ + e for e in (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".d.ts")] + [s_ + "/index" + e for e in (".ts", ".tsx", ".js", ".jsx")]
         elif lang == "go" and self.go_module.get(repo) and mod.startswith(self.go_module[repo] + "/"):
             d = mod[len(self.go_module[repo]) + 1:]
-            for (rp, p) in self.by_file:
-                if rp == repo and str(Path(p).parent) == d:
-                    cands.append(p)
+            cands += sorted((p for (rp, p) in self.by_file if rp == repo and str(Path(p).parent) == d), key=lambda p: (p.endswith("_test.go"), p))
+        elif lang in ("java", "kotlin", "scala") and mod:
+            rel = mod.replace(".", "/")
+            exts = {"java": (".java", ".kt", ".scala"), "kotlin": (".kt", ".java"), "scala": (".scala", ".java")}[lang]
+            cands += self._suffix_files(repo, [rel + e for e in exts])
+        elif lang == "php" and mod:
+            if mod.startswith("."):
+                cands.append(str(here / mod))
+            else:
+                comp = self._repo_json(repo, "composer.json")
+                for sect in ("autoload", "autoload-dev"):
+                    for prefix, dirs in ((comp.get(sect) or {}).get("psr-4") or {}).items():
+                        pre = prefix.rstrip("\\")
+                        if mod == pre or mod.startswith(pre + "\\"):
+                            for d_ in ([dirs] if isinstance(dirs, str) else dirs):
+                                cands.append(str(Path(d_) / (mod[len(pre):].lstrip("\\").replace("\\", "/") + ".php")))
+                cands += self._suffix_files(repo, [mod.replace("\\", "/") + ".php"])
+        elif lang == "ruby" and mod:
+            if mod.startswith("."):
+                s_ = str((here / mod))
+                cands += [s_, s_ + ".rb"]
+            else:
+                cands += self._suffix_files(repo, [mod + ".rb", "lib/" + mod + ".rb", "app/" + mod + ".rb"])
+        elif lang == "rust" and mod:
+            segs = [x for x in mod.split("::") if x]
+            root = next((str(x) for x in [here, *here.parents] if (repo, str(x / "lib.rs")) in self.by_file or (repo, str(x / "main.rs")) in self.by_file), "src")
+            if segs and segs[0] in ("crate",):
+                base = Path(root)
+                segs = segs[1:]
+            elif segs and segs[0] == "self":
+                base, segs = here, segs[1:]
+            elif segs and segs[0] == "super":
+                base = here.parent
+                segs = segs[1:]
+                while segs and segs[0] == "super":
+                    base, segs = base.parent, segs[1:]
+            else:
+                base = Path(root)
+            for n_ in range(len(segs), 0, -1):
+                sub_ = base.joinpath(*segs[:n_])
+                cands += [str(sub_) + ".rs", str(sub_ / "mod.rs")]
+        elif lang in ("c", "cpp") and mod and not mod.startswith("<"):
+            cands += [str(here / mod), mod, "include/" + mod]
+            cands += self._suffix_files(repo, [mod])
+        elif lang == "dart" and mod:
+            if mod.startswith("package:"):
+                pkgname, rest = mod[8:].split("/", 1) if "/" in mod[8:] else (mod[8:], "")
+                if pkgname == (self._pubspec_name(repo) or pkgname):
+                    cands += [f"lib/{rest}", rest]
+                    cands += self._suffix_files(repo, [rest])
+            elif not mod.startswith("dart:"):
+                cands.append(str(here / mod))
+        elif lang == "perl" and mod:
+            if mod.startswith("."):
+                cands.append(str(here / mod))
+            else:
+                cands += self._suffix_files(repo, [mod.replace("::", "/") + ".pm", "lib/" + mod.replace("::", "/") + ".pm"])
         for c in cands:
-            c = c.lstrip("./") if c.startswith("./") else c
+            c = posixpath.normpath(Path(c).as_posix())
+            c = c[2:] if c.startswith("./") else c
             if (repo, c) in self.by_file:
                 return c
+        return None
+
+    CS_EXTERNAL = {"System", "Microsoft", "Newtonsoft", "Azure", "Amazon", "AWSSDK", "Google", "NUnit", "Xunit", "Moq", "Serilog", "AutoMapper", "Dapper", "MediatR",
+                   "FluentValidation", "Npgsql", "MySql", "Oracle", "StackExchange", "Grpc", "RestSharp", "Polly", "Swashbuckle", "Hangfire", "Humanizer", "Bogus"}
+
+    def internal_import(self, f, r) -> bool:
+        """An unresolved import that points into this repo (same package/namespace/crate) must not become an external `package` node."""
+        lang, repo = lang_of(f["path"], r), f["repo"]
+        mod = r.get("module") or ""
+        name = r.get("name") or re.split(r"[.:\\]+", mod)[-1]
+        if name and any(self.nodes[c]["kind"] == "class" for c in self.defs_by_name.get((repo, name), [])):
+            return True
+        if lang in ("java", "kotlin", "scala"):
+            d = "/".join(mod.split(".")[:-1] if r.get("name") else mod.split("."))
+            key = (repo, d)
+            if key not in self._dircache:
+                self._dircache[key] = bool(d) and any(rp == repo and ("/" + d + "/") in ("/" + p) for (rp, p) in self.by_file)
+            return self._dircache[key]
+        if lang == "csharp":
+            return mod.split(".")[0] not in self.CS_EXTERNAL
+        if lang == "rust":
+            return mod.split("::")[0] in ("crate", "self", "super")
+        if lang == "php":
+            comp = self._repo_json(repo, "composer.json")
+            pres = [pre.rstrip("\\") for sect in ("autoload", "autoload-dev") for pre in ((comp.get(sect) or {}).get("psr-4") or {})]
+            return any(mod == p or mod.startswith(p + "\\") for p in pres if p)
+        if lang == "go":
+            return bool(self.go_module.get(repo)) and mod.startswith(self.go_module[repo])
+        if lang == "dart":
+            own = self._pubspec_name(repo)
+            return bool(own) and mod.startswith(f"package:{own}/")
+        return False
+
+    def _pubspec_name(self, repo):
+        root = self.repos.get(repo)
+        fp = Path(root) / "pubspec.yaml" if root else None
+        if fp and fp.is_file():
+            m = re.search(r"(?m)^name:\s*(\S+)", fp.read_text(errors="replace"))
+            return m.group(1) if m else None
         return None
 
     def imports(self):
@@ -167,7 +308,9 @@ class Linker:
                     alias = r.get("alias") or Path(tgt).stem
                     self.aliases[(f["repo"], f["path"])][alias] = (tgt, r.get("name"))
                 else:
-                    pkg = (r.get("module") or r.get("name") or "").split(".")[0].split("/")[0] if not (r.get("module") or "").startswith(".") else None
+                    pkg = pkg_of(lang_of(f["path"], r), r.get("module") or r.get("name") or "") if not (r.get("module") or "").startswith(".") else None
+                    if pkg and not path_py(f["path"]) and self.internal_import(f, r):
+                        pkg = None
                     if pkg:
                         pid = node_id("package", f["repo"], "", pkg)
                         if pid not in self.nodes:
@@ -189,7 +332,11 @@ class Linker:
                 return local[name], "high"
             if name in al and al[name][0]:
                 tgt, imported = al[name]
-                t = self.file_defs[(repo, tgt)].get(imported or name)
+                defs_ = self.file_defs[(repo, tgt)]
+                t = defs_.get(imported if imported not in (None, "default") else name)
+                if not t and imported == "default":  # default export: the file's only top-level definition, or one named like the file
+                    top = [v for k_, v in defs_.items() if "." not in k_]
+                    t = top[0] if len(top) == 1 else defs_.get(Path(tgt).stem)
                 if t:
                     return t, "high"
         else:
@@ -212,33 +359,220 @@ class Linker:
             return cands[0], "medium" if len(parts) == 1 else "low"
         return None, ""
 
+    # ------------------------------------------------------------ classes, objects, libraries
+    def resolve_class(self, f, name):
+        """Class node for a (possibly dotted/generic) type name seen in file f: local, imported, or the only class of that name in the repo."""
+        repo, path = f["repo"], f["path"]
+        name = re.split(r"[<\[(|?]", (name or "").strip())[0].strip().strip("&*\\")
+        if not name:
+            return None
+        parts = re.split(r"[.\\:]+", name.replace("::", "."))
+        parts = [x for x in parts if x]
+        if not parts:
+            return None
+        local = self.file_defs[(repo, path)]
+        if len(parts) == 1 and parts[0] in local and self.nodes[local[parts[0]]]["kind"] == "class":
+            return local[parts[0]]
+        al = self.aliases[(repo, path)]
+        if parts[0] in al and al[parts[0]][0]:
+            tgt, imported = al[parts[0]]
+            defs = self.file_defs[(repo, tgt)]
+            for key in (imported if len(parts) == 1 else None, parts[-1], parts[0]):
+                t = defs.get(key) if key else None
+                if t and self.nodes[t]["kind"] == "class":
+                    return t
+        cands = [c for c in self.defs_by_name.get((repo, parts[-1]), []) if self.nodes[c]["kind"] == "class"]
+        if len(cands) > 1 and len(parts) > 1:  # a qualified name: prefer the file whose path matches it
+            hint = "/".join(parts[:-1]).lower()
+            narrowed = [c for c in cands if hint in self.nodes[c].get("path", "").lower()]
+            cands = narrowed or cands
+        return cands[0] if len(cands) == 1 else None
+
+    def mro(self, cid):
+        out, seen, q = [], {cid}, list(self.bases.get(cid, []))
+        while q:
+            b = q.pop(0)
+            if b in seen:
+                continue
+            seen.add(b)
+            out.append(b)
+            q += self.bases.get(b, [])
+        return out
+
+    def find_method(self, cid, name):
+        for c in [cid] + self.mro(cid):
+            n = self.nodes[c]
+            t = self.file_defs[(n["repo"], n["path"])].get(f"{n.get('qualname', n['name'])}.{name}")
+            if t:
+                return t, c == cid
+        seen, q = {cid}, list(self.subs.get(cid, []))  # polymorphic call through an interface/base type: first implementation that has the method
+        while q:
+            c = q.pop(0)
+            if c in seen:
+                continue
+            seen.add(c)
+            n = self.nodes[c]
+            t = self.file_defs[(n["repo"], n["path"])].get(f"{n.get('qualname', n['name'])}.{name}")
+            if t:
+                return t, False
+            q += self.subs.get(c, [])
+        return None
+
+    def resolve_call(self, f, r):
+        """-> (target id or None, confidence, status) with status resolved | external | ambiguous | unresolved | dynamic."""
+        name, src = r["name"], r["src"]
+        parts = name.split(".")
+        short = parts[-1]
+        if r.get("recv_type"):
+            cid = self.resolve_class(f, r["recv_type"])
+            if cid:
+                m = self.find_method(cid, short)
+                if m:
+                    return m[0], r.get("recv_conf", "medium"), "resolved"
+        if r.get("recv_type"):  # typed receiver whose class comes from an external package: a library call
+            h_ = re.split(r"[.\\:]+", r["recv_type"])[0]
+            al_ = self.aliases[(f["repo"], f["path"])]
+            if h_ in al_ and not al_[h_][0]:
+                return None, "", "external"
+        if ((parts[0] in ("super", "base", "parent") and len(parts) == 2) or name == "super") and self.nodes.get(src, {}).get("qualname", "").count("."):
+            sn = self.nodes[src]
+            if name == "super":
+                short = sn["qualname"].rsplit(".", 1)[-1]
+            cid = node_id("class", sn["repo"], sn["path"], sn["qualname"].rsplit(".", 1)[0])
+            for b in self.mro(cid):
+                bn = self.nodes[b]
+                t = self.file_defs[(bn["repo"], bn["path"])].get(f"{bn.get('qualname', bn['name'])}.{short}")
+                if t:
+                    return t, "medium", "resolved"
+            return None, "", "unresolved"
+        if parts[0] == "<expr>":  # receiver is an arbitrary expression: never guess from the bare method name
+            cands = [c for c in self.defs_by_name.get((f["repo"], short), []) if c != src and self.nodes[c]["kind"] in ("function", "method")]
+            return (cands[0], "low", "resolved") if len(cands) == 1 else (None, "", "dynamic")
+        if len(parts) >= 2 and short == "new":  # Ruby/Rust-style constructor: Foo.new / Foo::new
+            cid = self.resolve_class(f, ".".join(parts[:-1]))
+            if cid:
+                return cid, "high", "resolved"
+        if len(parts) >= 2:  # Class.static() / Class::static() / mod.Class.method()
+            cid = self.resolve_class(f, ".".join(parts[:-1]))
+            if cid:
+                m = self.find_method(cid, short)
+                if m:
+                    return m[0], "high" if m[1] else "medium", "resolved"
+            if len(parts) == 2 and parts[0] in self.aliases[(f["repo"], f["path"])] and not self.aliases[(f["repo"], f["path"])][parts[0]][0]:
+                return None, "", "external"
+        if len(parts) == 1 and parts[0] in self.aliases[(f["repo"], f["path"])] and not self.aliases[(f["repo"], f["path"])][parts[0]][0] \
+                and parts[0] not in self.file_defs[(f["repo"], f["path"])]:
+            return None, "", "external"
+        tgt, conf = self.resolve_name(f, name, src)
+        if tgt:
+            return tgt, conf, "resolved"
+        al = self.aliases[(f["repo"], f["path"])]
+        if parts[0] in al and not al[parts[0]][0]:
+            return None, "", "external"
+        repo = f["repo"]
+        in_repo = lambda n_: bool(self.defs_by_name.get((repo, n_)))  # noqa: E731
+        if len(parts) >= 2 and parts[0][:1].isupper() and not in_repo(parts[0]):  # static call on a type that is not ours: Net::HTTP.get, URLSession.shared
+            r["_pkg"] = parts[0]
+            return None, "", "external"
+        if len(parts) >= 2 and r.get("path_call") and parts[0][:1].islower() and parts[0] not in ("crate", "self", "super") and not in_repo(parts[0]):
+            r["_pkg"] = parts[0]  # crate/module path call: reqwest::get
+            return None, "", "external"
+        if r.get("recv_type") and r["recv_type"][:1].isupper() and not in_repo(re.split(r"[.\\:]+", r["recv_type"])[-1]):
+            ext = [m_ for m_ in self.aliases[(repo, f["path"])].values() if not m_[0] and m_[1]]
+            r["_pkg"] = ext[0][1] if ext else r["recv_type"].split(".")[0]  # typed receiver of an unknown (library) class
+            return None, "", "external"
+        cands = [c for c in self.defs_by_name.get((f["repo"], short), []) if c != src]
+        return (None, "", "ambiguous") if len(cands) > 1 else (None, "", "unresolved")
+
     def calls(self):
+        self.bases = defaultdict(list)
+        self.subs = defaultdict(list)
+        self.call_stats = defaultdict(Counter)
+        self.unresolved = defaultdict(Counter)
+        self.unres_cite = {}
+        lib = {}
+        # pass 1: inheritance and interface implementation, then overrides
         for f in self.frags:
+            for r in f["refs"]:
+                if r["type"] not in ("inherit", "implements"):
+                    continue
+                c, ex = cite(f["repo"], f["path"], r["line"]), f["extractor"]
+                tgt = self.resolve_class(f, r["name"])
+                conf = "medium"
+                if not tgt:
+                    tgt, conf = self.resolve_name(f, r["name"], r["src"])
+                if tgt and tgt != r["src"]:
+                    self.bases[r["src"]].append(tgt)
+                    self.subs[tgt].append(r["src"])
+                    self.add_edge(make_edge(r["src"], "inherits" if r["type"] == "inherit" else "implements", tgt, c, extractor=ex, confidence=conf or "medium"))
+        for cid in list(self.bases):
+            cn = self.nodes[cid]
+            q = cn.get("qualname", cn["name"])
+            own = self.file_defs[(cn["repo"], cn["path"])]
+            for key, mid in own.items():
+                if not key.startswith(q + ".") or "." in key[len(q) + 1:] or key.endswith((".__init__", ".constructor", ".__new__")):
+                    continue
+                mname = key[len(q) + 1:]
+                for b in self.mro(cid):
+                    bn = self.nodes[b]
+                    t = self.file_defs[(bn["repo"], bn["path"])].get(f"{bn.get('qualname', bn['name'])}.{mname}")
+                    if t:
+                        self.add_edge(make_edge(mid, "overrides", t, self.nodes[mid]["citation"], extractor="rule", confidence="medium"))
+                        break
+        # pass 2: calls, types, callbacks, route handlers
+        for f in self.frags:
+            lang = Path(f["path"]).suffix.lower().lstrip(".") or "?"
             for r in f["refs"]:
                 c = cite(f["repo"], f["path"], r["line"])
                 ex = f["extractor"]
-                if r["type"] == "call":
-                    tgt, conf = self.resolve_name(f, r["name"], r["src"])
+                t = r["type"]
+                if t == "call":
+                    tgt, conf, status = self.resolve_call(f, r)
                     if tgt and tgt != r["src"]:
-                        if ex == "regex" and conf == "high":
+                        if ex != "ast" and conf == "high" and not r.get("recv_type"):
                             conf = "medium"
                         self.add_edge(make_edge(r["src"], "calls", tgt, c, extractor=ex, confidence=conf,
                                                 label="observed" if conf != "low" else "inferred"))
                         if "test" in (self.nodes.get(r["src"], {}).get("tags") or []):
                             self.add_edge(make_edge(tgt, "tested_by", r["src"], c, extractor=ex if ex != "tree-sitter" else "regex", confidence=conf))
-                elif r["type"] == "inherit":
+                    elif tgt:
+                        status = "resolved"  # self-recursion: resolved, no edge
+                    if status == "external":
+                        al = self.aliases[(f["repo"], f["path"])]
+                        head = (r.get("recv_type") or r["name"]).split(".")[0]
+                        pkg = al.get(head, (None, None))[1] or r.get("_pkg")
+                        pid = node_id("package", f["repo"], "", pkg) if pkg else None
+                        if pid and pid not in self.nodes and pkg:
+                            pn = make_node("package", f["repo"], "", pkg, pkg, r["line"], extractor=ex if ex != "tree-sitter" else "regex", confidence="low", citation=c)
+                            self.add_node(pn)
+                        if pid and pid in self.nodes:
+                            e = lib.setdefault((r["src"], pid), {"apis": set(), "n": 0, "cite": c, "ex": ex})
+                            e["apis"].add(".".join(r["name"].split(".")[1:]) or r["name"])
+                            e["n"] += 1
+                    self.call_stats[(f["repo"], lang)][status] += 1
+                    if status in ("unresolved", "ambiguous", "dynamic"):
+                        self.unresolved[f["repo"]][r["name"]] += 1
+                        self.unres_cite.setdefault((f["repo"], r["name"]), c)
+                elif t == "uses_type":
+                    cid = self.resolve_class(f, r["name"])
+                    if cid and cid != r["src"]:
+                        self.add_edge(make_edge(r["src"], "uses_type", cid, c, extractor=ex, confidence="medium"))
+                elif t == "arg_ref":
                     tgt, conf = self.resolve_name(f, r["name"], r["src"])
-                    if tgt:
-                        self.add_edge(make_edge(r["src"], "inherits", tgt, c, extractor=ex, confidence=conf or "medium"))
-                elif r["type"] == "route_handler":
+                    if tgt and tgt != r["src"] and self.nodes.get(tgt, {}).get("kind") in ("function", "method"):
+                        self.add_edge(make_edge(r["src"], "references", tgt, c, extractor=ex, confidence="low" if conf != "high" else "medium", label="inferred"))
+                elif t == "route_handler":
                     tgt, conf = self.resolve_name(f, r["name"], r["src"])
                     if r.get("hint"):  # Rails controller#action / Laravel Controller@method: prefer the file that matches the controller name
                         short = r["name"].split(".")[-1]
-                        hc = [c for c in self.defs_by_name.get((f["repo"], short), []) if r["hint"].replace("controller", "") in self.nodes[c].get("path", "").lower()]
+                        hc = [c_ for c_ in self.defs_by_name.get((f["repo"], short), []) if r["hint"].replace("controller", "") in self.nodes[c_].get("path", "").lower()]
                         if len(hc) == 1:
                             tgt, conf = hc[0], "medium"
                     if tgt:
                         self.add_edge(make_edge(r["src"], "routes_to", tgt, c, extractor=ex, confidence=conf or "medium"))
+        for (src, pid), e in lib.items():
+            self.add_edge(make_edge(src, "calls_lib", pid, e["cite"], extractor=e["ex"], confidence="medium",
+                                    attrs={"apis": sorted(e["apis"])[:8], "count": e["n"]}))
 
     # ------------------------------------------------------------ cross-repo HTTP
     def http(self):
@@ -297,6 +631,23 @@ class Linker:
 
 
 # ---------------------------------------------------------------- security, proposals, carry-over
+
+def call_resolution(link: Linker, out: Path) -> dict:
+    """Per repo and language: how many call references resolved, were external library calls, ambiguous, dynamic or unresolved.
+    Writes evidence/call-resolution-<repo>.json (top unresolved names with a citation) so gaps are visible, never silent."""
+    summary = {}
+    for repo in link.repos:
+        langs = {lang: dict(c) for (r, lang), c in link.call_stats.items() if r == repo}
+        total = {k: sum(v.get(k, 0) for v in langs.values()) for k in ("resolved", "external", "ambiguous", "dynamic", "unresolved")}
+        attempted = sum(total.values())
+        summary[repo] = {"calls": attempted, **total, "resolved_pct": round(100 * (total["resolved"] + total["external"]) / attempted, 1) if attempted else None}
+        top = [{"name": n, "count": k, "citation": link.unres_cite.get((repo, n))} for n, k in link.unresolved[repo].most_common(40)]
+        atomic_write(out / "evidence" / f"call-resolution-{repo}.json", json.dumps(
+            {"repo": repo, "summary": summary[repo], "by_language": langs, "top_unresolved": top,
+             "note": "resolved = an in-repo target was found; external = a library call (see calls_lib edges); ambiguous = several candidates; "
+                     "dynamic = receiver is an arbitrary expression; unresolved = no candidate. None of these are silently dropped."}, indent=1))
+    return summary
+
 
 def attach_security(link: Linker, out: Path):
     try:
@@ -455,6 +806,7 @@ def build(out: Path, structural_only=False) -> dict:
         role_stats = roles.apply(link, roots, out)
     except Exception as e:  # noqa: BLE001 - roles are derived labels; never fail the graph build
         role_stats = {"error": f"{type(e).__name__}: {e}"}
+    cres = call_resolution(link, out)
     sec = attach_security(link, out)
     props = {} if structural_only else merge_proposals(link, out)
     pruned = prune_superseded_drafts(link, out)
@@ -478,6 +830,7 @@ def build(out: Path, structural_only=False) -> dict:
              "nodes": nodes, "edges": edges, "layers": layers, "tours": tours,
              "stats": {"nodes": len(nodes), "edges": len(edges), "nodes_by_kind": count(nodes, lambda n: n["kind"]),
                        "edges_by_kind": count(edges, lambda e: e["kind"]),
+                       "call_resolution": cres,
                        "nodes_by_extractor": count(nodes, lambda n: n["provenance"]["extractor"]),
                        "edges_by_extractor": count(edges, lambda e: e["provenance"]["extractor"])}}
     probs = validate(graph)
@@ -504,7 +857,13 @@ def enrich(out: Path, structural_only=False) -> dict:
     import pipeline_facts
     import threat_seed
     steps["repo_context"] = repo_context.run(out)
+    import coverage_report
+    steps["coverage"] = coverage_report.run(out)
     steps["pipeline_facts"] = pipeline_facts.run(out)
+    import agent_graph
+    steps["agent_graph"] = agent_graph.run(out)
+    import deploy_facts
+    steps["deploy_facts"] = deploy_facts.run(out)
     steps["doc_claims"] = doc_claims.run(out)
     build(out, structural_only)
     steps["threat_seed"] = threat_seed.run(out)

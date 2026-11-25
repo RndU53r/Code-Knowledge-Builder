@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shop-api
+  namespace: shop
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: shop-api
+  template:
+    metadata:
+      labels:
+        app: shop-api
+    spec:
+      serviceAccountName: shop-api
+      containers:
+        - name: api
+          image: registry.example.com/shop/shop-api:1.2.0
+          ports:
+            - containerPort: 8000
+          securityContext:
+            privileged: true
+          env:
+            - name: DEBUG
+              value: "true"
+            - name: AUTH_DISABLED
+              value: "false"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: shop-db
+                  key: url

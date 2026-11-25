@@ -33,7 +33,8 @@ CODE = {"function", "method"}
 RANK = {"high": 3, "medium": 2, "low": 1}
 INV = {3: "high", 2: "medium", 1: "low"}
 MECH_KIND = {"call": "calls", "http": "http_calls", "grpc": "grpc_calls", "spawn": "spawns", "event": "publishes",
-             "import": "imports", "table": "writes", "package": "imports", "deploy": "deploys"}
+             "import": "imports", "table": "writes", "package": "imports", "deploy": "deploys",
+             "type": "uses_type", "inherit": "inherits", "implement": "implements", "lib": "calls_lib", "new": "calls", "override": "overrides", "ref": "references"}
 SAFE_LABEL = re.compile(r"[^A-Za-z0-9_./ :-]")
 
 
@@ -180,7 +181,19 @@ def compute(graph: dict, roots: dict[str, Path] | None = None, extra_repo_links:
             return node_id("file", n["repo"], n["path"], "")
         return None
 
-    fn, fl, rp = Acc(), Acc(), Acc()
+    fn, fl, rp, cl, lb = Acc(), Acc(), Acc(), Acc(), Acc()
+
+    def class_of(i):
+        n = nodes.get(i)
+        if not n:
+            return None
+        if n["kind"] == "class":
+            return i
+        q = n.get("qualname", "")
+        if n["kind"] in CODE and "." in q:
+            cid = node_id("class", n["repo"], n["path"], q.rsplit(".", 1)[0])
+            return cid if cid in nodes else None
+        return None
 
     def fn_and_file(src, dst, mech, conf, cites, dst_cite=None):
         if kind_of(src) in CODE and kind_of(dst) in CODE:
@@ -191,6 +204,22 @@ def compute(graph: dict, roots: dict[str, Path] | None = None, extra_repo_links:
 
     for e in edges:
         k, c = e["kind"], e["confidence"]
+        if k in ("calls", "references", "overrides"):
+            cs_, cd_ = class_of(e["src"]), (class_of(e["dst"]))
+            if cs_ and cd_ and cs_ != cd_:
+                cl.add(cs_, cd_, {"calls": "call", "references": "ref", "overrides": "override"}[k], c, [e["citation"]])
+            elif kind_of(e["dst"]) == "class" and kind_of(e["src"]) in CODE and cs_ != e["dst"]:
+                cl.add(cs_ or file_of(e["src"]) or e["src"], e["dst"], "new", c, [e["citation"]])
+        elif k in ("uses_type", "inherits", "implements") and kind_of(e["dst"]) == "class":
+            s_ = class_of(e["src"])
+            if s_ and s_ != e["dst"]:
+                cl.add(s_, e["dst"], {"uses_type": "type", "inherits": "inherit", "implements": "implement"}[k], c, [e["citation"]])
+        elif k == "calls_lib":
+            apis = ",".join((e.get("attrs") or {}).get("apis", [])[:3])
+            lb.add(e["src"], e["dst"], f"lib:{label(apis, 30)}", c, [e["citation"]])
+            fs_ = file_of(e["src"])
+            if fs_ and fs_ in nodes:
+                lb.add(fs_, e["dst"], f"lib:{label(apis, 30)}", c, [e["citation"]])
         if k == "calls":
             fn_and_file(e["src"], e["dst"], "call", c, [e["citation"]])
         elif k in ("http_calls", "grpc_calls"):
@@ -255,6 +284,8 @@ def compute(graph: dict, roots: dict[str, Path] | None = None, extra_repo_links:
     f_rows = fn.rows(nodes)
     fl_rows = fl.rows(nodes)
     rp_rows = rp.rows(nodes)
+    cl_rows = cl.rows(nodes)
+    lb_rows = [r for r in lb.rows(nodes)]
     for rep_id in {n["id"] for n in graph["nodes"] if n["kind"] == "repo"}:
         nodes.setdefault(rep_id, {"id": rep_id, "kind": "repo", "name": rep_id.split(":")[1], "repo": rep_id.split(":")[1], "path": "", "citation": ""})
 
@@ -270,12 +301,22 @@ def compute(graph: dict, roots: dict[str, Path] | None = None, extra_repo_links:
            "function": {"nodes": [slim(i, "function") for i in sorted(used(f_rows))], "edges": f_rows},
            "file": {"nodes": [slim(i, "file") for i in sorted(used(fl_rows))], "edges": fl_rows},
            "repo": {"nodes": [slim(i, "repo") for i in sorted(used(rp_rows))], "edges": rp_rows},
+           "class": {"nodes": [slim(i, "class") for i in sorted(used(cl_rows)) if i in nodes], "edges": cl_rows},
+           "library": {"nodes": [slim(i, "library") for i in sorted(used(lb_rows)) if i in nodes], "edges": lb_rows},
            "shared_stores": shared}
-    res["stats"] = {lv: {"nodes": len(res[lv]["nodes"]), "edges": len(res[lv]["edges"])} for lv in ("function", "file", "repo")}
+    res["stats"] = {lv: {"nodes": len(res[lv]["nodes"]), "edges": len(res[lv]["edges"])} for lv in ("function", "file", "repo", "class", "library")}
     return res
 
 
 # ---------------------------------------------------------------- outputs
+
+def nodes_kind(res, i):
+    for lv in ("file", "function", "class", "library"):
+        for n in res[lv]["nodes"]:
+            if n["id"] == i:
+                return n["kind"]
+    return None
+
 
 def md_cell(s) -> str:
     return md_safe(s, 80)
@@ -305,8 +346,8 @@ def mermaid(res_level, names, cap):
 
 
 def write_outputs(out: Path, res: dict, max_rows: int, targets: dict) -> list[str]:
-    names = {n["id"]: n["name"] for lv in ("function", "file", "repo") for n in res[lv]["nodes"]}
-    repo_of = {n["id"]: n.get("repo") for lv in ("function", "file", "repo") for n in res[lv]["nodes"]}
+    names = {n["id"]: n["name"] for lv in ("function", "file", "repo", "class", "library") for n in res[lv]["nodes"]}
+    repo_of = {n["id"]: n.get("repo") for lv in ("function", "file", "repo", "class", "library") for n in res[lv]["nodes"]}
     srcs = ", ".join(f"`{k}` @ `{str((v.get('revision') or 'local'))[:12]}`" for k, v in targets.items() if not k.startswith("ctx"))
     L = ["# Call graphs", "", "> **ckb provenance**", f"> - Sources: {srcs}", f"> - Generated: {res['generated']} by ckb callgraph, stage `callgraph`",
          "> - Scope: registered code repos · Excluded: vendored, generated, binaries, symlinks",
@@ -338,6 +379,16 @@ def write_outputs(out: Path, res: dict, max_rows: int, targets: dict) -> list[st
     cross = sorted(func_rows, key=lambda r: (repo_of[r["src"]] == repo_of[r["dst"]], -r["weight"]))
     L += [f"| {md_cell(repo_of[r['src']])}: {md_cell(names[r['src']])} | {md_cell(repo_of[r['dst']])}: {md_cell(names[r['dst']])} | {md_cell(r['mechanism'])} | {r['weight']} | {r['confidence']} | {cites(r)} |"
           for r in cross[:max_rows]] or ["| [unknown] none | | | | | |"]
+    cls_rows = res["class"]["edges"]
+    L += ["", "## Class → class", "", "Calls between methods of different classes, instantiation (`new`), inheritance, interface implementation, overrides and type use; receiver types come from constructors, annotations and injected fields.", "",
+          "| From | To | Mechanism | Count | Confidence | Source |", "| --- | --- | --- | --- | --- | --- |"]
+    L += [f"| {md_cell(repo_of[r['src']])}: {md_cell(names[r['src']])} | {md_cell(repo_of[r['dst']])}: {md_cell(names[r['dst']])} | {md_cell(r['mechanism'])} | {r['weight']} | {r['confidence']} | {cites(r)} |"
+          for r in sorted(cls_rows, key=lambda r: -r["weight"])[:max_rows]] or ["| [unknown] none | | | | | |"]
+    lib_rows = [r for r in res["library"]["edges"] if names.get(r["src"]) and repo_of.get(r["src"]) and nodes_kind(res, r["src"]) == "file"]
+    L += ["", "## Library calls (file → package)", "", "External packages the code calls, with the API names seen. Unresolved externals are listed in `evidence/call-resolution-<repo>.json`.", "",
+          "| File | Package | APIs | Count | Source |", "| --- | --- | --- | --- | --- |"]
+    L += [f"| {md_cell(repo_of[r['src']])}/{md_cell(names[r['src']])} | {md_cell(names[r['dst']])} | {md_cell(r['mechanism'].split(':', 1)[-1])} | {r['weight']} | {cites(r)} |"
+          for r in sorted(lib_rows, key=lambda r: -r["weight"])[:max_rows]] or ["| [unknown] no library calls resolved | | | | |"]
     L += ["", "Full machine-readable data: `graph/callgraph.json`. Per-repo diagrams: `diagrams/callgraph-<level>-<repo>.mmd`.", ""]
     atomic_write(out / "system" / "call-graphs.md", "\n".join(L))
     written = ["system/call-graphs.md"]

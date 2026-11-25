@@ -28,6 +28,8 @@ NODE_KINDS = {
     "taint_source", "sink", "threat", "sc_finding", "cspm_finding", "trust_boundary", "asset", "drift",
     # docs
     "doc_section",
+    # agents and tooling (agent_graph.py)
+    "agent", "skill", "command", "hook", "mcp_tool",
 }
 EXTRACTORS = {"ast", "tree-sitter", "regex", "llm", "context", "scanner", "rule"}  # rule = deterministic rule engine (threat_seed, doc_claims)
 CONFIDENCE = {"high", "medium", "low"}
@@ -40,10 +42,14 @@ EDGE_KINDS = {
     "imports": {"ast", "tree-sitter", "regex"},
     "calls": {"ast", "tree-sitter", "regex", "llm"},
     "inherits": {"ast", "tree-sitter", "regex", "llm"},
-    "implements": {"ast", "tree-sitter", "regex", "llm"},
-    "overrides": {"ast", "tree-sitter", "llm"},
-    "uses_type": {"ast", "tree-sitter", "llm"},
-    "references": {"ast", "tree-sitter", "regex", "llm"},
+    "implements": {"ast", "tree-sitter", "regex", "llm", "rule"},
+    "overrides": {"ast", "tree-sitter", "regex", "llm", "rule"},
+    "uses_type": {"ast", "tree-sitter", "regex", "llm", "rule"},
+    "references": {"ast", "tree-sitter", "regex", "llm", "rule"},
+    "calls_lib": {"ast", "tree-sitter", "regex", "llm"},
+    "dispatches": {"rule", "regex", "llm"},
+    "invokes": {"rule", "regex", "ast", "llm"},
+    "configured_by": {"rule", "regex", "context", "llm"},
     "routes_to": {"ast", "tree-sitter", "regex", "llm"},
     "http_calls": {"regex", "ast", "tree-sitter", "llm"},
     "grpc_calls": {"regex", "llm"},
@@ -55,7 +61,7 @@ EDGE_KINDS = {
     "spawns": {"ast", "regex", "tree-sitter", "llm"},
     "ffi": {"regex", "llm"},
     "depends_on": {"scanner", "regex"},
-    "deploys": {"regex", "context", "llm"},
+    "deploys": {"regex", "context", "llm", "rule"},
     "tested_by": {"ast", "regex", "llm"},
     "flows_to": {"ast", "regex", "tree-sitter", "llm", "rule"},
     "reaches_sink": {"ast", "regex", "tree-sitter", "llm"},

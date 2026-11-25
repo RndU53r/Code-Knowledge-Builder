@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: code `fulfillment`, `gateway`, `orders`, `platform`; context `ctx-platform`, `ctx-platform-src`
-> - Generated: 2026-11-24T05:23:57Z by ckb doc_claims, stage `context-from-docs`
+> - Generated: 2026-11-25T22:12:20Z by ckb doc_claims, stage `context-from-docs`
 > - Scope: claims extracted from supplied documents, diagrams and notes · Excluded: statements the patterns do not recognize
 > - Method: deterministic claim extraction and checks against the knowledge graph; documents record intent, code and IaC record what is built
 > - Verification: drift items are mirrored as graph proposals (graph/proposals/seed-docs.jsonl), verified by graph_merge
@@ -15,9 +15,9 @@
 
 | Claim (documented) | Source | Observed | Evidence | Verdict |
 | --- | --- | --- | --- | --- |
-| 'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (T | `ctx-platform/architecture.drawio.md:13` | 3 ingress rule(s) open to the internet in IaC (e.g. 'sourceAddressPrefix: 'Internet'') | `platform/deploy/azure/main.bicep:28` `platform/deploy/terraform/aws/main.tf:22` | **drift** |
+| 'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (T | `ctx-platform/architecture.drawio.md:13` | 3 ingress rule(s) open to the internet in IaC (e.g. 'sourceAddressPrefix: 'Internet'') | `platform/azure/main.bicep:28` `platform/terraform/aws/main.tf:22` | **drift** |
 | 'RabbitMQ (TLS)' is documented as TLS-protected | `ctx-platform/architecture.drawio.md:18` | broker URL default uses plain 'amqp://' (no TLS) in orders | `orders/app/events.py:6` | **drift** |
-| 'Postgres shop (encrypted)' is documented as encrypted | `ctx-platform/architecture.drawio.md:19` | IaC disables encryption/TLS for aws_db_instance shop: 'storage_encrypted = false' | `platform/deploy/terraform/aws/main.tf:30` `ctx-platform/defender-assessments.json.md:16` | **drift** |
+| 'Postgres shop (encrypted)' is documented as encrypted | `ctx-platform/architecture.drawio.md:19` | IaC disables encryption/TLS for aws_db_instance shop: 'storage_encrypted = false' | `platform/terraform/aws/main.tf:30` `ctx-platform/defender-assessments.json.md:16` | **drift** |
 | API Gateway (Express) → Orders service documented as mTLS REST | `ctx-platform/architecture.drawio.md:24` | gateway calls orders with a plain-http default ('http://orders:8000'); no client certificate settings | `gateway/src/server.js:5` `gateway/src/server.js:15` | **drift** |
 | Orders service → RabbitMQ (TLS) documented as AMQPS order.created | `ctx-platform/architecture.drawio.md:25` | broker URL default uses plain 'amqp://' (no TLS) in orders | `orders/app/events.py:6` | **drift** |
 | API Gateway → Orders service documented as HTTPS | `ctx-platform/data-flow.mmd.md:20` | gateway calls orders with a plain-http default ('http://orders:8000'); no client certificate settings | `gateway/src/server.js:5` `gateway/src/server.js:15` | **drift** |
@@ -25,7 +25,7 @@
 | API Gateway → Orders service documented as HTTPS | `ctx-platform/deploy.puml.md:18` | gateway calls orders with a plain-http default ('http://orders:8000'); no client certificate settings | `gateway/src/server.js:5` `gateway/src/server.js:15` | **drift** |
 | All service-to-service traffic uses mutual TLS (mTLS) issued by the internal CA. | `ctx-platform/security-design.docx.md:14` | gateway calls orders with a plain-http default ('http://orders:8000'); no client certificate settings | `gateway/src/server.js:5` `gateway/src/server.js:15` | **drift** |
 | The orders service validates the caller JWT on every request before reading or writing orders. | `ctx-platform/security-design.docx.md:18` | 2 of 2 endpoint(s) in orders show no authentication evidence (e.g. POST /orders) | `orders/app/main.py:25` `orders/app/main.py:37` | **drift** |
-| The database is encrypted at rest. | `ctx-platform/security-design.docx.md:22` | IaC disables encryption/TLS for aws_db_instance shop: 'storage_encrypted = false' | `platform/deploy/terraform/aws/main.tf:30` `ctx-platform/defender-assessments.json.md:16` | **drift** |
+| The database is encrypted at rest. | `ctx-platform/security-design.docx.md:22` | IaC disables encryption/TLS for aws_db_instance shop: 'storage_encrypted = false' | `platform/terraform/aws/main.tf:30` `ctx-platform/defender-assessments.json.md:16` | **drift** |
 | API Gateway (Express) → Orders service (mTLS REST) | `ctx-platform/architecture.drawio.md:24` | connection exists in code (http); this row checks existence only | `gateway/src/server.js:15` `gateway/src/server.js:27` | **consistent** |
 | API Gateway → Orders service (HTTPS) | `ctx-platform/data-flow.mmd.md:20` | connection exists in code (http); this row checks existence only | `gateway/src/server.js:15` `gateway/src/server.js:27` | **consistent** |
 | API Gateway → Orders service (HTTPS) | `ctx-platform/deploy.puml.md:18` | connection exists in code (http); this row checks existence only | `gateway/src/server.js:15` `gateway/src/server.js:27` | **consistent** |

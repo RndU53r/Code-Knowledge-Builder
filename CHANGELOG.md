@@ -2,6 +2,21 @@
 
 Versions follow `plugin.json`. Newest first.
 
+## 0.6.0
+
+### Added
+- **Complete call resolution.** Calls are resolved through typed receivers (constructor assignments, annotations, injected fields, module-level instances), the class hierarchy (`super()`/`base`/`parent`, inherited methods, interface-to-implementation dispatch), static/constructor calls, callbacks and decorators. New edge kinds produced: `uses_type`, `overrides`, `implements`, `references`, `calls_lib` (code to external package with the API names). Every call is accounted for as resolved / library / ambiguous / dynamic / unresolved in `evidence/call-resolution-<repo>.json` and `graph.json` stats; nothing is dropped silently. Call-graph levels `class` and `library` join function, file and repo.
+- **Twelve languages to the same depth.** `lang_specs.py` drives declarations, class spans, calls, imports, typed receivers and inheritance for JavaScript, TypeScript, Go, Java, Kotlin, Scala, C#, Ruby, PHP, Rust and Swift (Python keeps the AST path). Each passes the eleven-row matrix in `tests/test_langs.py`; `docs/languages.md` lists parsers, frameworks and gaps. New entry points: Rust (actix, axum, Rocket, warp, tonic, clap), Swift (Vapor), Ktor, Akka HTTP/http4s/Scalatra, Micronaut/Servlets/Vert.x, WordPress, Slim, Sidekiq, tRPC, Python routers with prefixes, aiohttp/Tornado/Starlette, gRPC servicers and Lambda handlers; Rust and Swift sinks and sources; sink types `memory`, `format`, `tls`, `unsafe_code` mapped to CWEs.
+- **Agent, skill and tool graph** (`agent_graph.py`, `system/agents.md`, `ckb_agents`): Claude Code plugins (agents, skills, commands, hooks, MCP tools; `dispatches`/`invokes` edges resolved against a name index; orphans, dangling references, risk flags) and agent frameworks in code (LangGraph, CrewAI, AutoGen, OpenAI Agents, Claude Agent SDK, MCP servers).
+- **Deployment context and controls outside code** (`deploy_facts.py`): workloads from Kubernetes, compose, Helm, ECS/Lambda/Cloud Run/Container Apps and Dockerfiles with exposure (Service, Ingress, load balancer, security group), injected environment (secret values never stored), identity, and controls (ingress/gateway authentication, WAF, mesh policy, NetworkPolicy, rate limits, listeners). Workloads are linked to the repos they run (`service` nodes, `deploys` and `configured_by` edges).
+- **Coverage report** (`coverage_report.py`, `system/coverage.md`): resolution percentages, functions no entry point reaches, dynamic-dispatch hotspots, dormant unsafe sinks.
+- **Threat model uses all of it:** an **Attack paths** table over every edge kind with exposure, controls in front and coverage; exposure and authentication from deployment facts (authentication outside the code is annotated, a public workload with no control is rated up, deployed toggle values replace code defaults); deployment threats (literal secrets, privileged workloads, missing NetworkPolicy, HTTP listeners, routes without authorizers); library reachability (an advisory on a package the code calls is rated up); OWASP LLM threats from the agent graph; coverage and blind-spot section and unknown-risk rows.
+- `graph_query` ops `agents`, `roles`, `entrypoints`; viewer levels Class and Library; tests `test_calls.py`, `test_agents.py`, `test_deploy.py`, `test_langs.py`.
+
+### Changed
+- The `taint` op also starts from agents and commands and follows `references`, `dispatches`, `invokes` and `ffi` edges. `graph_merge` passes edge `attrs` through. Regex extraction produces `method` nodes with `Class.method` qualified names.
+- Tree-sitter is only used for languages without a spec (none today); the specs are the parser.
+
 ## 0.5.0
 
 ### Added

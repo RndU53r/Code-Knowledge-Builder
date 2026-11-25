@@ -55,7 +55,7 @@ Ask in plain words and the matching skill loads: "how do these services talk to 
 
 ## MCP server
 
-`ckb-graph` (stdio, read-only) is registered by the plugin. Tools: `ckb_status`, `ckb_search`, `ckb_explain`, `ckb_neighbors`, `ckb_path`, `ckb_impact`, `ckb_taint`, `ckb_callgraph`, `ckb_roles`, `ckb_entrypoints`, `ckb_tour`. `ckb_roles` lists repo kinds and file roles; `ckb_entrypoints` lists endpoints, consumers, cron jobs and CLI commands with their handler, the taint sources they read and the unsafe sinks reachable from them. The graph location comes from `CKB_OUT`, then `output_dir` in settings, then `./.ckb`; every tool also accepts `out`.
+`ckb-graph` (stdio, read-only) is registered by the plugin. Tools: `ckb_status`, `ckb_search`, `ckb_explain`, `ckb_neighbors`, `ckb_path`, `ckb_impact`, `ckb_taint`, `ckb_callgraph`, `ckb_roles`, `ckb_entrypoints`, `ckb_agents`, `ckb_tour`. `ckb_agents` lists agents, skills, commands, hooks and tools with what each calls and is called by; `ckb_callgraph` also takes the levels `class` and `library`. `ckb_roles` lists repo kinds and file roles; `ckb_entrypoints` lists endpoints, consumers, cron jobs and CLI commands with their handler, the taint sources they read and the unsafe sinks reachable from them. The graph location comes from `CKB_OUT`, then `output_dir` in settings, then `./.ckb`; every tool also accepts `out`.
 
 ## Command-line scripts
 

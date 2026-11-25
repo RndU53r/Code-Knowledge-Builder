@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pay-svc
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pay-svc
+  template:
+    metadata:
+      labels:
+        app: pay-svc
+    spec:
+      containers:
+        - name: pay
+          image: registry.example.com/shop/pay-svc:3.1.0
+          env:
+            - name: DB_PASSWORD
+              value: "changeme-example"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pay-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: pay-svc
+  ports:
+    - port: 443

@@ -1,0 +1,78 @@
+{
+ "repo": "fulfillment",
+ "repo_kind": {
+  "repo_kind": "service",
+  "secondary_kinds": [],
+  "signals": [
+   "application share 70%",
+   "1 consumer"
+  ],
+  "confidence": "high"
+ },
+ "role_counts": {
+  "build": 2,
+  "generated": 1,
+  "core": 3
+ },
+ "entry_points": {
+  "consumer": 1
+ },
+ "files": [
+  {
+   "path": "Dockerfile",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "go.mod",
+   "role": "build",
+   "confidence": "high",
+   "signals": [
+    "build/manifest file"
+   ]
+  },
+  {
+   "path": "go.sum",
+   "role": "generated",
+   "confidence": "high",
+   "signals": [
+    "generated file name/lockfile"
+   ]
+  },
+  {
+   "path": "cmd/pricing/main.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "low",
+   "signals": [
+    "no entry-point, I/O or helper signal; default"
+   ],
+   "fan_in": 0
+  },
+  {
+   "path": "cmd/worker/main.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 0
+  },
+  {
+   "path": "internal/queue/consumer.go",
+   "role": "core",
+   "lang": "go",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 1
+  }
+ ],
+ "truncated": false,
+ "note": "core/utility are [inferred]; signals show why. Path and content rules decide the other roles."
+}

@@ -36,7 +36,7 @@ CODE_EXT = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": 
 TEST_PATH = re.compile(
     r"(^|/)(tests?|__tests__|spec|specs|e2e|cypress|playwright|integration-tests?|unit-tests?)/"
     r"|_test\.(go|py|rb|php)$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|(^|/)test_[^/]+\.py$|(^|/)conftest\.py$"
-    r"|(Test|Tests|IT)\.(java|kt|cs)$|_spec\.rb$|Test\.php$|(^|/)src/test/")
+    r"|(Test|Tests|IT)\.(java|kt|cs|swift)$|(Spec|Test)\.scala$|_spec\.rb$|Test\.php$|(^|/)src/test/|(^|/)Tests/")
 FIXTURE_PATH = re.compile(r"(^|/)(fixtures?|testdata|test_data|samples?|examples?|mocks?|__mocks__|stubs?|seeds?|snapshots?)/")
 MIGRATION_PATH = re.compile(r"(^|/)(migrations?|alembic|flyway|liquibase|db/migrate)/|(^|/)V\d+__[^/]*\.sql$")
 GENERATED_NAME = re.compile(r"(\.pb\.go|_pb2\.py|_pb2_grpc\.py|\.pb\.cc|\.pb\.h|\.min\.(js|css)|\.designer\.cs|\.g\.cs|\.generated\.[A-Za-z]+"

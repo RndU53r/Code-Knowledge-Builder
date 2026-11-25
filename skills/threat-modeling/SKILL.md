@@ -30,7 +30,7 @@ The analysis outputs (overviews, flows, `system/data-flows.md`, HLDs, outputs-an
 
 ## Draft first, then refine
 
-`graph_build.py --enrich` (or `threat_seed.py --out <out>`) writes a deterministic draft to `system/threat-model.md` from the knowledge graph (taint paths to unsafe sinks, endpoints without authentication evidence, security switches an env var can turn off, plaintext or identity-header trust between services, unauthenticated message channels, shared tables, cloud misconfigurations from IaC and CSPM, confirmed-suspicious supply-chain findings, documentation drift, LLM use). Every draft threat is cited and marked `[draft]`. Start from it: confirm, re-rate, correct, or remove each threat after reading the cited code, add the threats the rules cannot see, and delete the `<!-- ckb:threat-seed -->` marker when the model is yours. The steps below still apply; the draft covers steps 1–5 mechanically.
+`graph_build.py --enrich` writes a rule-based draft (`<!-- ckb:threat-seed -->`) that already uses the derived evidence: an **Attack paths** table, exposure and external controls from deployment facts, deployed toggle values, library reachability, agent/skill threats, pipeline and IaC threats, and an **Analysis coverage and blind spots** section. Confirm, re-rate or remove each draft threat after reading the cited code, then add what rules cannot see (business-logic abuse, ownership checks, multi-step chains). Read `system/coverage.md`, `evidence/deploy-facts-*.json`, `system/agents.md` and the attack-path table before rating, and state the coverage numbers in the assumptions.
 
 ## Steps
 

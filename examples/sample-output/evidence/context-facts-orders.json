@@ -1,0 +1,189 @@
+{
+ "repo": "orders",
+ "kind": "service",
+ "primary_kind": "service",
+ "secondary_kinds": [],
+ "role_counts": {
+  "build": 1,
+  "docs": 1,
+  "other": 1,
+  "core": 4
+ },
+ "core_files": [
+  {
+   "path": "app/db.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "app/events.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "app/pricing.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "owns I/O (data store, queue, outbound call, sink)"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "app/main.py",
+   "role": "core",
+   "lang": "python",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 0
+  }
+ ],
+ "utility_files": [],
+ "n_core": 4,
+ "n_test": 0,
+ "entry_points": [
+  {
+   "kind": "endpoint",
+   "name": "POST /orders",
+   "handler": "create_order",
+   "auth": "none seen",
+   "exposure": "internal",
+   "sources": [
+    "http_param"
+   ],
+   "citation": "orders/app/main.py:25",
+   "label": "observed",
+   "protocol": ""
+  },
+  {
+   "kind": "endpoint",
+   "name": "GET /orders/{order_id}",
+   "handler": "read_order",
+   "auth": "none seen",
+   "exposure": "internal",
+   "sources": [
+    "http_param"
+   ],
+   "citation": "orders/app/main.py:37",
+   "label": "observed",
+   "protocol": ""
+  }
+ ],
+ "sources": [
+  {
+   "type": "http_param",
+   "where": "create_order",
+   "detail": "handler parameters: x_request_user",
+   "count": 1,
+   "citation": "orders/app/main.py:26"
+  },
+  {
+   "type": "http_param",
+   "where": "read_order",
+   "detail": "handler parameters: order_id",
+   "count": 1,
+   "citation": "orders/app/main.py:38"
+  }
+ ],
+ "sinks": [
+  {
+   "type": "sql",
+   "cwe": "CWE-89",
+   "verdict": "unsafe/unknown",
+   "where": "get_order",
+   "reason": "string-built query",
+   "reached_from": [
+    "GET /orders/:id",
+    "GET /orders/{order_id}"
+   ],
+   "citation": "orders/app/db.py:23",
+   "confidence": "high"
+  },
+  {
+   "type": "sql",
+   "cwe": "CWE-89",
+   "verdict": "safe pattern",
+   "where": "insert_order",
+   "reason": "parameterized",
+   "reached_from": [],
+   "citation": "orders/app/db.py:14",
+   "confidence": "medium"
+  },
+  {
+   "type": "command",
+   "cwe": "CWE-78",
+   "verdict": "safe pattern",
+   "where": "price_items",
+   "reason": "argument list",
+   "reached_from": [],
+   "citation": "orders/app/pricing.py:10",
+   "confidence": "medium"
+  }
+ ],
+ "resources": [],
+ "iac_findings": [
+  {
+   "check": "SC-D03",
+   "severity": "medium",
+   "message": "container runs as root (no non-root USER)",
+   "citation": "orders/Dockerfile:1"
+  },
+  {
+   "check": "SC-D01",
+   "severity": "low",
+   "message": "base image python:3.12-slim not pinned by digest",
+   "citation": "orders/Dockerfile:1"
+  }
+ ],
+ "pipelines": [],
+ "pipeline_findings": [],
+ "deployment": [
+  {
+   "workload": "orders",
+   "deployed_in": "orders",
+   "kind": "dockerfile",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": null,
+   "identity": null,
+   "env_names": 0,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "orders/Dockerfile:1"
+  },
+  {
+   "workload": "orders",
+   "deployed_in": "platform",
+   "kind": "compose-service",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": null,
+   "identity": null,
+   "env_names": 2,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "platform/docker-compose.yml:8"
+  }
+ ],
+ "deploy_controls": [],
+ "generated": "2026-11-25T22:12:20Z"
+}

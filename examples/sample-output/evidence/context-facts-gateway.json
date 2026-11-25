@@ -1,0 +1,205 @@
+{
+ "repo": "gateway",
+ "kind": "service",
+ "primary_kind": "service",
+ "secondary_kinds": [],
+ "role_counts": {
+  "build": 2,
+  "generated": 1,
+  "core": 2
+ },
+ "core_files": [
+  {
+   "path": "src/auth.js",
+   "role": "core",
+   "lang": "javascript",
+   "confidence": "medium",
+   "signals": [
+    "reached from an entry point"
+   ],
+   "fan_in": 1
+  },
+  {
+   "path": "src/server.js",
+   "role": "core",
+   "lang": "javascript",
+   "confidence": "medium",
+   "signals": [
+    "defines an entry point"
+   ],
+   "fan_in": 0
+  }
+ ],
+ "utility_files": [],
+ "n_core": 2,
+ "n_test": 0,
+ "entry_points": [
+  {
+   "kind": "endpoint",
+   "name": "GET /healthz",
+   "handler": "route GET /healthz",
+   "auth": "yes",
+   "exposure": "public",
+   "sources": [],
+   "citation": "gateway/src/server.js:11",
+   "label": "observed",
+   "protocol": "http"
+  },
+  {
+   "kind": "endpoint",
+   "name": "POST /orders",
+   "handler": "route POST /orders",
+   "auth": "yes",
+   "exposure": "public",
+   "sources": [
+    "http_param"
+   ],
+   "citation": "gateway/src/server.js:13",
+   "label": "observed",
+   "protocol": "http"
+  },
+  {
+   "kind": "endpoint",
+   "name": "GET /orders/:id",
+   "handler": "route GET /orders/:id",
+   "auth": "yes",
+   "exposure": "public",
+   "sources": [
+    "http_param"
+   ],
+   "citation": "gateway/src/server.js:26",
+   "label": "observed",
+   "protocol": "http"
+  },
+  {
+   "kind": "endpoint",
+   "name": "GET /admin/report",
+   "handler": "route GET /admin/report",
+   "auth": "yes",
+   "exposure": "public",
+   "sources": [
+    "http_param"
+   ],
+   "citation": "gateway/src/server.js:31",
+   "label": "observed",
+   "protocol": "http"
+  }
+ ],
+ "sources": [
+  {
+   "type": "http_param",
+   "where": "requireAuth",
+   "detail": "req.headers",
+   "count": 1,
+   "citation": "gateway/src/auth.js:11"
+  },
+  {
+   "type": "http_param",
+   "where": "route POST /orders",
+   "detail": "req.body",
+   "count": 1,
+   "citation": "gateway/src/server.js:15"
+  },
+  {
+   "type": "http_param",
+   "where": "route GET /orders/:id",
+   "detail": "req.params",
+   "count": 1,
+   "citation": "gateway/src/server.js:27"
+  },
+  {
+   "type": "http_param",
+   "where": "route GET /admin/report",
+   "detail": "req.query",
+   "count": 1,
+   "citation": "gateway/src/server.js:32"
+  }
+ ],
+ "sinks": [
+  {
+   "type": "ssrf",
+   "cwe": "CWE-918",
+   "verdict": "unsafe/unknown",
+   "where": "route GET /admin/report",
+   "reason": "request input controls the URL/host",
+   "reached_from": [
+    "GET /admin/report"
+   ],
+   "citation": "gateway/src/server.js:32",
+   "confidence": "high"
+  },
+  {
+   "type": "ssrf",
+   "cwe": "CWE-918",
+   "verdict": "safe pattern",
+   "where": "route GET /orders/:id",
+   "reason": "request input only in the URL path (check downstream handling)",
+   "reached_from": [],
+   "citation": "gateway/src/server.js:27",
+   "confidence": "medium"
+  }
+ ],
+ "resources": [],
+ "iac_findings": [
+  {
+   "check": "SC-D01",
+   "severity": "low",
+   "message": "base image node:20-alpine not pinned by digest",
+   "citation": "gateway/Dockerfile:1"
+  }
+ ],
+ "pipelines": [],
+ "pipeline_findings": [],
+ "deployment": [
+  {
+   "workload": "gateway",
+   "deployed_in": "gateway",
+   "kind": "dockerfile",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": null,
+   "identity": null,
+   "env_names": 0,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "gateway/Dockerfile:1"
+  },
+  {
+   "workload": "gateway",
+   "deployed_in": "platform",
+   "kind": "compose-service",
+   "exposure": "host-ports",
+   "hosts": [],
+   "public": true,
+   "tls": null,
+   "identity": null,
+   "env_names": 2,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "platform/docker-compose.yml:2"
+  },
+  {
+   "workload": "gateway",
+   "deployed_in": "platform",
+   "kind": "Deployment",
+   "exposure": "none",
+   "hosts": [],
+   "public": false,
+   "tls": false,
+   "identity": null,
+   "env_names": 1,
+   "switches": [],
+   "external_controls": [],
+   "privileged": false,
+   "network_policy": false,
+   "citation": "platform/k8s/gateway.yaml:2"
+  }
+ ],
+ "deploy_controls": [],
+ "generated": "2026-11-25T22:12:20Z"
+}

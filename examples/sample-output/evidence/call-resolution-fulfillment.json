@@ -1,0 +1,82 @@
+{
+ "repo": "fulfillment",
+ "summary": {
+  "calls": 34,
+  "resolved": 1,
+  "external": 19,
+  "ambiguous": 0,
+  "dynamic": 0,
+  "unresolved": 14,
+  "resolved_pct": 58.8
+ },
+ "by_language": {
+  "go": {
+   "external": 19,
+   "unresolved": 14,
+   "resolved": 1
+  }
+ },
+ "top_unresolved": [
+  {
+   "name": "m.Nack",
+   "count": 2,
+   "citation": "fulfillment/internal/queue/consumer.go:41"
+  },
+  {
+   "name": "map",
+   "count": 2,
+   "citation": "fulfillment/cmd/pricing/main.go:25"
+  },
+  {
+   "name": "conn.Channel",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:22"
+  },
+  {
+   "name": "ch.QueueDeclare",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:26"
+  },
+  {
+   "name": "ch.QueueBind",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:30"
+  },
+  {
+   "name": "ch.Consume",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:33"
+  },
+  {
+   "name": "handle",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:44"
+  },
+  {
+   "name": "m.Ack",
+   "count": 1,
+   "citation": "fulfillment/internal/queue/consumer.go:49"
+  },
+  {
+   "name": "items",
+   "count": 1,
+   "citation": "fulfillment/cmd/pricing/main.go:17"
+  },
+  {
+   "name": "req.Header.Set",
+   "count": 1,
+   "citation": "fulfillment/cmd/worker/main.go:29"
+  },
+  {
+   "name": "client.Do",
+   "count": 1,
+   "citation": "fulfillment/cmd/worker/main.go:30"
+  },
+  {
+   "name": "db.Exec",
+   "count": 1,
+   "citation": "fulfillment/cmd/worker/main.go:35"
+  }
+ ],
+ "note": "resolved = an in-repo target was found; external = a library call (see calls_lib edges); ambiguous = several candidates; dynamic = receiver is an arbitrary expression; unresolved = no candidate. None of these are silently dropped."
+}

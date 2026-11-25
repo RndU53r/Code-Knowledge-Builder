@@ -1,0 +1,260 @@
+{
+ "repo": "platform",
+ "kind": "iac",
+ "primary_kind": "iac",
+ "secondary_kinds": [],
+ "role_counts": {
+  "build": 1,
+  "iac": 5
+ },
+ "core_files": [],
+ "utility_files": [],
+ "n_core": 0,
+ "n_test": 0,
+ "entry_points": [],
+ "sources": [],
+ "sinks": [],
+ "resources": [
+  {
+   "type": "Microsoft.Network/networkSecurityGroups",
+   "name": "Microsoft.Network/networkSecurityGroups nsg",
+   "iac": "azure-bicep",
+   "issues": [
+    "SC-D05 Azure: ingress open to the internet"
+   ],
+   "citation": "platform/azure/main.bicep:16-36"
+  },
+  {
+   "type": "Microsoft.Storage/storageAccounts",
+   "name": "Microsoft.Storage/storageAccounts reports",
+   "iac": "azure-bicep",
+   "issues": [
+    "SC-D07 Azure: storage or service publicly accessible",
+    "SC-D09 Azure: encryption or TLS disabled",
+    "CSPM: a1b2"
+   ],
+   "citation": "platform/azure/main.bicep:4-14"
+  },
+  {
+   "type": "AWS::IAM::Role",
+   "name": "AWS::IAM::Role OpsRole",
+   "iac": "cloudformation",
+   "issues": [],
+   "citation": "platform/cloudformation/queue.yaml:10"
+  },
+  {
+   "type": "AWS::SQS::Queue",
+   "name": "AWS::SQS::Queue FulfillmentDLQ",
+   "iac": "cloudformation",
+   "issues": [],
+   "citation": "platform/cloudformation/queue.yaml:5-8"
+  },
+  {
+   "type": "Deployment",
+   "name": "Deployment gateway",
+   "iac": "kubernetes",
+   "issues": [
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/ec2-sg-open-3000"
+   ],
+   "citation": "platform/k8s/gateway.yaml:2"
+  },
+  {
+   "type": "Ingress",
+   "name": "Ingress gateway",
+   "iac": "kubernetes",
+   "issues": [
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/ec2-sg-open-3000"
+   ],
+   "citation": "platform/k8s/gateway.yaml:22"
+  },
+  {
+   "type": "aws_s3_bucket_public_access_block",
+   "name": "aws_s3_bucket_public_access_block invoices",
+   "iac": "terraform",
+   "issues": [
+    "SC-D07 Terraform/AWS: storage or service publicly accessible",
+    "CSPM: prowler-aws-s3_bucket_public_access-eu-west-1-shop-invoices-fixture"
+   ],
+   "citation": "platform/terraform/aws/main.tf:11-14"
+  },
+  {
+   "type": "aws_security_group",
+   "name": "aws_security_group gateway",
+   "iac": "terraform",
+   "issues": [
+    "SC-D05 ingress open to 0.0.0.0/0",
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/ec2-sg-open-3000"
+   ],
+   "citation": "platform/terraform/aws/main.tf:16-24"
+  },
+  {
+   "type": "aws_db_instance",
+   "name": "aws_db_instance shop",
+   "iac": "terraform",
+   "issues": [
+    "SC-D09 Terraform/AWS: encryption or TLS disabled",
+    "CSPM: a1b2",
+    "CSPM: f1"
+   ],
+   "citation": "platform/terraform/aws/main.tf:26-33"
+  },
+  {
+   "type": "aws_mq_broker",
+   "name": "aws_mq_broker orders",
+   "iac": "terraform",
+   "issues": [
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/iam-star",
+    "CSPM: wiz-001"
+   ],
+   "citation": "platform/terraform/aws/main.tf:35-45"
+  },
+  {
+   "type": "aws_iam_policy",
+   "name": "aws_iam_policy orders_app",
+   "iac": "terraform",
+   "issues": [
+    "SC-D08 Terraform/AWS: wildcard IAM action",
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/iam-star",
+    "CSPM: wiz-001"
+   ],
+   "citation": "platform/terraform/aws/main.tf:47-53"
+  },
+  {
+   "type": "aws_s3_bucket",
+   "name": "aws_s3_bucket invoices",
+   "iac": "terraform",
+   "issues": [
+    "SC-D07 Terraform/AWS: storage or service publicly accessible",
+    "CSPM: prowler-aws-s3_bucket_public_access-eu-west-1-shop-invoices-fixture"
+   ],
+   "citation": "platform/terraform/aws/main.tf:6-9"
+  },
+  {
+   "type": "google_compute_firewall",
+   "name": "google_compute_firewall admin",
+   "iac": "terraform",
+   "issues": [
+    "SC-D05 Terraform/GCP: ingress open to the internet",
+    "CSPM: f1",
+    "CSPM: arn:aws:securityhub:eu-west-1:111122223333:finding/iam-star"
+   ],
+   "citation": "platform/terraform/gcp/main.tf:13-21"
+  },
+  {
+   "type": "google_storage_bucket",
+   "name": "google_storage_bucket exports",
+   "iac": "terraform",
+   "issues": [
+    "CSPM: f2"
+   ],
+   "citation": "platform/terraform/gcp/main.tf:2-5"
+  },
+  {
+   "type": "google_storage_bucket_iam_member",
+   "name": "google_storage_bucket_iam_member exports_public",
+   "iac": "terraform",
+   "issues": [
+    "SC-D07 Terraform/GCP: storage or service publicly accessible"
+   ],
+   "citation": "platform/terraform/gcp/main.tf:7-11"
+  }
+ ],
+ "iac_findings": [
+  {
+   "check": "SC-D07",
+   "severity": "high",
+   "message": "Azure: storage or service publicly accessible",
+   "citation": "platform/azure/main.bicep:10"
+  },
+  {
+   "check": "SC-D09",
+   "severity": "medium",
+   "message": "Azure: encryption or TLS disabled",
+   "citation": "platform/azure/main.bicep:11"
+  },
+  {
+   "check": "SC-D09",
+   "severity": "medium",
+   "message": "Azure: encryption or TLS disabled",
+   "citation": "platform/azure/main.bicep:12"
+  },
+  {
+   "check": "SC-D05",
+   "severity": "medium",
+   "message": "Azure: ingress open to the internet",
+   "citation": "platform/azure/main.bicep:28"
+  },
+  {
+   "check": "SC-D08",
+   "severity": "high",
+   "message": "AWS CloudFormation: wildcard IAM action",
+   "citation": "platform/cloudformation/queue.yaml:22"
+  },
+  {
+   "check": "SC-D01",
+   "severity": "low",
+   "message": "workload image registry.example.com/shop/gateway:1.0.0 not pinned by digest",
+   "citation": "platform/k8s/gateway.yaml:15"
+  },
+  {
+   "check": "SC-D07",
+   "severity": "high",
+   "message": "Terraform/AWS: storage or service publicly accessible",
+   "citation": "platform/terraform/aws/main.tf:13"
+  },
+  {
+   "check": "SC-D05",
+   "severity": "medium",
+   "message": "ingress open to 0.0.0.0/0",
+   "citation": "platform/terraform/aws/main.tf:22"
+  },
+  {
+   "check": "SC-D09",
+   "severity": "medium",
+   "message": "Terraform/AWS: encryption or TLS disabled",
+   "citation": "platform/terraform/aws/main.tf:30"
+  },
+  {
+   "check": "SC-D08",
+   "severity": "high",
+   "message": "Terraform/AWS: wildcard IAM action",
+   "citation": "platform/terraform/aws/main.tf:51"
+  },
+  {
+   "check": "SC-D07",
+   "severity": "high",
+   "message": "Terraform/AWS: storage or service publicly accessible",
+   "citation": "platform/terraform/aws/main.tf:8"
+  },
+  {
+   "check": "SC-D07",
+   "severity": "high",
+   "message": "Terraform/GCP: storage or service publicly accessible",
+   "citation": "platform/terraform/gcp/main.tf:10"
+  },
+  {
+   "check": "SC-D05",
+   "severity": "medium",
+   "message": "Terraform/GCP: ingress open to the internet",
+   "citation": "platform/terraform/gcp/main.tf:16"
+  }
+ ],
+ "pipelines": [],
+ "pipeline_findings": [],
+ "deployment": [],
+ "deploy_controls": [
+  {
+   "kind": "open-ingress",
+   "scope": "gateway",
+   "detail": "open to the internet on 3000",
+   "citation": "platform/terraform/aws/main.tf:16"
+  },
+  {
+   "kind": "open-ingress",
+   "scope": "admin",
+   "detail": "open to the internet",
+   "citation": "platform/terraform/gcp/main.tf:13"
+  }
+ ],
+ "generated": "2026-11-25T22:12:20Z"
+}

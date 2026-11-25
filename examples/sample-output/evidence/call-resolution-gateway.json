@@ -1,0 +1,67 @@
+{
+ "repo": "gateway",
+ "summary": {
+  "calls": 24,
+  "resolved": 1,
+  "external": 4,
+  "ambiguous": 0,
+  "dynamic": 0,
+  "unresolved": 19,
+  "resolved_pct": 20.8
+ },
+ "by_language": {
+  "js": {
+   "unresolved": 19,
+   "external": 4,
+   "resolved": 1
+  }
+ },
+ "top_unresolved": [
+  {
+   "name": "res.status",
+   "count": 5,
+   "citation": "gateway/src/auth.js:14"
+  },
+  {
+   "name": "next",
+   "count": 3,
+   "citation": "gateway/src/auth.js:9"
+  },
+  {
+   "name": "app.get",
+   "count": 3,
+   "citation": "gateway/src/server.js:11"
+  },
+  {
+   "name": "res.json",
+   "count": 3,
+   "citation": "gateway/src/server.js:11"
+  },
+  {
+   "name": "header.startsWith",
+   "count": 1,
+   "citation": "gateway/src/auth.js:12"
+  },
+  {
+   "name": "header.slice",
+   "count": 1,
+   "citation": "gateway/src/auth.js:12"
+  },
+  {
+   "name": "app.post",
+   "count": 1,
+   "citation": "gateway/src/server.js:13"
+  },
+  {
+   "name": "app.listen",
+   "count": 1,
+   "citation": "gateway/src/server.js:36"
+  },
+  {
+   "name": "console.log",
+   "count": 1,
+   "citation": "gateway/src/server.js:36"
+  }
+ ],
+ "note": "resolved = an in-repo target was found; external = a library call (see calls_lib edges); ambiguous = several candidates; dynamic = receiver is an arbitrary expression; unresolved = no candidate. None of these are silently dropped."
+}
