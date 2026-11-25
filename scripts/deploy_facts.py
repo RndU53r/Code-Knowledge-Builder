@@ -25,11 +25,21 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from ckb_common import read_text, repo_excludes, repo_roots_for_output, walk_files  # noqa: E402
+from ckb_common import read_text, redact_text, repo_excludes, repo_roots_for_output, walk_files  # noqa: E402
 from graph_common import atomic_write, graph_dir, safe_quote  # noqa: E402
 from roles import classify  # noqa: E402
 
-SECRETISH = re.compile(r"(?i)(PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|PRIVATE_?KEY|CREDENTIAL|CONN(ECTION)?_?STRING|DSN)")
+SECRETISH = re.compile(r"(?i)(PASS|PWD|SECRET|TOKEN|KEY|CREDENTIAL|CONN(ECTION)?_?STRING|DSN|COOKIE|SALT|SIGN|AUTH|CERT|URL|URI|HOST_?KEY|SESSION)")
+
+
+def safe_value(name: str, v: str):
+    """A literal env value is kept only for names that are clearly not secret and values that do not look like credentials."""
+    v = (v or "").strip()
+    if re.fullmatch(r"(?i)true|false|0|1|yes|no|on|off|enabled|disabled", v):
+        return v  # a boolean switch value is not a secret, whatever the variable is called
+    if not v or SECRETISH.search(name or "") or len(v) > 60 or re.search(r"://[^/\s]*@|[A-Za-z0-9+/=_-]{32,}", v):
+        return None
+    return v
 WORKLOAD_KINDS = {"Deployment", "StatefulSet", "DaemonSet", "Job", "CronJob", "Pod", "ReplicaSet"}
 PUBLIC_CIDR = re.compile(r"0\.0\.0\.0/0|::/0|\"\*\"|'\*'")
 
@@ -62,60 +72,60 @@ def env_entries(block: str, base_line: int):
     out = []
     lines = block.splitlines()
     for i, ln in enumerate(lines):
-        m = re.match(r"^\s*-\s*name:\s*['\"]?([A-Za-z_][\w.]*)['\"]?\s*$", ln)
+        m = re.match(r"^[ \t]*-\s*name:\s*['\"]?([A-Za-z_][\w.]*)['\"]?\s*$", ln)
         if m:
             nxt_lines = []
             for x in lines[i + 1:i + 8]:
-                if re.match(r"^\s*-\s*name:", x):
+                if re.match(r"^[ \t]*-\s*name:", x):
                     break
                 nxt_lines.append(x)
             nxt = " ".join(nxt_lines)
             vf = re.search(r"valueFrom:\s*(?:\n\s*)?(secretKeyRef|configMapKeyRef|fieldRef|resourceFieldRef)", nxt) or re.search(r"\b(secretKeyRef|configMapKeyRef|fieldRef)\b", nxt)
             val = re.match(r"\s*value:\s*['\"]?([^'\"#\n]*)['\"]?", nxt_lines[0]) if nxt_lines else None
             src = vf.group(1) if vf else ("literal" if val else "unknown")
-            out.append({"name": m.group(1), "source": src, "line": base_line + i, **({"value": val.group(1).strip()} if val and src == "literal" and not SECRETISH.search(m.group(1)) else {})})
+            out.append({"name": m.group(1), "source": src, "line": base_line + i, **({"value": safe_value(m.group(1), val.group(1))} if val and src == "literal" and safe_value(m.group(1), val.group(1)) is not None else {})})
             continue
-        m = re.match(r"^\s*-\s*([A-Za-z_][\w]*)=(.*)$", ln)  # compose list form
+        m = re.match(r"^[ \t]*-\s*([A-Za-z_][\w]*)=(.*)$", ln)  # compose list form
         if m:
             out.append({"name": m.group(1), "source": "literal" if m.group(2) and "${" not in m.group(2) else "variable", "line": base_line + i,
-                        **({"value": m.group(2).strip("'\"")} if m.group(2) and "${" not in m.group(2) and not SECRETISH.search(m.group(1)) else {})})
+                        **({"value": safe_value(m.group(1), m.group(2).strip("'\""))} if m.group(2) and "${" not in m.group(2) and safe_value(m.group(1), m.group(2).strip("'\"")) is not None else {})})
             continue
         m = re.match(r"^\s{2,}([A-Z_][A-Z0-9_]*):\s*(.*)$", ln)  # compose / helm map form
         if m:
             v = m.group(2).strip().strip("'\"")
             out.append({"name": m.group(1), "source": "variable" if "${" in v or "{{" in v else ("literal" if v else "unknown"), "line": base_line + i,
-                        **({"value": v} if v and "${" not in v and "{{" not in v and not SECRETISH.search(m.group(1)) else {})})
+                        **({"value": safe_value(m.group(1), v)} if v and "${" not in v and "{{" not in v and safe_value(m.group(1), v) is not None else {})})
     return out
 
 
 def parse_k8s(repo, rel, text, facts):
     for start, doc in docs_of(text):
         kind = _first(r"^kind:\s*(\w+)", doc)
-        name = _first(r"^metadata:\s*\n(?:\s+.*\n)*?\s+name:\s*(\S+)", doc + "\n") or _first(r"^\s+name:\s*(\S+)", doc)
+        name = _first(r"^metadata:[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+name:[ \t]*(\S+)", doc + "\n") or _first(r"^[ \t]+name:\s*(\S+)", doc)
         if not kind:
             continue
         cite = _cite(repo, rel, start + (next((i for i, ln in enumerate(doc.splitlines()) if ln.startswith("kind:")), 0)))
         if kind in WORKLOAD_KINDS:
-            images = re.findall(r"^\s*-?\s*image:\s*['\"]?([^\s'\"#]+)", doc, re.M)
-            ports = [int(p) for p in re.findall(r"containerPort:\s*(\d+)", doc)]
+            images = [re.sub(r"//[^/@\s]*@", "//", i)[:200] for i in re.findall(r"^[ \t]*-?[ \t]*image:[ \t]*['\"]?([^\s'\"#]{1,300})", doc, re.M)]
+            ports = [int(p) for p in re.findall(r"containerPort:[ \t]*(\d{1,5})", doc)]
             envs = env_entries(doc[doc.find("env:"):] if "env:" in doc else "", start + (doc[:doc.find("env:")].count("\n") if "env:" in doc else 0))
             envfrom = re.findall(r"(?:secretRef|configMapRef):\s*\n\s*name:\s*(\S+)", doc)
             sec = {"privileged": bool(re.search(r"privileged:\s*true", doc)), "host_network": bool(re.search(r"hostNetwork:\s*true", doc)),
                    "host_path": bool(re.search(r"\bhostPath:", doc)), "run_as_non_root": bool(re.search(r"runAsNonRoot:\s*true", doc)),
                    "run_as_root": bool(re.search(r"runAsUser:\s*0\b", doc)), "limits": bool(re.search(r"\blimits:", doc))}
-            facts["workloads"].append({"name": name or kind, "kind": kind, "source": "kubernetes", "namespace": _first(r"^\s+namespace:\s*(\S+)", doc), "images": images[:6], "ports": ports[:8],
+            facts["workloads"].append({"name": name or kind, "kind": kind, "source": "kubernetes", "namespace": _first(r"^[ \t]+namespace:\s*(\S+)", doc), "images": images[:6], "ports": ports[:8],
                                        "env": envs[:60], "env_from": envfrom[:6], "service_account": _first(r"serviceAccountName:\s*(\S+)", doc),
                                        "replicas": int(_first(r"replicas:\s*(\d+)", doc, "0") or 0) or None, "security": sec, "citation": cite,
                                        "exposure": {"kind": "none"}})
         elif kind == "Service":
-            facts["_services"].append({"name": name, "type": _first(r"^\s+type:\s*(\w+)", doc, "ClusterIP"), "selector": re.findall(r"^\s{4,}(?:app|app\.kubernetes\.io/name):\s*(\S+)", doc, re.M),
-                                       "ports": [int(p) for p in re.findall(r"^\s*-?\s*port:\s*(\d+)", doc, re.M)][:6], "citation": cite,
-                                       "annotations": re.findall(r"^\s+([\w./-]*(?:internal|load-balancer|ssl|cert|auth)[\w./-]*):\s*(.*)$", doc, re.M)[:6]})
+            facts["_services"].append({"name": name, "type": _first(r"^[ \t]+type:\s*(\w+)", doc, "ClusterIP"), "selector": re.findall(r"^\s{4,}(?:app|app\.kubernetes\.io/name):\s*(\S+)", doc, re.M),
+                                       "ports": [int(p) for p in re.findall(r"^[ \t]*-?\s*port:\s*(\d+)", doc, re.M)][:6], "citation": cite,
+                                       "annotations": re.findall(r"^[ \t]+([\w./-]*(?:internal|load-balancer|ssl|cert|auth)[\w./-]*):\s*(.*)$", doc, re.M)[:6]})
         elif kind == "Ingress":
-            hosts = re.findall(r"^\s*-?\s*host:\s*['\"]?([^\s'\"]+)", doc, re.M)
+            hosts = re.findall(r"^[ \t]*-?\s*host:\s*['\"]?([^\s'\"]+)", doc, re.M)
             backends = re.findall(r"(?:service:\s*\n\s*name:|serviceName:)\s*['\"]?([\w.-]+)", doc)
-            ann = dict(re.findall(r"^\s+([\w./-]+):\s*['\"]?([^'\"\n#]*)['\"]?\s*$", doc[doc.find("annotations:"):doc.find("spec:")] if "annotations:" in doc else "", re.M))
-            facts["_ingresses"].append({"name": name, "hosts": hosts[:6], "backends": backends[:8], "tls": bool(re.search(r"^\s*tls:", doc, re.M)), "annotations": ann, "citation": cite})
+            ann = dict(re.findall(r"^[ \t]+([\w./-]+):\s*['\"]?([^'\"\n#]*)['\"]?\s*$", doc[doc.find("annotations:"):doc.find("spec:")] if "annotations:" in doc else "", re.M))
+            facts["_ingresses"].append({"name": name, "hosts": hosts[:6], "backends": backends[:8], "tls": bool(re.search(r"^[ \t]*tls:", doc, re.M)), "annotations": ann, "citation": cite})
             for k, v in ann.items():
                 if re.search(r"auth-url|auth-signin|oauth2|auth-type|auth-secret|jwt|authorizer", k, re.I):
                     facts["controls"].append({"kind": "gateway-auth", "scope": f"ingress {name}", "detail": f"{k}: {v}"[:120], "citation": cite, "hosts": hosts[:3], "backends": backends[:8]})
@@ -126,7 +136,7 @@ def parse_k8s(repo, rel, text, facts):
                 if re.search(r"limit-(rps|rpm|connections)|rate-limit", k, re.I):
                     facts["controls"].append({"kind": "rate-limit", "scope": f"ingress {name}", "detail": f"{k}: {v}"[:120], "citation": cite, "backends": backends[:8]})
         elif kind == "NetworkPolicy":
-            facts["controls"].append({"kind": "network-policy", "scope": name or "networkpolicy", "detail": "policyTypes: " + ",".join(re.findall(r"^\s*-\s*(Ingress|Egress)\s*$", doc, re.M)) + ("; default-deny" if re.search(r"podSelector:\s*\{\}", doc) else ""),
+            facts["controls"].append({"kind": "network-policy", "scope": name or "networkpolicy", "detail": "policyTypes: " + ",".join(re.findall(r"^[ \t]*-\s*(Ingress|Egress)\s*$", doc, re.M)) + ("; default-deny" if re.search(r"podSelector:\s*\{\}", doc) else ""),
                                       "citation": cite})
         elif kind == "PeerAuthentication":
             facts["controls"].append({"kind": "mtls", "scope": name or "peerauthentication", "detail": "mode: " + (_first(r"mode:\s*(\w+)", doc) or "?"), "citation": cite})
@@ -143,7 +153,7 @@ def parse_compose(repo, rel, text, facts):
     in_services, cur = False, None
     blocks = {}
     for i, ln in enumerate(lines, 1):
-        if re.match(r"^services:\s*$", ln):
+        if re.match(r"^services:[ \t]*$", ln):
             in_services = True
             continue
         if in_services and re.match(r"^\S", ln) and not ln.startswith("#"):
@@ -157,44 +167,44 @@ def parse_compose(repo, rel, text, facts):
                 blocks[cur][1].append(ln)
     for name, (start, body) in blocks.items():
         b = "\n".join(body)
-        image = _first(r"^\s+image:\s*(\S+)", b)
-        build = _first(r"^\s+build:\s*(\S+)", b) or _first(r"^\s+context:\s*(\S+)", b)
-        ports = re.findall(r"^\s*-\s*['\"]?(?:(\d+(?:\.\d+\.\d+\.\d+)?):)?(\d+)(?:/\w+)?['\"]?\s*$", b[b.find("ports:"):] if "ports:" in b else "", re.M)
-        published = [p for p in re.findall(r"^\s*-\s*['\"]?(?:[\d.]+:)?(\d+):(\d+)", b[b.find("ports:"):] if "ports:" in b else "", re.M)]
-        inline = re.search(r"^\s+ports:\s*\[([^\]]*)\]", b, re.M)  # ports: ["3000:3000", "9000:9000"]
+        image = re.sub(r"//[^/@\s]*@", "//", (_first(r"^[ \t]+image:[ \t]*(\S+)", b) or ""))[:200] or None
+        build = _first(r"^[ \t]+build:\s*(\S+)", b) or _first(r"^[ \t]+context:\s*(\S+)", b)
+        ports = re.findall(r"^[ \t]*-\s*['\"]?(?:(\d+(?:\.\d+\.\d+\.\d+)?):)?(\d{1,5})(?:/\w+)?['\"]?\s*$", b[b.find("ports:"):] if "ports:" in b else "", re.M)
+        published = [p for p in re.findall(r"^[ \t]*-\s*['\"]?(?:[\d.]+:)?(\d{1,5}):(\d{1,5})", b[b.find("ports:"):] if "ports:" in b else "", re.M)]
+        inline = re.search(r"^[ \t]+ports:\s*\[([^\]]*)\]", b, re.M)  # ports: ["3000:3000", "9000:9000"]
         if inline:
             published += [p for p in re.findall(r"['\"]?(?:[\d.]+:)?(\d+):(\d+)['\"]?", inline.group(1))]
             ports += [(None, c) for h, c in re.findall(r"['\"]?(?:[\d.]+:)?(\d+):(\d+)['\"]?", inline.group(1))]
         envs = env_entries(b[b.find("environment:"):b.find("environment:") + 2000] if "environment:" in b else "", start + b[:b.find("environment:")].count("\n") + 1 if "environment:" in b else start)
         facts["workloads"].append({"name": name, "kind": "compose-service", "source": "compose", "images": [image] if image else [], "build": build, "ports": [int(c) for _, c in ports][:8],
-                                   "published_ports": [int(h) for h, c in published][:8], "env": envs[:60], "env_file": _first(r"^\s+env_file:\s*(\S+)", b), "security": {"privileged": bool(re.search(r"privileged:\s*true", b)),
+                                   "published_ports": [int(h) for h, c in published][:8], "env": envs[:60], "env_file": _first(r"^[ \t]+env_file:\s*(\S+)", b), "security": {"privileged": bool(re.search(r"privileged:\s*true", b)),
                                    "run_as_root": bool(re.search(r"user:\s*['\"]?(0|root)\b", b))},
                                    "exposure": {"kind": "host-ports" if published else "none", "published": [int(h) for h, c in published][:6], "public": bool(published)}, "citation": _cite(repo, rel, start)})
 
 
 def parse_helm_values(repo, rel, text, facts):
     chart = Path(rel).parent.name
-    img = _first(r"^image:\s*\n(?:\s+.*\n)*?\s+repository:\s*(\S+)", text + "\n") or _first(r"^\s*repository:\s*(\S+)", text)
-    env = env_entries(text[text.find("env:"):text.find("env:") + 2000] if re.search(r"^\s*env:", text, re.M) else "", text[:max(0, text.find("env:"))].count("\n") + 1)
-    ing = re.search(r"^ingress:\s*\n((?:\s+.*\n?)+)", text, re.M)
+    img = _first(r"^image:[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+repository:[ \t]*(\S+)", text + "\n") or _first(r"^[ \t]*repository:\s*(\S+)", text)
+    env = env_entries(text[text.find("env:"):text.find("env:") + 2000] if re.search(r"^[ \t]*env:", text, re.M) else "", text[:max(0, text.find("env:"))].count("\n") + 1)
+    ing = re.search(r"^ingress:[ \t]*\n((?:[ \t]+[^\n]*\n?)+)", text, re.M)
     enabled = bool(ing and re.search(r"enabled:\s*true", ing.group(1)))
     hosts = re.findall(r"host:\s*['\"]?([^\s'\"]+)", ing.group(1)) if ing else []
-    stype = _first(r"^service:\s*\n(?:\s+.*\n)*?\s+type:\s*(\w+)", text + "\n")
+    stype = _first(r"^service:[ \t]*\n(?:[ \t]+[^\n]*\n)*?[ \t]+type:[ \t]*(\w+)", text + "\n")
     facts["workloads"].append({"name": chart, "kind": "helm-release", "source": "helm", "images": [img] if img else [], "ports": [], "env": env[:60], "security": {},
                                "exposure": {"kind": "ingress" if enabled else ("service-" + stype.lower() if stype else "none"), "hosts": hosts[:4], "service_type": stype}, "citation": _cite(repo, rel, 1), "chart": chart})
-    for m in re.finditer(r"^\s*(?:oauth2Proxy|authUrl|auth_url|auth)\s*:", text, re.M):
+    for m in re.finditer(r"^[ \t]*(?:oauth2Proxy|authUrl|auth_url|auth)\s*:", text, re.M):
         facts["controls"].append({"kind": "gateway-auth", "scope": f"helm {chart}", "detail": m.group(0).strip()[:80], "citation": _cite(repo, rel, text[:m.start()].count("\n") + 1), "hosts": hosts[:3], "backends": [chart]})
 
 
 def parse_dockerfile(repo, rel, text, facts):
-    ports = [int(p) for p in re.findall(r"^\s*EXPOSE\s+(\d+)", text, re.M | re.I)]
-    user = _first(r"^\s*USER\s+(\S+)", text, None, re.M | re.I)
+    ports = [int(p) for p in re.findall(r"^[ \t]*EXPOSE\s+(\d+)", text, re.M | re.I)]
+    user = _first(r"^[ \t]*USER\s+(\S+)", text, None, re.M | re.I)
     facts["workloads"].append({"name": Path(rel).parent.name or repo, "kind": "dockerfile", "source": "dockerfile", "images": [], "ports": ports[:8], "env": [], "build": str(Path(rel).parent) or ".",
-                               "security": {"run_as_root": user in (None, "root", "0")}, "healthcheck": bool(re.search(r"^\s*HEALTHCHECK\b", text, re.M | re.I)),
+                               "security": {"run_as_root": user in (None, "root", "0")}, "healthcheck": bool(re.search(r"^[ \t]*HEALTHCHECK\b", text, re.M | re.I)),
                                "exposure": {"kind": "container-ports" if ports else "none"}, "citation": _cite(repo, rel, 1)})
 
 
-TF_BLOCK = re.compile(r'^\s*resource\s+"(?P<type>[\w-]+)"\s+"(?P<name>[\w-]+)"\s*\{', re.M)
+TF_BLOCK = re.compile(r'^[ \t]*resource\s+"(?P<type>[\w-]+)"\s+"(?P<name>[\w-]+)"\s*\{', re.M)
 
 
 def parse_terraform(repo, rel, text, facts):
@@ -221,7 +231,7 @@ def parse_terraform(repo, rel, text, facts):
                                       "insecure": proto == "HTTP" and "redirect" not in body})
         elif typ in ("aws_security_group", "aws_security_group_rule", "azurerm_network_security_rule", "google_compute_firewall"):
             if PUBLIC_CIDR.search(body) or re.search(r"source_address_prefix\s*=\s*\"(\*|Internet)\"", body):
-                ports = re.findall(r"(?:from_port|to_port|destination_port_range)\s*=\s*\"?(\d+)", body)
+                ports = re.findall(r"(?:from_port|to_port|destination_port_range)\s*=\s*\"?(\d{1,5})", body)
                 facts["controls"].append({"kind": "open-ingress", "scope": name, "detail": "open to the internet" + (f" on {','.join(sorted(set(ports)))}" if ports else ""), "citation": cite})
         elif typ.startswith("aws_wafv2") or typ in ("azurerm_web_application_firewall_policy", "azurerm_cdn_frontdoor_firewall_policy"):
             facts["controls"].append({"kind": "waf", "scope": name, "detail": typ, "citation": cite})
@@ -231,14 +241,14 @@ def parse_terraform(repo, rel, text, facts):
         elif typ in ("aws_ecs_task_definition",):
             images = re.findall(r"\"image\"\s*[:=]\s*\"([^\"]+)\"", body)
             envn = [(a, b) for a, b in re.findall(r"\"?name\"?\s*[:=]\s*\"([A-Z_][A-Z0-9_]*)\"\s*,?\s*\"?value\"?\s*[:=]\s*\"([^\"]*)\"", body)]
-            ports = [int(p) for p in re.findall(r"containerPort\"?\s*[:=]\s*(\d+)", body)]
+            ports = [int(p) for p in re.findall(r"containerPort\"?\s*[:=]\s*(\d{1,5})", body)]
             facts["workloads"].append({"name": name, "kind": "ecs-task", "source": "ecs", "images": images[:4], "ports": ports[:6], "security": {}, "citation": cite,
-                                       "env": [{"name": a, "source": "literal", "line": start, **({"value": b} if not SECRETISH.search(a) else {})} for a, b in envn][:40],
+                                       "env": [{"name": a, "source": "literal", "line": start, **({"value": safe_value(a, b)} if safe_value(a, b) is not None else {})} for a, b in envn][:40],
                                        "service_account": _first(r"task_role_arn\s*=\s*(\S+)", body), "exposure": {"kind": "none"}})
         elif typ in ("aws_lambda_function", "google_cloudfunctions_function", "azurerm_linux_function_app", "azurerm_function_app"):
-            envn = re.findall(r"^\s*([A-Z_][A-Z0-9_]*)\s*=\s*(\"[^\"]*\"|var\.\w+|\S+)", body[body.find("variables"):] if "variables" in body else body, re.M)
+            envn = re.findall(r"^[ \t]*([A-Z_][A-Z0-9_]*)\s*=\s*(\"[^\"]*\"|var\.\w+|\S+)", body[body.find("variables"):] if "variables" in body else body, re.M)
             facts["workloads"].append({"name": name, "kind": "function", "source": "terraform", "images": [], "ports": [], "security": {}, "citation": cite,
-                                       "env": [{"name": a, "source": "literal" if b.startswith('"') else "variable", "line": start, **({"value": b.strip('"')} if b.startswith('"') and not SECRETISH.search(a) else {})} for a, b in envn][:30],
+                                       "env": [{"name": a, "source": "literal" if b.startswith('"') else "variable", "line": start, **({"value": safe_value(a, b.strip('"'))} if b.startswith('"') and safe_value(a, b.strip('"')) is not None else {})} for a, b in envn][:30],
                                        "service_account": _first(r"role\s*=\s*(\S+)", body), "exposure": {"kind": "none"}})
         elif typ in ("azurerm_container_app",):
             ext = bool(re.search(r"external_enabled\s*=\s*true", body))
@@ -276,19 +286,21 @@ def scan_repo(repo: str, root: Path, excludes: list[str]) -> dict:
         text = read_text(p, max_bytes=600_000)
         if not text:
             continue
-        info = classify(rel, text[:2500])
-        if name.startswith("Dockerfile") or name == "Containerfile":
-            parse_dockerfile(repo, rel, text, facts)
-        elif suffix == ".tf":
-            parse_terraform(repo, rel, text, facts)
-        elif re.match(r"(docker-)?compose[^/]*\.ya?ml$", name) or (suffix in (".yaml", ".yml") and re.search(r"(?m)^services:\s*$", text) and re.search(r"(?m)^\s+(image|build):", text)):
-            parse_compose(repo, rel, text, facts)
-        elif suffix in (".yaml", ".yml", ".tpl") and re.search(r"(?m)^values.*\.ya?ml$", name) and ("/templates/" not in rel):
-            parse_helm_values(repo, rel, text, facts)
-        elif suffix in (".yaml", ".yml", ".tpl") and re.search(r"(?m)^kind:\s*\w+", text) and "apiVersion" in text:
-            parse_k8s(repo, rel, text, facts)
-        elif re.search(r"(?i)nginx|envoy|kong|traefik|haproxy", name) or (suffix == ".conf" and re.search(r"proxy_pass|server_name", text)):
-            parse_gateway(repo, rel, text, facts)
+        try:
+            if name.startswith("Dockerfile") or name == "Containerfile":
+                parse_dockerfile(repo, rel, text, facts)
+            elif suffix == ".tf":
+                parse_terraform(repo, rel, text, facts)
+            elif re.match(r"(docker-)?compose[^/]*\.ya?ml$", name) or (suffix in (".yaml", ".yml") and re.search(r"(?m)^services:[ \t]*$", text) and re.search(r"(?m)^[ \t]+(image|build):", text)):
+                parse_compose(repo, rel, text, facts)
+            elif suffix in (".yaml", ".yml", ".tpl") and re.search(r"(?m)^values.*\.ya?ml$", name) and ("/templates/" not in rel):
+                parse_helm_values(repo, rel, text, facts)
+            elif suffix in (".yaml", ".yml", ".tpl") and re.search(r"(?m)^kind:[ \t]*\w+", text) and "apiVersion" in text:
+                parse_k8s(repo, rel, text, facts)
+            elif re.search(r"(?i)nginx|envoy|kong|traefik|haproxy", name) or (suffix == ".conf" and re.search(r"proxy_pass|server_name", text)):
+                parse_gateway(repo, rel, text, facts)
+        except Exception as e:  # noqa: BLE001 - one hostile or odd file must not stop the other files or repos; it is listed, not hidden
+            facts.setdefault("skipped", []).append({"path": rel, "reason": f"{type(e).__name__}: {str(e)[:80]}"})
     # exposure per workload from Services, Ingresses, load balancers
     svcs = {s["name"]: s for s in facts["_services"]}
     for w in facts["workloads"]:
@@ -352,14 +364,18 @@ def run(out: Path, only: str | None = None) -> dict:
             all_facts[repo] = f
     link_workloads(all_facts, list(roots))
     lines, stats = [], {}
+    if not only:  # evidence of repos that no longer hold deployment content must not feed the threat model
+        for p in (out / "evidence").glob("deploy-facts-*.json"):
+            if p.name[len("deploy-facts-"):-len(".json")] not in all_facts:
+                p.unlink()
     gp = graph_dir(out) / "graph.json"
     graph = json.loads(gp.read_text()) if gp.is_file() else {"nodes": []}
     envnodes = {(n["repo"], n["name"]): n["id"] for n in graph["nodes"] if n["kind"] == "env_var"}
     for repo, facts in all_facts.items():
         if only and repo != only:
             continue
-        atomic_write(out / "evidence" / f"deploy-facts-{repo}.json", json.dumps(facts, indent=1))
-        stats[repo] = {"workloads": len(facts["workloads"]), "controls": len(facts["controls"]), "linked": sum(1 for w in facts["workloads"] if w.get("app_repo"))}
+        atomic_write(out / "evidence" / f"deploy-facts-{repo}.json", redact_text(json.dumps(facts, indent=1)))
+        stats[repo] = {"workloads": len(facts["workloads"]), "controls": len(facts["controls"]), "linked": sum(1 for w in facts["workloads"] if w.get("app_repo")), "dropped_unverifiable": 0}
         for w in facts["workloads"]:
             ar = w.get("app_repo")
             if not ar:
@@ -369,6 +385,7 @@ def run(out: Path, only: str | None = None) -> dict:
             rel_line = cite.split("/", 1)[1] if "/" in cite else cite
             quote = safe_quote(_line_at(roots[repo], rel_line))
             if not quote:
+                stats[repo]["dropped_unverifiable"] += 1  # its source line could not be re-read: listed in the evidence JSON but not added to the graph
                 continue
             lines.append({"op": "node", "kind": "service", "repo": repo, "qualname": w["name"], "name": w["name"], "citation": cite, "quote": quote, "confidence": "medium", "label": "inferred",
                           "extractor": "rule", "attrs": {"workload_kind": w["kind"], "source": w["source"], "exposure": (w.get("exposure") or {}).get("kind"), "public": (w.get("exposure") or {}).get("public"),
@@ -380,6 +397,8 @@ def run(out: Path, only: str | None = None) -> dict:
                 ev = envnodes.get((ar, e["name"]))
                 eline = f"{repo}/{rel_line.rsplit(':', 1)[0]}:{e['line']}"
                 eq = safe_quote(_line_at(roots[repo], f"{rel_line.rsplit(':', 1)[0]}:{e['line']}"))
+                if eq and (SECRETISH.search(e["name"]) or safe_value(e["name"], re.split(r"[:=]", eq, 1)[-1].strip(" '\"-")) is None):
+                    eq = e["name"]  # never copy a value line for a secret-like name: quote only the name (it appears in the cited line)
                 if ev and eq:
                     lines.append({"op": "edge", "src": ev, "kind": "configured_by", "dst": nid, "citation": eline, "quote": eq, "confidence": "medium", "label": "observed", "extractor": "rule",
                                   "dst_citation": cite if ar != repo else None, "attrs": {"source": e["source"], **({"value": e["value"]} if "value" in e else {})}})

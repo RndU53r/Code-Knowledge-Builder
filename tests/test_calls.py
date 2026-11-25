@@ -30,6 +30,7 @@ def run(script, *args):
 
 work = tmp / "calls"
 shutil.copytree(FX, work)
+(work / "shop" / "app" / "huge.py").write_text("x = 1\n" + "# padding\n" * 200000)  # over the 1.5 MB extraction cap
 out = tmp / ".ckb"
 assert run("fetch_source.py", "--out", out, "--key", "shop", work / "shop").returncode == 0
 (out / "evidence").mkdir(parents=True, exist_ok=True)
@@ -79,6 +80,14 @@ tm = (out / "system" / "threat-model.md").read_text()
 check("library reachability: an advisory on a package the code calls is rated up, one never called is rated down", "Vulnerable dependency requests is called by the code (post)" in tm
       and "Vulnerable dependency pyyaml is declared but no call into it was resolved" in tm)
 check("threat model carries the coverage section and the attack-path section", "## Analysis coverage and blind spots" in tm and "## Attack paths" in tm)
+
+sk = json.loads((out / "evidence" / "extract-skips-shop.json").read_text())
+check("a file too large to extract is reported, not silently skipped", any(x["path"] == "app/huge.py" for x in sk["skipped"]), sk)
+check("coverage report lists files that were not fully extracted", "app/huge.py" in (out / "system" / "coverage.md").read_text())
+(out / "evidence" / "agent-graph-broken.json").write_text("{not json")
+r2 = run("threat_seed.py", "--out", out, "--force")
+check("an unreadable evidence file is called out in the threat model instead of silently dropping threats", "agent-graph-broken.json" in (out / "system" / "threat-model.md").read_text() and r2.returncode == 0)
+check("external calls whose package cannot be named are not counted as covered", all(cr["summary"][k] >= 0 for k in ("resolved", "external")) and cr["summary"]["resolved"] + cr["summary"]["external"] <= cr["summary"]["calls"])
 
 print(f"\n{fails} failure(s)")
 sys.exit(1 if fails else 0)

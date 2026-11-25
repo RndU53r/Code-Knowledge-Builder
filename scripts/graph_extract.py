@@ -976,21 +976,29 @@ def extract_ts(key, rel, text, lang, mod) -> Frag:
 
 # ---------------------------------------------------------------- driver
 
+SKIPS: list[dict] = []  # files that were not extracted or were downgraded, written to evidence/extract-skips-<key>.json
+
+
 def extract_file(key, root: Path, rel: str, backend: str, tsmod: str | None) -> dict | None:
     lang = LANG.get(Path(rel).suffix.lower())
     if not lang:
         return None
     p = root / rel
     if is_secret_file(rel) or is_binary(p):
+        SKIPS.append({"path": rel, "reason": "secret-bearing or binary file (not read)"})
         return None
     text = read_text(p, max_bytes=1_500_000)
-    if text is None or not text.strip():
+    if text is None:
+        SKIPS.append({"path": rel, "reason": "unreadable or larger than 1.5 MB: no functions, routes or sinks were extracted"})
+        return None
+    if not text.strip():
         return None  # empty files (e.g. bare __init__.py) have no citable lines
     try:
         if lang == "python" and backend in ("auto", "ast"):
             try:
                 return extract_python(key, rel, text).dump()
             except (SyntaxError, RecursionError, ValueError):
+                SKIPS.append({"path": rel, "reason": "Python syntax error: downgraded to the regex parser"})
                 return extract_regex(key, rel, text, lang).dump() if (lang in RX or lang in SPEC) else None
         if tsmod and backend in ("auto", "tree-sitter") and lang in TS_LANG and lang not in SPEC:  # spec-driven regex parsing is the primary path for every supported language
             try:
@@ -1039,6 +1047,9 @@ def main() -> int:
         counts["nodes"] += len(frag["nodes"])
         counts["edges"] += len(frag["edges"])
         counts["by_extractor"][frag["extractor"]] = counts["by_extractor"].get(frag["extractor"], 0) + 1
+    if a.files is None:
+        atomic_write(out / "evidence" / f"extract-skips-{a.key}.json", json.dumps({"repo": a.key, "skipped": SKIPS[:500], "count": len(SKIPS)}, indent=1))
+    counts["skipped"] = len(SKIPS)
     counts["tree_sitter"] = tsmod or "not installed (regex fallback for non-Python)"
     print(json.dumps({"repo": a.key, **counts}))
     return 0

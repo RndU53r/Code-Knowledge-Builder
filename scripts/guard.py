@@ -238,6 +238,8 @@ def check_write(ev: dict) -> int:
         return 0
     cwd = Path(ev.get("cwd") or os.getcwd())
     p = resolve(fp, cwd)
+    if p.name.startswith("seed-") and p.suffix == ".jsonl" and p.parent.name == "proposals":
+        return deny("graph/proposals/seed-*.jsonl are written by ckb's deterministic rule engines only; agents write <stage>-<repo>.jsonl.")
     for root, out in targets():
         if within(p, root) and not within(p, out):
             return deny(f"write to {p} is inside target {root}. ckb only writes under {out}.")

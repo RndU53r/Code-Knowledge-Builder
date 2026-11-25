@@ -100,6 +100,20 @@ def safe_quote(line: str, limit: int = 140) -> str:
     return line[:limit]
 
 
+def clean_attrs(attrs, limit: int = 160) -> dict:
+    """Sanitise attrs coming from proposals: strings redacted and capped, short lists of scalars kept, nested structures dropped."""
+    out = {}
+    for k, v in (attrs or {}).items() if isinstance(attrs, dict) else []:
+        k = str(k)[:40]
+        if isinstance(v, str):
+            out[k] = safe_str(v, limit)
+        elif isinstance(v, (int, float, bool)) or v is None:
+            out[k] = v
+        elif isinstance(v, list):
+            out[k] = [safe_str(x, limit) if isinstance(x, str) else x for x in v[:12] if isinstance(x, (str, int, float, bool))]
+    return out
+
+
 def md_safe(s, limit: int = 0) -> str:
     """Make target-derived text inert inside generated markdown tables: no HTML tags, no event-handler or
     javascript: patterns, no table/code breakers."""

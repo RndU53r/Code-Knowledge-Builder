@@ -196,8 +196,15 @@ def scan_plugin(root: Path, repo: str, known_files: set[str]) -> tuple[Graph, di
                     tm = re.search(r"\"name\"\s*:\s*\"([\w-]+)\".*\"op\"", ln) or re.search(r"\"name\"\s*:\s*\"(ckb_[\w]+|[a-z]+_[a-z_]+)\"", ln) if "op" in ln or "description" in ln else None
                     if tm:
                         g.node("mcp_tool", tm.group(1), f"scripts/{m.group(1)}", i, ln.strip()[:110], server=sname)
+    unparsed = [f"{rel}: over the size cap or unreadable" for kind in ("agent", "skill", "command") for p, rel in pf[kind] if not read_text(p, max_bytes=400_000)]
+    for key_, label_ in (("hooks", "hooks"), ("mcp", "MCP config"), ("manifest", "plugin manifest")):
+        if pf[key_]:
+            try:
+                json.loads(read_text(pf[key_][0], max_bytes=400_000) or "")
+            except ValueError:
+                unparsed.append(f"{pf[key_][1]}: not valid JSON ({label_} ignored)")
     orphans = [n["name"] for n in g.nodes.values() if n["kind"] in ("agent", "skill") and not any(e["dst"] == n["id"] for e in g.edges) and not n["attrs"].get("user_invocable")]
-    return g, {"dangling": dangling, "orphans": orphans}
+    return g, {"dangling": dangling, "orphans": orphans, "unparsed": unparsed}
 
 
 # ---------------------------------------------------------------- agent frameworks in code
@@ -336,6 +343,7 @@ def run(out: Path, only: str | None = None) -> dict:
         if n["kind"] == "file" and n.get("path"):
             known[n["repo"]].add(n["path"])
     stats, all_nodes, all_edges, reports = {}, {}, [], {}
+    produced = set()
     for repo, root in repo_roots_for_output(out).items():
         if repo.startswith("ctx") or (only and repo != only):
             continue
@@ -350,13 +358,18 @@ def run(out: Path, only: str | None = None) -> dict:
             tools = set(n["attrs"].get("tools", []))
             if n["kind"] in ("agent", "skill", "command") and tools & RISKY_TOOLS:
                 flags.append({"node": n["name"], "kind": n["kind"], "risky_tools": sorted(tools & RISKY_TOOLS), "reads_untrusted": bool(tools & READ_TOOLS), "citation": n["citation"]})
-        reports[repo] = {"repo": repo, "nodes": list(all_n.values()), "edges": all_e, "orphans": meta["orphans"], "dangling": meta["dangling"], "risk_flags": flags}
+        produced.add(repo)
+        reports[repo] = {"repo": repo, "nodes": list(all_n.values()), "edges": all_e, "orphans": meta["orphans"], "dangling": meta["dangling"], "risk_flags": flags, "unparsed": meta.get("unparsed", [])}
         atomic_write(out / "evidence" / f"agent-graph-{repo}.json", json.dumps(reports[repo], indent=1))
         all_nodes.update(all_n)
         all_edges += all_e
         stats[repo] = {"agents": sum(1 for n in all_n.values() if n["kind"] == "agent"), "skills": sum(1 for n in all_n.values() if n["kind"] == "skill"),
                        "commands": sum(1 for n in all_n.values() if n["kind"] == "command"), "hooks": sum(1 for n in all_n.values() if n["kind"] == "hook"),
                        "tools": sum(1 for n in all_n.values() if n["kind"] == "mcp_tool"), "edges": len(all_e), "orphans": len(meta["orphans"]), "dangling": len(meta["dangling"])}
+    if not only:  # evidence of repos that no longer yield agent facts (or are no longer registered) must not feed the threat model
+        for p in (out / "evidence").glob("agent-graph-*.json"):
+            if p.name[len("agent-graph-"):-len(".json")] not in produced:
+                p.unlink()
     lines = []
     for n in all_nodes.values():
         lines.append({"op": "node", "kind": n["kind"], "repo": n["repo"], "qualname": n["name"], "name": n["name"], "citation": n["citation"], "quote": n["quote"],
@@ -391,6 +404,8 @@ def render(reports: dict) -> str:
         if r["risk_flags"]:
             L += ["", "**Risk flags** (tools that can change files, run commands or fetch remote content):", ""]
             L += [f"- {f['kind']} `{md_safe(f['node'])}`: {', '.join(f['risky_tools'])}" + (" and reads untrusted content" if f["reads_untrusted"] else "") + f" (`{f['citation']}`)" for f in r["risk_flags"]]
+        if r.get("unparsed"):
+            L += ["", "**Not parsed** (the graph for this repo is incomplete): " + "; ".join(md_safe(x, 90) for x in r["unparsed"])]
         L += ["", f"**Orphans** (never called by another agent or skill and not user-invocable): {', '.join(md_safe(x) for x in r['orphans']) or 'none'}", "",
               "**Dangling references** (a `ns:name` token that matches no agent, skill or command): " + (", ".join(f"`{md_safe(d['ref'])}` (`{d['citation']}`)" for d in r["dangling"]) or "none"), ""]
     return "\n".join(L) + "\n"

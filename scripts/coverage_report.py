@@ -86,7 +86,9 @@ def run(out: Path) -> dict:
             owner = next((e["src"] for e in g["edges"] if e["kind"] == "reaches_sink" and e["dst"] == sk["id"]), None)
             if owner in seen:
                 reached.add(sk["id"])
-        report["repos"][repo] = {
+        sk = out / "evidence" / f"extract-skips-{repo}.json"
+        skips = json.loads(sk.read_text()).get("skipped", []) if sk.is_file() else []
+        report["repos"][repo] = {"extract_skips": skips[:20], "extract_skip_count": len(skips),
             "files_by_extractor": dict(files), "call_resolution": cres.get("summary"), "top_unresolved": cres.get("top_unresolved", [])[:15],
             "entry_points": len(entries), "entry_citations": [e["citation"] for e in entries if e.get("citation")][:6],
             "sample_file": next((n["citation"] for n in N.values() if n["kind"] == "file" and n.get("repo") == repo and n.get("citation")), None), "functions": len(code), "reachable_functions": len([1 for nid in code if nid in seen]), "unreachable": [{"name": n.get("qualname", n["name"]), "citation": n["citation"]} for n in unreachable[:40]],
@@ -108,6 +110,8 @@ def render(rep: dict) -> str:
               f"| Resolved or library | {cr.get('resolved_pct', '[unknown]')}% |", f"| Entry points | {v['entry_points']}" + (" (" + ", ".join(f"`{c}`" for c in v["entry_citations"][:4]) + ")" if v["entry_citations"] else (f" (parsed, for example: `{v['sample_file']}`)" if v.get("sample_file") else "")) + " |",
               f"| Functions reachable from an entry point | {v['reachable_functions']} of {v['functions']} |", f"| Unsafe sinks reached by an entry point | {v['unsafe_sinks_reached']} of {v['unsafe_sinks']} |",
               f"| Parsers | {md_safe(', '.join(f'{k}: {n}' for k, n in sorted(v['files_by_extractor'].items())) or '[unknown]')} |", ""]
+        if v.get("extract_skip_count"):
+            L += [f"Files that were not fully extracted ({v['extract_skip_count']}):", ""] + [f"- `{md_safe(x['path'], 70)}`: {md_safe(x['reason'], 100)}" for x in v["extract_skips"][:10]] + [""]
         if v["top_unresolved"]:
             L += ["Top unresolved calls:", "", "| Name | Count | First seen |", "| --- | --- | --- |"]
             L += [f"| {md_safe(x['name'], 50)} | {x['count']} | `{x['citation']}` |" for x in v["top_unresolved"]]

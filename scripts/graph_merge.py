@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from ckb_common import load_json, now_iso, repo_roots_for_output  # noqa: E402
-from graph_common import (CONFIDENCE, EDGE_KINDS, LABELS, NODE_KINDS, atomic_write, graph_dir, make_edge,  # noqa: E402
+from graph_common import (clean_attrs, CONFIDENCE, EDGE_KINDS, LABELS, NODE_KINDS, atomic_write, graph_dir, make_edge,  # noqa: E402
                           make_node, safe_str)
 from verify_citations import CITE, Verifier  # noqa: E402
 
@@ -105,7 +105,7 @@ def node_from(obj):
     path = obj.get("path") or ""
     n = make_node(obj["kind"], obj["repo"], path, obj["qualname"], obj.get("name") or obj["qualname"], 1, extractor=ex,
                   confidence=obj.get("confidence", "medium"), label=obj.get("label", "inferred"),
-                  summary=obj.get("summary"), attrs={k: safe_str(v) if isinstance(v, str) else v for k, v in (obj.get("attrs") or {}).items()} or None)
+                  summary=obj.get("summary"), attrs=clean_attrs(obj.get("attrs")) or None)
     n["citation"] = obj["citation"]
     n["path"] = path
     m = re.search(r":(\d+)(?:-(\d+))?$", obj["citation"])
@@ -121,8 +121,7 @@ def edge_from(obj):
     label = obj.get("label", "inferred")
     if conf == "low" and label == "observed":
         label = "inferred"
-    attrs = obj.get("attrs")
-    extra = {"attrs": {str(k)[:40]: (safe_str(v, 160) if isinstance(v, str) else v) for k, v in attrs.items() if isinstance(v, (str, int, float, bool, list))}} if isinstance(attrs, dict) else {}
+    extra = {"attrs": clean_attrs(obj.get("attrs"))} if isinstance(obj.get("attrs"), dict) else {}
     return make_edge(obj["src"], obj["kind"], obj["dst"], obj["citation"], extractor=obj.get("_extractor", "llm"), confidence=conf, label=label,
                      quote=obj["quote"], dst_citation=obj.get("dst_citation"), rationale=obj.get("rationale"), **extra)
 

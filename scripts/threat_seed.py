@@ -118,7 +118,8 @@ class Ctx:
         for p in sorted((out / "evidence").glob("deploy-facts-*.json")):
             try:
                 d = json.loads(p.read_text())
-            except ValueError:
+            except (ValueError, OSError):
+                EVIDENCE_PROBLEMS.append(p.name)
                 continue
             self.deploy_all[d["repo"]] = d
             for w in d.get("workloads", []):
@@ -374,12 +375,15 @@ def rule_deploy(c: Ctx, threats):
                     gaps="Authorization is NONE for this method/route.", control="Attach an authorizer (IAM, Cognito, JWT, Lambda).", label="observed", confidence="high")
 
 
+EVIDENCE_PROBLEMS: list[str] = []
+
+
 def _evidence_json(c: Ctx, pattern: str):
     for p in sorted((c.out / "evidence").glob(pattern)):
         try:
             yield json.loads(p.read_text())
-        except ValueError:
-            continue
+        except (ValueError, OSError):
+            EVIDENCE_PROBLEMS.append(p.name)  # reported in the threat model so a missing threat is never mistaken for a clean result
 
 
 def rule_agents(c: Ctx, threats):
@@ -853,13 +857,15 @@ def render(c: Ctx, threats, tbs, prop_lines) -> str:
         L += ["[unknown] no coverage report was generated (run `coverage_report.py`)."]
     L += ["", "## Prioritized risks", ""]
     L += [f"{i}. **{t['id']}** ({t['priority']}): {esc(t['title'])}: `{t['primary']}`" for i, t in enumerate(threats[:10], 1)] or ["[unknown] none"]
-    L += ["", "## Assumptions", "", "- Exposure labels are inferred from the call graph (an endpoint nobody else calls is a public candidate); confirm against ingress/gateway configuration. [inferred]",
+    L += ["", "## Assumptions", ""] + ([f"- [unknown] Evidence file(s) unreadable, so the rules that depend on them did not run: {', '.join(sorted(set(EVIDENCE_PROBLEMS)))}. Re-run the graph build."] if EVIDENCE_PROBLEMS else []) + [""]
+    L += [ "- Exposure labels are inferred from the call graph (an endpoint nobody else calls is a public candidate); confirm against ingress/gateway configuration. [inferred]",
           "- Authentication evidence is looked for on the route line and handler chain only: global middleware and gateway-level auth are not visible to these rules. [inferred]",
           "- Taint paths are candidate reachability over call/route edges, not a full data-flow proof. [inferred]", ""]
     return "\n".join(L)
 
 
 def run(out: Path, force=False) -> dict:
+    EVIDENCE_PROBLEMS.clear()
     c = Ctx(out)
     threats = []
     for rule in (rule_taint, rule_auth, rule_switches, rule_deploy, rule_agents, rule_library, rule_coverage, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_pipeline, rule_drift, rule_llm):

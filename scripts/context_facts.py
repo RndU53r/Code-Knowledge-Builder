@@ -67,11 +67,12 @@ def gather(out: Path, repo: str, store, ctx) -> dict:
         if e["kind"] == "flows_to" and nodes.get(e["src"], {}).get("kind") == "taint_source":
             src_into[e["dst"]].append(nodes[e["src"]])
     reach = defaultdict(set)
+    reach_error = None
     try:
         for p in store.taint(max_depth=10, limit=2000)["paths"]:
             reach[p["sink"]["id"]].add(nodes[p["source"]["id"]]["name"])
-    except Exception:  # noqa: BLE001 - the tables still work without reachability
-        pass
+    except Exception as e:  # noqa: BLE001 - the tables still work, but the 'reached from' column must say it is unknown
+        reach_error = f"{type(e).__name__}: {e}"
 
     def mine(n):
         return n.get("repo") == repo or (n["kind"] == "endpoint" and n.get("citation", "").startswith(repo + "/"))
@@ -100,7 +101,7 @@ def gather(out: Path, repo: str, store, ctx) -> dict:
         a = n.get("attrs") or {}
         st = a.get("sink_type")
         sinks.append({"type": st, "cwe": CWE_OF.get(st, "-"), "verdict": "safe pattern" if a.get("safe") is True else "unsafe/unknown", "where": n["name"].split(" in ", 1)[-1],
-                      "reason": a.get("reason", ""), "reached_from": sorted(reach.get(n["id"], []))[:4], "citation": n["citation"], "confidence": n["confidence"]})
+                      "reason": a.get("reason", ""), "reached_from": (["[unknown: reachability unavailable]"] if reach_error else sorted(reach.get(n["id"], []))[:4]), "citation": n["citation"], "confidence": n["confidence"]})
     resources, findings = [], []
     for n in sorted((n for n in nodes.values() if n["kind"] == "cloud_resource" and n.get("repo") == repo), key=lambda n: n["citation"]):
         fs = [nodes[e["src"]] for e in store.in_adj.get(n["id"], []) if e["kind"] == "finding_at" and e["src"] in nodes]
@@ -122,7 +123,7 @@ def gather(out: Path, repo: str, store, ctx) -> dict:
     deployment = []
     for w in ctx.deploy.get(repo, []):
         ex = w.get("exposure") or {}
-        sw = [f"{e['name']}={e.get('value', '<' + e['source'] + '>')}" for e in w.get("env", []) if re.search(r"(?i)DEBUG|AUTH|SECURITY|VERIFY|TLS|SSL|DISABLE|BYPASS|INSECURE", e["name"])][:5]
+        sw = [f"{e['name']}={e.get('value', '<' + e['source'] + '>') if len(str(e.get('value', ''))) <= 24 else '<value omitted>'}" for e in w.get("env", []) if re.search(r"(?i)DEBUG|AUTH|SECURITY|VERIFY|TLS|SSL|DISABLE|BYPASS|INSECURE", e["name"])][:5]
         deployment.append({"workload": w["name"], "deployed_in": w["deploy_repo"], "kind": w["kind"], "exposure": ex.get("kind", "none"), "hosts": ex.get("hosts", []), "public": bool(ex.get("public")),
                            "tls": ex.get("tls"), "identity": w.get("identity") or w.get("service_account"), "env_names": len(w.get("env", [])), "switches": sw,
                            "external_controls": [f"{x['kind']}: {x['detail']}" for x in w.get("external_controls", [])][:4], "privileged": bool((w.get("security") or {}).get("privileged")),

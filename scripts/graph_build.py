@@ -446,8 +446,7 @@ class Linker:
                     return t, "medium", "resolved"
             return None, "", "unresolved"
         if parts[0] == "<expr>":  # receiver is an arbitrary expression: never guess from the bare method name
-            cands = [c for c in self.defs_by_name.get((f["repo"], short), []) if c != src and self.nodes[c]["kind"] in ("function", "method")]
-            return (cands[0], "low", "resolved") if len(cands) == 1 else (None, "", "dynamic")
+            return None, "", "dynamic"
         if len(parts) >= 2 and short == "new":  # Ruby/Rust-style constructor: Foo.new / Foo::new
             cid = self.resolve_class(f, ".".join(parts[:-1]))
             if cid:
@@ -538,6 +537,7 @@ class Linker:
                     elif tgt:
                         status = "resolved"  # self-recursion: resolved, no edge
                     if status == "external":
+                        pkg_known = False
                         al = self.aliases[(f["repo"], f["path"])]
                         head = (r.get("recv_type") or r["name"]).split(".")[0]
                         pkg = al.get(head, (None, None))[1] or r.get("_pkg")
@@ -546,9 +546,12 @@ class Linker:
                             pn = make_node("package", f["repo"], "", pkg, pkg, r["line"], extractor=ex if ex != "tree-sitter" else "regex", confidence="low", citation=c)
                             self.add_node(pn)
                         if pid and pid in self.nodes:
+                            pkg_known = True
                             e = lib.setdefault((r["src"], pid), {"apis": set(), "n": 0, "cite": c, "ex": ex})
                             e["apis"].add(".".join(r["name"].split(".")[1:]) or r["name"])
                             e["n"] += 1
+                        if not pkg_known:  # an external call whose package could not be named leaves no edge: do not count it as covered
+                            status = "unresolved"
                     self.call_stats[(f["repo"], lang)][status] += 1
                     if status in ("unresolved", "ambiguous", "dynamic"):
                         self.unresolved[f["repo"]][r["name"]] += 1
@@ -848,31 +851,36 @@ def build(out: Path, structural_only=False) -> dict:
 
 
 def enrich(out: Path, structural_only=False) -> dict:
-    """Deterministic enrichment in dependency order: build, repo context + doc claims, rebuild (merges their
-    seed proposals incl. drift nodes), draft threat model, final rebuild. Each step is skipped if it has no input."""
+    """Deterministic enrichment in dependency order: build, repo context + coverage + pipeline/agent/deploy facts + doc claims, rebuild (merges their
+    seed proposals incl. drift nodes), draft threat model, final rebuild, context facts. A failing step is recorded as failed (and makes the exit
+    status non-zero) instead of aborting the others or hiding."""
     steps = {}
+
+    def step(name, fn):
+        try:
+            steps[name] = fn()
+        except Exception as e:  # noqa: BLE001 - recorded loudly below; one broken derived step must not hide the rest
+            steps[name] = {"status": "failed", "error": f"{type(e).__name__}: {e}"}
+            print(f"enrich step {name} failed: {type(e).__name__}: {e}", file=sys.stderr)
     build(out, structural_only)
-    import doc_claims
-    import repo_context
-    import pipeline_facts
-    import threat_seed
-    steps["repo_context"] = repo_context.run(out)
-    import coverage_report
-    steps["coverage"] = coverage_report.run(out)
-    steps["pipeline_facts"] = pipeline_facts.run(out)
     import agent_graph
-    steps["agent_graph"] = agent_graph.run(out)
+    import context_facts
+    import coverage_report
     import deploy_facts
-    steps["deploy_facts"] = deploy_facts.run(out)
-    steps["doc_claims"] = doc_claims.run(out)
+    import doc_claims
+    import pipeline_facts
+    import repo_context
+    import threat_seed
+    step("repo_context", lambda: repo_context.run(out))
+    step("coverage", lambda: coverage_report.run(out))
+    step("pipeline_facts", lambda: pipeline_facts.run(out))
+    step("agent_graph", lambda: agent_graph.run(out))
+    step("deploy_facts", lambda: deploy_facts.run(out))
+    step("doc_claims", lambda: doc_claims.run(out))
     build(out, structural_only)
-    steps["threat_seed"] = threat_seed.run(out)
+    step("threat_seed", lambda: threat_seed.run(out))
     res = build(out, structural_only)
-    try:
-        import context_facts
-        steps["context_facts"] = context_facts.run(out)
-    except Exception as e:  # noqa: BLE001 - derived tables; never fail the build
-        steps["context_facts"] = {"error": f"{type(e).__name__}: {e}"}
+    step("context_facts", lambda: context_facts.run(out))
     res["enrich"] = steps
     return res
 
@@ -887,6 +895,7 @@ def main() -> int:
     ap.add_argument("--backend", default="auto")
     a = ap.parse_args()
     out = Path(a.out).resolve()
+    failed_extracts = []
     if a.extract:
         roots = {k: v for k, v in repo_roots_for_output(out).items() if not k.startswith("ctx")}
         changed = None
@@ -903,10 +912,16 @@ def main() -> int:
             if changed and key in changed and changed[key].get("status") == "changed":
                 files = changed[key].get("added", []) + changed[key].get("changed", []) + changed[key].get("removed", [])
                 cmd += ["--files", *files]
-            subprocess.run(cmd, check=False, stdout=subprocess.DEVNULL)
+            pr = subprocess.run(cmd, check=False, capture_output=True, text=True)
+            if pr.returncode != 0:
+                failed_extracts.append({"repo": key, "returncode": pr.returncode, "stderr": pr.stderr[-300:]})
+                print(f"graph_extract failed for {key} (exit {pr.returncode}): {pr.stderr[-200:]}", file=sys.stderr)
     res = enrich(out, a.structural_only) if a.enrich else build(out, a.structural_only)
+    if failed_extracts:
+        res["extract_failures"] = failed_extracts
     print(json.dumps(res, indent=2))
-    return 1 if res["schema_problems"] else 0
+    failed_steps = [k for k, v in (res.get("enrich") or {}).items() if isinstance(v, dict) and v.get("status") == "failed"]
+    return 1 if (res["schema_problems"] or failed_extracts or failed_steps or any(isinstance(v, dict) and "error" in v for v in [res.get("roles"), res.get("callgraph")] if v)) else 0
 
 
 if __name__ == "__main__":
