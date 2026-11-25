@@ -6,14 +6,14 @@
   const LIVE = DATA.live || null;
   let G, byId, outAdj, inAdj, generated;
   const COLORS = {repo:"#8892a6",dir:"#6b7385",file:"#7f8ea8",module:"#7f8ea8",class:"#b48ead",interface:"#b48ead",function:"#6ea8fe",
-    method:"#6ea8fe",endpoint:"#5ad19a",consumer:"#5ad19a",topic:"#f7b955",queue:"#f7b955",table:"#e5a05b",cache:"#e5a05b",bucket:"#e5a05b",
+    method:"#6ea8fe",endpoint:"#5ad19a",consumer:"#5ad19a",cron_job:"#5ad19a",cli_command:"#5ad19a",topic:"#f7b955",queue:"#f7b955",table:"#e5a05b",cache:"#e5a05b",bucket:"#e5a05b",
     env_var:"#9aa3b2",package:"#6b7385",cloud_resource:"#56c2e6",service:"#56c2e6",external:"#c0c6d2",sink:"#ff8f6b",taint_source:"#5ad19a",
     threat:"#ff6b6b",sc_finding:"#ff6b6b",cspm_finding:"#ff6b6b",trust_boundary:"#c792ea",drift:"#ffcb6b",doc_section:"#c0c6d2",asset:"#c792ea"};
   const EDGE_COLORS = {calls:"#6ea8fe",http_calls:"#5ad19a",publishes:"#f7b955",consumes:"#f7b955",reads:"#e5a05b",writes:"#e5a05b",
     routes_to:"#5ad19a",reaches_sink:"#ff8f6b",threatens:"#ff6b6b",finding_at:"#ff6b6b",affects:"#ff6b6b",drifts_from:"#ffcb6b",
     spawns:"#c792ea",imports:"#4b5468",contains:"#3a4152",reads_env:"#4b5468"};
   const SEC = new Set(["threat","sc_finding","cspm_finding","drift","trust_boundary"]);
-  const OVERVIEW = new Set(["endpoint","topic","queue","table","bucket","external","service","cloud_resource","threat","cspm_finding","drift","trust_boundary"]);
+  const OVERVIEW = new Set(["endpoint","consumer","cron_job","cli_command","topic","queue","table","bucket","external","service","cloud_resource","threat","cspm_finding","drift","trust_boundary"]);
   const $ = (id) => document.getElementById(id);
   const el = (tag, text, cls) => { const e = document.createElement(tag); if (text != null) e.textContent = String(text); if (cls) e.className = cls; return e; };
 
@@ -24,7 +24,7 @@
       if (!inAdj.has(e.dst)) inAdj.set(e.dst, []); inAdj.get(e.dst).push(e); }
     const s = G.stats || {};
     $("meta").textContent = `${s.nodes || G.nodes.length} nodes · ${s.edges || G.edges.length} edges · ${Object.keys(G.repos || {}).join(", ")} · ${G.generated || ""}`;
-    buildKinds(); buildTours();
+    buildKinds(); buildRoles(); buildTours();
   }
 
   // ---------------------------------------------------------------- state
@@ -64,6 +64,14 @@
       const dot = el("span", null, "dot"); dot.style.background = COLORS[k] || "#888";
       lab.append(cb, dot, el("span", `${k} (${counts[k]})`)); box.append(lab);
     }
+  }
+  function buildRoles() {
+    const counts = {}; for (const n of G.nodes) if (n.kind === "file" && n.attrs && n.attrs.role) counts[n.attrs.role] = (counts[n.attrs.role] || 0) + 1;
+    const sel = $("role"); sel.replaceChildren(el("option", "All roles")); sel.firstChild.value = "";
+    for (const r of Object.keys(counts).sort()) { const o = el("option", `${r} (${counts[r]})`); o.value = r; sel.append(o); }
+    $("rolebox").hidden = !Object.keys(counts).length;
+    sel.onchange = () => { if (!sel.value) { overview(); return; }
+      visible = new Set(); show(G.nodes.filter(n => n.kind === "file" && n.attrs && n.attrs.role === sel.value).map(n => n.id).slice(0, 1500)); };
   }
   function buildTours() {
     const sel = $("tours"); sel.replaceChildren(el("option", "— choose a tour —"));
@@ -131,7 +139,7 @@
   function taintOverlay() {
     clearHL(); const sinks = new Set(G.nodes.filter(n => n.kind === "sink" && !(n.attrs || {}).safe).map(n => n.id));
     const T = new Set(["routes_to","calls","http_calls","grpc_calls","spawns","reaches_sink","flows_to","publishes","consumes"]);
-    for (const src of G.nodes.filter(n => n.kind === "endpoint" || n.kind === "taint_source")) {
+    for (const src of G.nodes.filter(n => ["endpoint","consumer","cron_job","cli_command","taint_source"].includes(n.kind))) {
       const prev = new Map([[src.id, null]]); const q = [src.id];
       while (q.length) { const c = q.shift(); if (sinks.has(c)) { let x = c; highlight.add(x); while (prev.get(x)) { const [p, e] = prev.get(x); hlEdges.add(e); highlight.add(p); x = p; } continue; }
         for (const [nx, e] of forward(c)) if (T.has(e.kind) && !prev.has(nx)) { prev.set(nx, [c, e]); q.push(nx); } }

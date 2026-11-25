@@ -11,6 +11,7 @@ allowed-tools: Read, Grep, Glob, Write, Edit, Agent, AskUserQuestion, Skill, Bas
 Read `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_ROOT}/shared/pipeline.md`.
 
 1. Locate the output dir. Ingest any `--context` paths (P2b). Run whatever is missing first: the analysis (`/ckb:analyze` steps, including authorization for new sources), then `system/threat-model.md` (`/ckb:threat-model` steps). Section 9 of context.md depends on the threat model.
-2. Using the `security-context` skill, write `repos/<repo>/context.md` for each repo (parallel Agent calls are fine: one general agent per repo, given `<out>`, the repo key and root, and told to follow the security-context skill and the safety contract) and then `system/context.md`.
-3. Verify all context files with `ckb:citation-verifier`, and check that each has the nine numbered headings in order and valid front matter.
-4. Run P4 (verify, check outputs, snapshot hashes, refresh `index.md`), then report the paths and each repo's `focus_areas`.
+2. Make sure the deterministic facts exist: `graph_build.py --extract --enrich` (or `context_facts.py --out <out>` when the graph is already built) writes `evidence/context-facts-<repo>.json`, `repos/<repo>/context-facts.md` and `repos/<repo>/code-map.md` (file roles and repo kind). Tell each per-repo agent to embed the facts file verbatim and add judgement beside it.
+3. Using the `security-context` skill, write `repos/<repo>/context.md` for each repo (parallel Agent calls are fine: one general agent per repo, given `<out>`, the repo key and root, and told to follow the security-context skill and the safety contract) and then `system/context.md`.
+4. Verify all context files with `ckb:citation-verifier`, run `check_outputs.py` (its F1 check proves the embedded facts blocks match the generated ones), and check that each has the nine numbered headings in order and valid front matter.
+5. Run P4 (verify, check outputs, snapshot hashes, refresh `index.md`), then report the paths and each repo's `focus_areas`.

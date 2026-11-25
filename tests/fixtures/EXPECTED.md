@@ -83,3 +83,31 @@ value does not appear in any output except as `AKIA…[REDACTED]`.
 | A4 | call graphs: repo gateway→orders (http), orders→fulfillment (`event:order.created` and `spawn`), file `app/main.py`→`app/db.py`, function `create_order`→`insert_order`/`price_items`, `price_items`→Go `main` |
 | A5 | doc drift: mTLS vs `http://orders:8000`; orders "validates JWT" vs no auth; "database encrypted" vs `storage_encrypted = false`; "private VPC" vs open ingress; RabbitMQ TLS vs `amqp://` |
 | A6 | repo context: OpenAPI `summary` on `POST /orders`; README summary on `platform`; CODEOWNERS tags; ADR node; docstring summary on `price_items`; hostile README paragraph never used |
+
+## entry points, sources, sinks, roles (v0.5: tests/fixtures/entrypoints, asserted by tests/test_entrypoints.py)
+
+Static text only; never build or run these.
+
+| ID | Where | Expected |
+| --- | --- | --- |
+| E1 | spring-svc `OrderController` | class prefix `/api/orders` joined to `@GetMapping("/{id}")`, `@PostMapping`, `@RequestMapping(value="/export", method=POST)`; each bound to its method; `@KafkaListener` consumer `order.created`; `@Scheduled` cron job; no nodes from `OrderControllerTest` |
+| E2 | aspnet-svc | `[Route("api/[controller]")]` + `[HttpGet("{id}")]` etc. → `/api/users/...`; minimal API `MapGet("/health")` (inline) and `MapPost("/webhook", HandleWebhook)` (bound by name); Azure Functions timer (cron) and queue trigger (consumer) |
+| E3 | rails-app | `resources :orders, only: [...]` inside `namespace :api` → three routes, no DELETE; `post '/import', to: 'imports#create'` resolves to `imports_controller.rb`; `get '/ping' => 'health#ping'` |
+| E4 | laravel-app | `Route::get(..., [UserController::class, 'show'])`, `'UserController@import'`, `Route::prefix('api')->group` routes, inline closure |
+| E5 | django-app | `path()` in `urls.py` incl. `as_view()`; Celery `@shared_task` → consumer; argparse → CLI entry |
+| E6 | nest-app | `@Controller('users')` + `@Get(':id')`/`@Post()` bound to methods with decorated parameters; `@MessagePattern`; `@Cron` |
+| E7 | go-chi | chi `r.Get/Post`, `http.HandleFunc("GET /v2/ping", ...)`, gorilla `.Methods("POST")`, gRPC `RegisterBillingServer` (not bound to a neighbour), cobra `Run: runTool` |
+| S1 | sinks | unsafe: string-built/interpolated SQL (Spring, ASP.NET, Rails, Laravel, Django variable), `Runtime.exec`/`Process.Start`/`system`/`shell_exec`/`sh -c`, variable-URL outbound calls, `ObjectInputStream`/`BinaryFormatter`/`Marshal.load`/`unserialize`/`yaml.load`, un-hardened XML parser, `redirect_to params`, `mark_safe`, `innerHTML`, dynamic `fs.readFileSync`/`os.ReadFile`; safe: prepared statements with placeholders |
+| S2 | sources | `http_param` from `@PathVariable/@RequestBody/[FromQuery]/params[]/$request->input/request.GET/@Param/r.URL.Query()`, `message_body` for task/consumer arguments, `cli_arg` from argparse/`os.Args` |
+| S3 | auth evidence | Spring `@PreAuthorize` on one method only; Rails class-level `before_action :authenticate_user!` except `skip_before_action`; ASP.NET `[Authorize]` class vs `[AllowAnonymous]`; Laravel `->middleware('auth')` on its own route only |
+| R1 | roles-demo | `app/main.py` (entry) and `app/service.py` (data store) core; `app/utils/*.py` utility (fan-in 2-3); `tests/` test; `app/gen/api_pb2.py` generated; `migrations/` migration; `docs/` docs; `fixtures/` fixture; `scripts/seed.sh` tooling |
+
+## repo kinds, pipelines, IaC (v0.5: tests/fixtures/repokinds)
+
+| ID | Where | Expected |
+| --- | --- | --- |
+| K1 | infra-tf | kind `iac`; no endpoints; public S3 ACL, `0.0.0.0/0` ingress, wildcard IAM (`Action = "*"`), unencrypted RDS, unpinned module source, public Azure blob access |
+| K2 | ci-templates | kind `cicd-pipeline`; GitHub `pull_request_target` + PR-head checkout + title injection + unpinned third-party action; Azure Pipelines mutable template repo ref, self-hosted pool with `pr:` trigger, `$(Build.SourceBranchName)` in a script, deploy without environment; Jenkins `@Library` unpinned and `${params.TAG}` in a Groovy string |
+| K3 | gitops-manifests | kind `gitops-config` (k8s, Kustomize, Argo CD); privileged container, `:latest` image |
+| K4 | orders-app | kind `mixed` (service + iac): FastAPI endpoints and its own `terraform/` |
+| K5 | repo call graph | `ci-templates → orders-app` (`checkout: orders-app`, medium) and `gitops-manifests → orders-app` (image/source mention, low) as `deploy` |

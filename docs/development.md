@@ -34,6 +34,7 @@ python3 tests/test_guard.py        # hooks and guard (deny/allow matrix, write g
 python3 tests/test_ingest.py       # context ingestion, refusals, redaction, IaC checks
 python3 tests/test_graph.py        # graph: extraction, linking, IDs, merge, queries, viewer, server, MCP, exports
 python3 tests/test_auto.py         # auto mode: probe, branch rule + snapshots, enumeration (mock server), plans, threat draft, call graphs, drift, repo context
+python3 tests/test_entrypoints.py  # file roles, repo kinds, entry points / sources / sinks in 8 languages, pipeline facts, deploys links, context facts + F1
 python3 tests/make_script_docs.py --check   # docs/scripts.md matches the scripts' usage text
 ```
 
@@ -73,9 +74,17 @@ Use the `skill-creator` and `plugin-dev` workflows. Command skills set `disable-
 ### Add a graph query or MCP tool
 Add a method to `GraphStore` in `graph_query.py`, register it in `dispatch()` and the CLI `argmap`; expose it by adding it to `ALLOWED_OPS` (`graph_serve.py`) and a tool entry in `graph_mcp.py` (update the tool-count assertion in `tests/test_graph.py`). Queries must be read-only.
 
+### Add entry points or sinks for a framework or language
+
+Patterns live in `scripts/graph_patterns.py`: `find_entries()` (routes, consumers, cron, CLI), `SOURCES` (user-controlled inputs) and `SINK_RULES` (one tuple per dangerous call: languages, regex with an `arg` group, sink type, mode, reason). Add the pattern, add a case to a fixture under `tests/fixtures/entrypoints/` and an assertion to `tests/test_entrypoints.py`. New sink types also need an entry in `threat_seed.py` (`CWE`, `SINK_TITLE`, `SINK_STRIDE`, `SINK_CONTROL`) and `context_facts.py` (`CWE_OF`). Keep patterns narrow: a wrong entry point is worse than a missing one, and tests/generated files are skipped on purpose.
+
+### Add a role or repo-kind rule
+
+`scripts/roles.py`: `classify()` (path and content rules) and `repo_kind()` (shares, name hints). Add a path case to `tests/test_entrypoints.py` (roles) or a repo to `tests/fixtures/repokinds/`.
+
 ## Release checklist
 
-1. All four suites report `0 failure(s)`; `python3 tests/make_script_docs.py` and `--check` pass; `graph_check` reports 0 errors on a fresh fixture run.
+1. All five suites report `0 failure(s)`; `python3 tests/make_script_docs.py` and `--check` pass; `graph_check` reports 0 errors on a fresh fixture run.
 2. Bump `version` in `.claude-plugin/plugin.json`; update `CHANGELOG.md`, `README.md` and any affected page under `docs/`; add a design addendum to `docs/phase2-design.md` for architectural changes.
 3. Regenerate `examples/sample-output/` from a fresh end-to-end run if output formats changed (scrub local paths).
 4. Commit, push, and (optionally) tag `vX.Y.Z`.

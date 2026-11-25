@@ -1,0 +1,30 @@
+trigger:
+  branches:
+    include: [main]
+pr:
+  branches:
+    include: ['*']
+
+resources:
+  repositories:
+    - repository: shared
+      type: git
+      name: platform/pipeline-templates
+      ref: refs/heads/main
+
+pool:
+  name: self-hosted-pool
+
+stages:
+  - stage: Build
+    jobs:
+      - job: build
+        steps:
+          - checkout: orders-app
+          - script: echo "Building $(Build.SourceBranchName) with $(Build.SourceVersionMessage)"
+          - template: steps/lint.yml@shared
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: prod-subscription-connection
+              scriptType: bash
+              inlineScript: kubectl apply -f manifests/

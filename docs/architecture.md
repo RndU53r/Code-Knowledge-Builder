@@ -29,9 +29,9 @@ flowchart LR
 | --- | --- | --- |
 | **Planning** | `env_probe.py`, `auto_plan.py`, `enumerate_sources.py` | decide sources, branches, parsers, stages, consent items from the environment and the code |
 | **Acquisition** | `fetch_source.py`, `ckb_common.py` (target registry) | read-only access: clone with hooks off, git-archive snapshots, in-place reads; registers every target so hooks can protect it |
-| **Extraction** | `inventory.py`, `graph_extract.py`, `scan_supply_chain.py`, `ingest_context.py` | turn files into candidates and facts, each with a citation: ASTs, regex patterns, scanner findings, converted documents |
-| **Graph** | `graph_build.py`, `graph_security.py`, `graph_merge.py`, `graph_common.py` | link cross-file and cross-repo references; attach findings and cloud resources; merge verified proposals; write `graph.json` + `graph.sqlite` |
-| **Derivation** | `callgraph.py`, `threat_seed.py`, `doc_claims.py`, `repo_context.py` | deterministic rule engines over the graph (extractor `rule`) |
+| **Extraction** | `inventory.py`, `graph_extract.py` (+ `graph_patterns.py`), `scan_supply_chain.py`, `ingest_context.py`, `pipeline_facts.py` | turn files into candidates and facts, each with a citation: ASTs, regex patterns, scanner findings, converted documents |
+| **Graph** | `graph_build.py`, `roles.py`, `graph_security.py`, `graph_merge.py`, `graph_common.py` | link cross-file and cross-repo references; attach findings and cloud resources; merge verified proposals; write `graph.json` + `graph.sqlite` |
+| **Derivation** | `callgraph.py`, `threat_seed.py`, `doc_claims.py`, `repo_context.py`, `context_facts.py` | deterministic rule engines over the graph (extractor `rule`) |
 | **Judgement** | agents + knowledge skills | read cited code, refine the draft threat model, write HLD/LLD, summaries and tours; add semantic edges only as verified proposals |
 | **Access** | `graph_query.py` (GraphStore), `graph_mcp.py`, `graph_serve.py`, `graph_viewer.py`, `graph_export.py`, `graph_neo4j.py` | query, view, serve and export the graph (read-only) |
 | **Assurance** | `verify_citations.py`, `check_outputs.py`, `graph_check.py`, `guard.py` (hooks), `citation-verifier` agent | nothing unverified or unsafe is written or trusted |
@@ -55,9 +55,9 @@ flowchart LR
 
 ## The graph build, in order
 
-1. `graph_extract` writes one fragment per source file (nodes, intra-file edges, unresolved references).
-2. `graph_build` links imports → calls → HTTP calls (client URL matched to endpoint path and method) → subprocess/binary; attaches IaC cloud resources, supply-chain findings, CSPM findings; merges verified proposals; carries summaries over; drops rule-drafted threats once a refined model and agent threats exist; writes JSON, SQLite, `system/graph.md` and the call graphs.
-3. With `--enrich`: `repo_context` and `doc_claims` write seed proposals, the graph is rebuilt, `threat_seed` writes the draft threat model and its proposals, and the graph is rebuilt again.
+1. `graph_extract` writes one fragment per source file (nodes, intra-file edges, unresolved references): functions and classes, entry points (endpoint, consumer, cron_job, cli_command), taint sources and sinks. Python uses `ast`; other languages use tree-sitter structure when installed and the patterns in `graph_patterns.py` otherwise. Test and generated files are skipped for entry points, sources and sinks.
+2. `graph_build` links imports → calls → HTTP calls (client URL matched to endpoint path and method) → subprocess/binary; attaches IaC cloud resources, supply-chain findings, CSPM findings; merges verified proposals; carries summaries over; drops rule-drafted threats once a refined model and agent threats exist; writes JSON, SQLite, `system/graph.md` and the call graphs. Right after linking, `roles.py` assigns every file a role and every repo a kind (code map and file-roles evidence).
+3. With `--enrich`: `repo_context` and `doc_claims` write seed proposals, `pipeline_facts` tabulates CI/CD pipelines, the graph is rebuilt, `threat_seed` writes the draft threat model and its proposals (including pipeline and IaC threats), the graph is rebuilt again, and `context_facts` writes the per-repo fact tables that are embedded in `context.md`.
 
 ## Extension points
 

@@ -10,6 +10,8 @@ Checks:
   L1 broken relative markdown link (target file missing)
   S1 secret-looking value present (type only; value is never printed)
   H1 active HTML (<script>, <iframe>, on*= handlers, javascript: URLs)
+  F1 generated facts block (<!-- ckb:facts:begin ... -->) that no longer matches evidence/context-facts-<repo>.json
+     (hand-edited, stale, or the file is missing)
 
 Exit 0 clean, 1 problems found, 2 usage. Idea inspired by arden/Codebase-Knowledge-Builder
 (deterministic doc checks); independent implementation.
@@ -53,9 +55,50 @@ def mermaid_problems(src: str) -> list[str]:
     return probs
 
 
+FACTS_BEGIN = re.compile(r"<!-- ckb:facts:begin repo=(\S+) kind=(\S+) entry_points=(\d+) sources=(\d+) sinks=(\d+) core_files=(\d+) test_files=(\d+) -->")
+
+
+def facts_problems(path: Path, text: str) -> list[dict]:
+    """Verify every embedded facts block against its facts JSON (counts) and against the generated markdown (verbatim)."""
+    out = []
+    for m in FACTS_BEGIN.finditer(text):
+        line = text.count("\n", 0, m.start()) + 1
+        repo = m.group(1)
+        end = text.find("<!-- ckb:facts:end -->", m.end())
+        if end == -1:
+            out.append({"code": "F1", "line": line, "message": "facts block has no end marker"})
+            continue
+        block = text[m.start(): end + len("<!-- ckb:facts:end -->")]
+        base = path.parent
+        facts = None
+        for d in [base, *base.parents][:4]:
+            cand = d / "evidence" / f"context-facts-{repo}.json"
+            if cand.is_file():
+                facts = cand
+                gen = d / "repos" / repo / "context-facts.md"
+                break
+        if facts is None:
+            out.append({"code": "F1", "line": line, "message": f"no evidence/context-facts-{repo}.json found for this facts block"})
+            continue
+        try:
+            j = json.loads(facts.read_text())
+        except ValueError:
+            out.append({"code": "F1", "line": line, "message": "facts JSON is unreadable"})
+            continue
+        want = (len(j.get("entry_points", [])), len(j.get("sources", [])), len(j.get("sinks", [])), j.get("n_core", 0), j.get("n_test", 0))
+        got = tuple(int(x) for x in m.groups()[2:])
+        if want != got:
+            out.append({"code": "F1", "line": line, "message": f"facts counts in the header {got} differ from {facts.name} {want} (stale or hand-edited)"})
+        if gen.is_file():
+            ref = gen.read_text().strip()
+            if ref and block.strip() != ref:
+                out.append({"code": "F1", "line": line, "message": "facts block differs from repos/%s/context-facts.md (hand-edited or stale); re-run context_facts.py and re-embed it verbatim" % repo})
+    return out
+
+
 def check(path: Path) -> list[dict]:
     text = path.read_text(errors="replace")
-    out = []
+    out = facts_problems(path, text)
     for m in re.finditer(r"```mermaid\n(.*?)```", text, re.S):
         ln = text.count("\n", 0, m.start()) + 1
         for p in mermaid_problems(m.group(1)):

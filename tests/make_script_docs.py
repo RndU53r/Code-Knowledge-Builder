@@ -9,13 +9,13 @@ ROOT = Path(__file__).resolve().parents[1]
 GROUPS = [
     ("Planning", ["env_probe", "auto_plan", "enumerate_sources"]),
     ("Acquisition", ["fetch_source"]),
-    ("Extraction", ["inventory", "graph_extract", "scan_supply_chain", "ingest_context"]),
-    ("Graph", ["graph_build", "graph_merge", "graph_check"]),
-    ("Derivation", ["callgraph", "threat_seed", "doc_claims", "repo_context"]),
+    ("Extraction", ["inventory", "graph_extract", "scan_supply_chain", "ingest_context", "pipeline_facts"]),
+    ("Graph", ["graph_build", "graph_merge", "graph_check", "roles"]),
+    ("Derivation", ["callgraph", "threat_seed", "doc_claims", "repo_context", "context_facts"]),
     ("Query, view and export", ["graph_query", "graph_viewer", "graph_serve", "graph_mcp", "graph_export", "graph_neo4j"]),
     ("Assurance", ["verify_citations", "check_outputs", "hash_index", "guard"]),
 ]
-INTERNAL = ["ckb_common", "graph_common", "graph_security"]
+INTERNAL = ["ckb_common", "graph_common", "graph_security", "graph_patterns"]
 
 
 def doc(name: str) -> str:

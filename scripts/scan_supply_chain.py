@@ -700,7 +700,7 @@ class Scanner:
     def iac_common(self, rel, lines, provider):
         """Cloud misconfiguration patterns shared by Terraform/CloudFormation/ARM/Bicep/DM."""
         for i, ln in enumerate(lines, 1):
-            if re.search(r'"Action"\s*:\s*"\*"|Action:\s*["\']?\*["\']?\s*$|actions\s*=\s*\[\s*"\*"\s*\]|"actions"\s*:\s*\[\s*"\*"', ln):
+            if re.search(r'"Action"\s*:\s*"\*"|Action:\s*["\']?\*["\']?\s*$|actions\s*=\s*\[\s*"\*"\s*\]|"actions"\s*:\s*\[\s*"\*"|\bActions?\s*=\s*\[?\s*"\*"\s*[\],}]', ln):
                 self.add("SC-D08", "containers-iac", RISKY, "high", "medium", rel, i, ln, f"{provider}: wildcard IAM action")
             if re.search(r'(?i)acl\s*[=:]\s*["\']?public-read(-write)?|PublicRead(Write)?\b|block_public_acls\s*=\s*false|'
                          r'allowBlobPublicAccess["\']?\s*[:=]\s*true|publicNetworkAccess["\']?\s*[:=]\s*["\']?Enabled|'

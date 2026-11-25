@@ -3,6 +3,8 @@
 A Claude Code plugin that turns one repository, a workspace of repos, or a whole Azure DevOps project / GitHub org / GitLab group into:
 
 * a **cited knowledge graph** and knowledge base: inventory, per-repo and system HLD/LLD, cross-repo data flows, outputs and the conditions that change them;
+* a **code map** for every repo: its kind (application, service, library, IaC, CI/CD pipeline, GitOps config, mixed) and each file's role (core, utility, test, generated, infrastructure, ...);
+* every **entry point** (HTTP/gRPC endpoint, queue consumer, cron job, CLI command), the **taint sources** it reads and the **sinks** it can reach, across Python, JS/TS, Go, Java/Kotlin, C#, Ruby and PHP;
 * **call graphs** at function, file and repo level;
 * a **threat model** (STRIDE, CWE/OWASP, OWASP LLM Top 10 when relevant), always at least a rule-based draft;
 * **`context.md`** files a security scanner can consume;
@@ -46,7 +48,7 @@ Branches: **main, else master, else the repository default**, unless you pass `-
   index.md                       start here
   system/   hld · data-flows · call-graphs · outputs-and-conditions · threat-model
             documented-vs-observed · context · supply-chain-report · graph
-  repos/<repo>/   overview · flows · hld · lld · outputs-and-conditions · context · supply-chain
+  repos/<repo>/   overview · code-map · context-facts · flows · hld · lld · outputs-and-conditions · context · supply-chain
   graph/    graph.json · graph.sqlite · index.html (viewer) · exports
   evidence/ authorization · plan · verification · citations · converted context
 ```
@@ -84,15 +86,16 @@ python3 tests/test_guard.py     # hooks and guard
 python3 tests/test_ingest.py    # context ingestion and IaC checks
 python3 tests/test_graph.py     # graph, queries, viewer, servers, MCP
 python3 tests/test_auto.py      # auto mode, branch rule, enumeration, threat draft, call graphs, drift
+python3 tests/test_entrypoints.py  # file roles, repo kinds, entry points/sources/sinks in 8 languages, pipeline facts, context facts
 ```
 
-All four must report `0 failure(s)`. Fixtures (`tests/fixtures/`) include deliberately malicious-looking but inert repos: never install or run them. See the [developer guide](docs/development.md).
+All five must report `0 failure(s)`. Fixtures (`tests/fixtures/`) include deliberately malicious-looking but inert repos: never install or run them. See the [developer guide](docs/development.md).
 
 ## Known limitations
 
 * **Static analysis only.** Reflection, dynamic dispatch, runtime configuration and generated code are marked `[inferred]` or `[unknown]`.
 * **Rule-based drafts.** The threat draft, documentation checks and call-graph links rest on patterns; exposure is inferred from who calls whom, authentication is looked for on the route and handler chain only, and unusual wording is missed. The threat-modeler agent reviews and extends the draft.
-* **Precision depends on the parser.** Python uses `ast`; other languages use tree-sitter only if you already have it installed, otherwise regex (medium/low confidence edges).
+* **Precision depends on the parser.** Python uses `ast`; other languages use tree-sitter only if you already have it installed, otherwise regex (medium/low confidence edges). Entry points, sources and sinks outside Python are line-level patterns: a source-to-sink link is a candidate path, "no auth evidence" means no marker was found on the route or its class (global middleware and gateway auth are invisible), and core/utility labels are inferred from the graph.
 * **Not run against live accounts:** Azure DevOps / GitHub / GitLab enumeration and cloning are tested against a mock server and local repos; Snyk and Neo4j lookups follow the documented APIs but were never exercised against a live service.
 * **Snapshots** read main/master as committed (no uncommitted work, submodules or LFS objects). Org-wide runs are capped (`auto_max_repos`) and shallow.
 * Legacy binary Office files (`.doc`, `.xls`, `.vsd`, `.ppt`) must be exported first; PDF text needs `pdftotext` or Claude reads the pages.

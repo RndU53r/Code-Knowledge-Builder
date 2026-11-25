@@ -32,7 +32,7 @@ from graph_query import GraphStore  # noqa: E402
 from graph_viewer import render  # noqa: E402
 
 LIST_ARGS = {"kinds", "targets", "ids"}
-ALLOWED_OPS = {"status", "search", "node", "explain", "neighbors", "path", "impact", "taint", "tour", "subgraph", "graph", "callgraph"}
+ALLOWED_OPS = {"status", "search", "node", "explain", "neighbors", "path", "impact", "taint", "tour", "subgraph", "graph", "callgraph", "roles", "entrypoints"}
 
 
 def make_handler(store: GraphStore, token: str, port_ref: dict):

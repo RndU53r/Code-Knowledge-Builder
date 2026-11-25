@@ -1,0 +1,21 @@
+name: release
+on:
+  pull_request_target:
+    types: [opened]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          repository: acme/orders-app
+      - uses: third-party/deploy-action@main
+      - name: greet
+        run: echo "Title is ${{ github.event.pull_request.title }}"
+      - name: deploy
+        run: kubectl apply -f k8s/
+        env:
+          KUBE_TOKEN: ${{ secrets.KUBE_TOKEN }}

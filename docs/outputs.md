@@ -18,6 +18,8 @@ Everything ckb writes goes under the output directory (default `<target>/.ckb`).
     impact-<slug>.md                one per /ckb:impact run
   repos/<repo>/
     overview.md                     languages, frameworks, entry points, dependencies, infra, cloud resources
+    code-map.md                     repo kind, files by role, core and utility files, tests (roles are [inferred] for core/utility)
+    context-facts.md                generated facts: entry points, taint sources, sinks (or resources / pipelines), embedded verbatim in context.md
     flows.md                        inbound/outbound/shared-state/polyglot edges and call graph
     hld.md  lld.md                  per-repo design; LLD has sequence diagrams, data models, error handling
     outputs-and-conditions.md       each output: what, how, when (condition | effect | default | source), who consumes
@@ -44,6 +46,9 @@ Everything ckb writes goes under the output directory (default `<target>/.ckb`).
     citations.md                    every citation used, by repo and file
     doc-claims.json                 claims extracted from documents and their verdicts
     inventory-*.json, sc-*.json     raw script output (inventory, supply-chain scan)
+    file-roles-<repo>.json          every file with its role, signals, confidence and fan-in, plus the repo kind
+    pipeline-facts-<repo>.json      CI/CD pipelines: triggers, runners, secrets (names), third-party code, deploy steps, findings PF01-PF05
+    context-facts-<repo>.json       the rows behind context-facts.md (machine-readable)
     context/ctx-*/                  converted documents, diagrams, scan exports (each cited as ctx-*/file:line)
     hashes.json                     content hashes used by /ckb:update
 ```
@@ -77,3 +82,10 @@ Nodes (files, functions, endpoints, topics, tables, env vars, cloud resources, s
 ## Verification state
 
 `evidence/verification.md` and `evidence/graph-verification.md` tell you whether the outputs were checked: every citation must resolve to a real line (and quoted text must match), every output file must carry a provenance block, secret-looking values must be redacted, and diagrams must be inert. Warnings of the "section has no citation" kind are usually summary sections; errors mean the output should not be trusted until fixed.
+
+## Roles, repo kinds and the generated facts
+
+* **File roles**: `core`, `utility`, `test`, `fixture`, `config`, `build`, `iac`, `pipeline`, `migration`, `docs`, `generated`, `tooling`. Everything except `core` and `utility` comes from path and content rules and is reliable. `core` and `utility` are `[inferred]` from the graph (entry point, reached from one, owns I/O, helper-style name, fan-in); `code-map.md` and the evidence JSON show the signals behind each label.
+* **Repo kind**: `application`, `service`, `library`, `iac`, `cicd-pipeline`, `gitops-config`, `docs`, `tooling`, `config` or `mixed` (primary plus secondary kinds). It decides which tables `context-facts.md` contains: entry points, sources and sinks for code repos; provisioned resources and exposure for IaC and GitOps repos; pipelines with triggers, runners, secrets, third-party code and deploy gates for CI/CD repos.
+* **Facts blocks in `context.md`** sit between `<!-- ckb:facts:begin ... -->` and `<!-- ckb:facts:end -->`. Do not edit them; re-run `context_facts.py` and re-embed. `check_outputs.py` (F1) flags a block that was edited or is stale.
+* Source-to-sink links are **candidate paths** over the call graph, not proven dataflow. Entry points and sinks outside Python are regex-based (confidence `medium` or `low`).

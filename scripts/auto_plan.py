@@ -55,6 +55,20 @@ SAFE_KEY = re.compile(r"[^A-Za-z0-9._-]+")
 SKIP_DIRS = {"node_modules", "vendor", ".venv", "venv", "dist", "build", "__pycache__", ".git"}
 
 
+def kind_hint(rels: list[str], name: str) -> dict:
+    """Cheap pre-scan guess of the repo kind from path rules only (the graph build refines it with entry points and head-of-file checks)."""
+    from roles import GITOPS_SUBS, classify, repo_kind
+    counts, subs = Counter(), Counter()
+    for rel in rels[:20000]:
+        c = classify(rel)
+        r = "code" if c["role"] == "code" else c["role"]
+        counts[r] += 1
+        if c["role"] == "iac":
+            subs["iac_gitops" if c.get("sub") in GITOPS_SUBS else "iac_infra"] += 1
+    k = repo_kind(counts, subs, {}, name, False, False)
+    return {"repo_kind": k["repo_kind"], "secondary_kinds": k.get("secondary_kinds", []), "roles": dict(counts)}
+
+
 def ts_mod():
     for m in ("tree_sitter_language_pack", "tree_sitter_languages"):
         import importlib.util
@@ -182,13 +196,13 @@ def plan_local(paths: list[Path], settings: dict, ref: str | None):
             man = [rel for _, rel in svc_files if Path(rel).name in MANIFESTS][:5]
             path = str(root if d == "." else root / d)
             args = ["--key", key, path] + (["--ref", ref] if ref else [])
-            sources.append({"key": key, "path": path, "kind": "local", "languages": dict(lc), "git": gp,
+            sources.append({"key": key, "path": path, "kind": "local", "languages": dict(lc), "git": gp, "kind_hint": kind_hint([rel for _, rel in svc_files], key),
                             "evidence": [f"{key}/{Path(m).relative_to(d) if d != '.' else m}:1" for m in man], "fetch_args": args})
         outside = [(p, rel) for p, rel in files if roots != ["."] and not any(rel.startswith(r + "/") for r in roots)]
         if roots != ["."] and any(IAC.search(rel) or rel.endswith((".yaml", ".yml")) for _, rel in outside):
             key = unique("platform", taken, prefix=root.name if multi else "")
             excl = [f"{r}/**" for r in roots if r != "."]
-            sources.append({"key": key, "path": str(root), "kind": "local", "role": "platform", "git": gp, "exclude": excl,
+            sources.append({"key": key, "path": str(root), "kind": "local", "role": "platform", "git": gp, "exclude": excl, "kind_hint": kind_hint([rel for _, rel in outside], key),
                             "evidence": [rel for _, rel in outside if IAC.search(rel)][:8],
                             "note": "IaC/contracts/deploy files outside service dirs; registered so they are scanned and cited",
                             "fetch_args": ["--key", key, str(root)] + sum((["--exclude", g] for g in excl), []) + (["--ref", ref] if ref else [])})
@@ -211,7 +225,7 @@ def plan_registered(out: Path):
         files_total += len(files)
         lc = Counter(LANG[Path(rel).suffix.lower()] for _, rel in files if Path(rel).suffix.lower() in LANG)
         langs_total.update(lc)
-        sources.append({"key": key, "path": str(root), "kind": meta.get("kind"), "languages": dict(lc), "ref": meta.get("ref"),
+        sources.append({"key": key, "path": str(root), "kind": meta.get("kind"), "languages": dict(lc), "ref": meta.get("ref"), "kind_hint": kind_hint([rel for _, rel in files], key),
                         "source_mode": meta.get("source_mode"), "exclude": meta.get("exclude", []), "registered": True,
                         "evidence": [f"{key}/{rel}:1" for _, rel in files if Path(rel).name in MANIFESTS][:5]})
         collect_signals(files, signals, context, with_context=not ctx_keys)
@@ -315,6 +329,12 @@ def build_plan(sources, context, signals, langs_total, files_total, workspaces, 
         "outputs_and_conditions": {"run": True, "why": "always"},
         "knowledge_graph": {"run": True, "why": "always (structural graph before agents)"},
         "call_graphs": {"run": True, "why": "always: function, file and repo call graphs from the knowledge graph", "levels": ["function", "file", "repo"]},
+        "file_roles": {"run": True, "why": "always: every file gets a role (core, utility, test, iac, pipeline, generated, ...) and every repo a kind (application, IaC, CI/CD pipeline, GitOps, mixed)",
+                       "evidence": [f"{s['key']}: {s['kind_hint']['repo_kind']}" for s in sources if s.get("kind_hint")][:12]},
+        "entry_points_sources_sinks": {"run": True, "why": "always: endpoints, consumers, cron jobs, CLI commands, taint sources and sinks are extracted for every supported language"},
+        "pipeline_facts": {"run": bool(signals["ci"]) or remote_unknown or any((s.get("kind_hint") or {}).get("repo_kind") in ("cicd-pipeline", "mixed") for s in sources),
+                           "why": "CI/CD pipeline files present: triggers, runners, secrets, third-party code and deploy gates are tabulated", "evidence": signals["ci"][:5]},
+        "context_facts": {"run": True, "why": "always: deterministic entry-point/source/sink or resource/pipeline tables for each repo's context.md"},
         "repo_context": {"run": True, "why": "always: docstrings, READMEs, ADRs, API descriptions enrich the graph and context.md"},
         "supply_chain": {"run": True, "why": "manifests/CI present" if (signals["ci"] or any(s["evidence"] for s in sources)) else "always (cheap static scan)",
                          "evidence": signals["ci"][:5]},

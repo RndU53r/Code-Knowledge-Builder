@@ -57,7 +57,7 @@ EDGE_KINDS = {
     "depends_on": {"scanner", "regex"},
     "deploys": {"regex", "context", "llm"},
     "tested_by": {"ast", "regex", "llm"},
-    "flows_to": {"ast", "llm"},
+    "flows_to": {"ast", "regex", "tree-sitter", "llm", "rule"},
     "reaches_sink": {"ast", "regex", "tree-sitter", "llm"},
     "threatens": {"llm", "rule"},
     "finding_at": {"scanner"},

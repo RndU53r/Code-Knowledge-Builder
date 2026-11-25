@@ -2,7 +2,23 @@
 
 Versions follow `plugin.json`. Newest first.
 
-## Unreleased
+## 0.5.0
+
+### Added
+- **File roles** (`roles.py`): every file is labelled `core`, `utility`, `test`, `fixture`, `config`, `build`, `iac`, `pipeline`, `migration`, `docs`, `generated` or `tooling`. Path and content rules decide most roles; `core` vs `utility` comes from graph signals (entry point, reached from one, owns I/O, helper-style name, fan-in) and is always `[inferred]` with its signals listed. Written to `evidence/file-roles-<repo>.json`, `repos/<repo>/code-map.md` and as `role` attributes and `role:*` tags on graph file nodes.
+- **Repo kinds**: every repo is classified as `application`, `service`, `library`, `iac`, `cicd-pipeline`, `gitops-config`, `docs`, `tooling`, `config` or `mixed` (primary plus secondary kinds), shown in the plan, the graph report, the code map and `context.md`. Pipelines and Terraform/Bicep/GitOps repos no longer produce empty application output.
+- **Entry points for Java/Kotlin, C#, Ruby and PHP** (Spring, JAX-RS, ASP.NET controllers, minimal APIs and Azure Functions, Rails routes and Sinatra, Laravel and Symfony), plus deeper Python (Django `path()`, Flask `add_url_rule`, DRF routers, Celery, click/typer/argparse), JS/TS (any router receiver, `app.route()` chains, Nest, Next.js file routing, Hapi, cron, commander) and Go (chi/gin/echo/fiber, gorilla `.Methods`, Go 1.22 patterns, gRPC services, cobra, cron). New node kinds in use: `consumer`, `cron_job`, `cli_command`.
+- **Taint sources** (`taint_source` nodes: `http_param`, `cli_arg`, `stdin`, `file_read`, `message_body`) in all supported languages, linked to their handlers with `flows_to`.
+- **Many more sink classes**: `template`, `xss`, `path`, `redirect`, `nosql`, `ldap`, `xpath`, `xxe`, and the existing sql/command/ssrf/code/deserialization sinks for Java, C#, Ruby, PHP and Go. Python `execute(variable)` is now reported (low confidence, unknown verdict). Tests and generated files are not scanned for entry points or sinks.
+- **CI/CD pipeline facts** (`pipeline_facts.py`) for GitHub Actions, Azure Pipelines, GitLab CI, Jenkins and CircleCI: triggers, fork reachability, runners, secrets and service connections (names only), third-party code and pinning, deploy steps and gates; findings PF01 to PF05 for what the supply-chain scanner does not cover.
+- **Pipeline and IaC threats** in the draft threat model (`rule_pipeline`), a wider sink-to-CWE map, and class-level authentication evidence for Spring, ASP.NET, Rails, Laravel, Nest and Django.
+- **`deploys` links** between pipeline, IaC or GitOps repos and the application repos they name, in the repo call graph.
+- **Context facts** (`context_facts.py`): deterministic tables per repo (code map, entry points with auth evidence and exposure, sources, sinks with CWE and reachable entry points, known-safe patterns; or resources and pipelines for IaC and CI/CD repos) embedded verbatim in `context.md`; `check_outputs.py` check F1 proves the embedded block matches the generated one.
+- `graph_query.py` ops `roles` and `entrypoints`, MCP tools `ckb_roles` and `ckb_entrypoints`, viewer file-role filter, `kind_hint` in the auto plan, and `tests/test_entrypoints.py` with fixtures for eight languages and four repo kinds.
+
+### Changed
+- The `taint` op starts from endpoints, consumers, cron jobs, CLI commands and sources and removes duplicate paths; results remain candidate paths, not proven dataflow.
+- The supply-chain scanner recognizes HCL-style wildcard IAM actions (`Action = "*"`).
 
 ### Security
 - Snapshots of local repos are stored in a per-user, owner-only cache and are never reused unless they are real directories owned by the current user with no group/world access (previously a predictable directory name in the shared temp dir).

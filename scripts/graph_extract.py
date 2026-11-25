@@ -27,11 +27,13 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ckb_common import is_binary, is_secret_file, read_text, repo_excludes, repo_roots_for_output, walk_files  # noqa: E402
 from graph_common import atomic_write, cite, make_edge, make_node, node_id, safe_str, sig_hash  # noqa: E402
+from graph_patterns import arg_kind, find_entries, line_sinks, line_sources  # noqa: E402
+from roles import FIXTURE_PATH, GENERATED_NAME, TEST_PATH  # noqa: E402
 
 LANG = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript", ".jsx": "javascript",
         ".ts": "typescript", ".tsx": "typescript", ".go": "go", ".java": "java", ".kt": "kotlin", ".rb": "ruby",
         ".php": "php", ".rs": "rust", ".cs": "csharp", ".scala": "scala", ".swift": "swift"}
-TEST_PATH = re.compile(r"(^|/)(tests?|__tests__|spec)/|_test\.(go|py)$|\.test\.[jt]sx?$|\.spec\.[jt]sx?$|(^|/)test_[^/]+\.py$")
+PY_SOURCE = re.compile(r"^(?:flask\.)?request\.(args|form|json|values|files|headers|cookies|data|GET|POST|query_params|path_params|body|FILES|META|get_json)\b")
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all", "route", "api_route", "websocket"}
 SQL_WRITE = re.compile(r"(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|REPLACE\s+INTO)\s+[`\"]?([A-Za-z_][\w.]*)")
 SQL_READ = re.compile(r"(?i)\b(?:FROM|JOIN)\s+[`\"]?([A-Za-z_][\w.]*)")
@@ -90,6 +92,34 @@ class Frag:
                       extractor=self.extractor, confidence=conf, attrs={"sink_type": stype, "safe": safe, "reason": reason})
         sid = self.node(n)
         self.edge(owner, "reaches_sink", sid, line, conf=conf)
+        return sid
+
+    def entry(self, kind, name, line, handler_id=None, conf="medium", label="observed", **attrs):
+        """Entry point node (endpoint, consumer, cron_job, cli_command) with a routes_to edge to its handler."""
+        q = name if kind == "endpoint" else f"{name} ({self.rel}:{line})"
+        n = make_node(kind, self.key, "", q, name, line, extractor=self.extractor, confidence=conf, label=label,
+                      citation=cite(self.key, self.rel, line), attrs={k: v for k, v in attrs.items() if v is not None})
+        eid = self.node(n)
+        if handler_id and handler_id != self.file_id:
+            self.edge(eid, "routes_to", handler_id, line, conf=conf, label=label)
+        return eid
+
+    def consumer_for(self, owner, topic, line, conf="medium"):
+        if owner != self.file_id:
+            self.entry("consumer", f"consume {topic}", line, handler_id=owner, conf=conf, queue=topic)
+
+    def source(self, owner, qual, stype, detail, line, conf="medium"):
+        """One taint_source node per (function, source type); later hits only bump its count."""
+        if owner == self.file_id:
+            return None
+        sid = node_id("taint_source", self.key, self.rel, f"{qual}.{stype}")
+        if sid in self.nodes:
+            self.nodes[sid]["attrs"]["count"] = self.nodes[sid]["attrs"].get("count", 1) + 1
+            return sid
+        n = make_node("taint_source", self.key, self.rel, f"{qual}.{stype}", f"{stype} input in {qual}", line, extractor=self.extractor,
+                      confidence=conf, attrs={"source_type": stype, "detail": safe_str(detail, 60), "count": 1})
+        self.node(n)
+        self.edge(sid, "flows_to", owner, line, conf=conf)
         return sid
 
     def sql(self, owner, text, line, safe, conf="high"):
@@ -165,6 +195,8 @@ def extract_python(key, rel, text) -> Frag:
     f = Frag(key, rel, "ast")
     tree = ast.parse(text)
     lines = text.splitlines()
+    sec = not (TEST_PATH.search(rel) or GENERATED_NAME.search(rel))  # entry points/sources/sinks are not extracted from tests or generated code
+    defused = "defusedxml" in text
     f.node(make_node("file", key, rel, "", rel, 1, max(1, len(lines)), extractor="ast", attrs={"language": "python"}))
     # module constants (incl. env defaults)
     for st in tree.body:
@@ -197,7 +229,18 @@ def extract_python(key, rel, text) -> Frag:
                 if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
                     visit_def(ch, nid, qual + ".", True)
             return
-        for dec in node.decorator_list:
+        is_entry = None
+        for dec in (node.decorator_list if sec else []):
+            dn = dotted(dec.func if isinstance(dec, ast.Call) else dec)
+            dlast = dn.rsplit(".", 1)[-1]
+            if dlast in ("task", "shared_task"):
+                f.entry("consumer", f"consume task {qual}", dec.lineno, handler_id=nid, queue=qual, protocol="celery")
+                is_entry = "message_body"
+            elif dlast in ("periodic_task", "scheduled_job", "cron", "crontab"):
+                f.entry("cron_job", f"schedule {qual}", dec.lineno, handler_id=nid)
+            elif dn in ("click.command", "click.group", "app.command", "typer.command") or dlast == "command" and dn.split(".")[0] in ("cli", "app", "typer", "click"):
+                f.entry("cli_command", f"command {qual}", dec.lineno, handler_id=nid)
+                is_entry = "cli_arg"
             if isinstance(dec, ast.Call) and isinstance(dec.func, ast.Attribute) and dec.func.attr in HTTP_METHODS and dec.args:
                 path = literal(dec.args[0], f.constants)
                 if path is not None:
@@ -211,9 +254,21 @@ def extract_python(key, rel, text) -> Frag:
                                        citation=cite(key, rel, dec.lineno), attrs={"method": m, "path": path, "norm": norm_path(path)})
                         eid = f.node(ep)
                         f.edge(eid, "routes_to", nid, dec.lineno)
+                        is_entry = "http_param"
+        if is_entry and sec and not isinstance(node, ast.ClassDef):
+            params = [a.arg for a in node.args.args + node.args.kwonlyargs if a.arg not in ("self", "cls", "request", "response", "req", "res", "db", "session", "background_tasks", "background")]
+            if params:
+                f.source(nid, qual, is_entry, "handler parameters: " + ", ".join(params[:6]), node.lineno, conf="medium")
         for sub in ast.walk(node):
             if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)) and sub is not node:
                 continue
+            if sec and isinstance(sub, ast.Attribute):
+                d = dotted(sub)
+                m_ = PY_SOURCE.match(d)
+                if m_:
+                    f.source(nid, qual, "http_param", m_.group(0), sub.lineno)
+                elif d in ("sys.argv", "sys.stdin"):
+                    f.source(nid, qual, "cli_arg" if d == "sys.argv" else "stdin", d, sub.lineno)
             if isinstance(sub, ast.Call):
                 handle_call(sub, nid, qual)
             elif isinstance(sub, ast.Subscript) and dotted(sub.value) in ("os.environ", "environ") and isinstance(sub.slice, ast.Constant):
@@ -236,11 +291,37 @@ def extract_python(key, rel, text) -> Frag:
         f.ref(type="call", src=owner, name=name, line=ln)
         last = name.rsplit(".", 1)[-1]
         a0 = c.args[0] if c.args else None
+        if sec and last in ("path", "re_path", "url") and len(c.args) >= 2 and Path(rel).name in ("urls.py", "routes.py"):
+            pth = literal(a0, f.constants)
+            view = c.args[1]
+            vname = dotted(view.func.value) if isinstance(view, ast.Call) and isinstance(view.func, ast.Attribute) and view.func.attr == "as_view" else dotted(view)
+            if pth is not None and vname and not vname.endswith("include"):
+                pth = "/" + pth.lstrip("^/").rstrip("$")
+                ep = f.entry("endpoint", f"ANY {pth}", ln, method="ANY", path=pth, norm=norm_path(pth), protocol="http")
+                f.ref(type="route_handler", src=ep, name=vname.split(".")[-1], line=ln)
+        elif sec and last == "add_url_rule" and a0 is not None:
+            pth = literal(a0, f.constants)
+            vf = next((kw.value for kw in c.keywords if kw.arg == "view_func"), None)
+            ms = next(([str(e.value).upper() for e in kw.value.elts if isinstance(e, ast.Constant)] for kw in c.keywords if kw.arg == "methods" and isinstance(kw.value, (ast.List, ast.Tuple))), ["GET"])
+            if pth is not None:
+                for m_ in ms:
+                    ep = f.entry("endpoint", f"{m_} {pth}", ln, method=m_, path=pth, norm=norm_path(pth), protocol="http")
+                    if vf is not None and dotted(vf):
+                        f.ref(type="route_handler", src=ep, name=dotted(vf).split(".")[-1], line=ln)
+        elif sec and last == "register" and name.endswith(("router.register", "routes.register")) and len(c.args) >= 2 and literal(a0, f.constants) is not None:
+            pth = "/" + literal(a0, f.constants).strip("^/$")
+            ep = f.entry("endpoint", f"ANY {pth}", ln, method="ANY", path=pth, norm=norm_path(pth), protocol="http")
+            f.ref(type="route_handler", src=ep, name=dotted(c.args[1]).split(".")[-1], line=ln)
+        elif sec and name in ("argparse.ArgumentParser", "ArgumentParser", "optparse.OptionParser"):
+            f.entry("cli_command", f"command {Path(rel).stem}", ln, handler_id=owner, conf="low")
+            f.source(owner, qual, "cli_arg", name, ln, conf="low")
         if last in ("execute", "executemany", "raw", "exec_driver_sql", "query", "text") and a0 is not None:
             lit = literal(a0, f.constants)
             unsafe = isinstance(a0, (ast.JoinedStr, ast.BinOp)) or (isinstance(a0, ast.Call) and dotted(a0.func).endswith("format"))
             if lit or unsafe:
                 f.sql(owner, lit or "SELECT ?", ln, safe=not unsafe)
+            elif sec and last in ("execute", "executemany", "exec_driver_sql") and isinstance(a0, (ast.Name, ast.Attribute)):
+                f.sink(owner, qual, "sql", safe=False, reason="non-literal query (variable): check how it is built", line=ln, conf="low")
         elif name in ("subprocess.run", "subprocess.Popen", "subprocess.call", "subprocess.check_output",
                       "subprocess.check_call", "os.system", "os.popen"):
             shell = any(kw.arg == "shell" and isinstance(kw.value, ast.Constant) and kw.value.value for kw in c.keywords)
@@ -256,8 +337,10 @@ def extract_python(key, rel, text) -> Frag:
                 f.edge(owner, "spawns", ext, ln, conf="medium")
         # Detection only: these call names in the *target's* source mark deserialization/code sinks.
         # ckb never loads pickle/marshal data itself.
-        elif name in ("eval", "exec", "compile", "pickle.loads", "pickle.load", "yaml.load", "marshal.loads"):
-            f.sink(owner, qual, "code" if name in ("eval", "exec", "compile") else "deserialization", safe=False, reason=name, line=ln)
+        elif name in ("eval", "exec", "compile", "pickle.loads", "pickle.load", "yaml.load", "marshal.loads", "jsonpickle.decode", "dill.load",
+                      "dill.loads", "torch.load", "shelve.open", "cPickle.loads", "pickle.Unpickler"):
+            safe_loader = name == "yaml.load" and any(kw.arg == "Loader" and "Safe" in dotted(kw.value) for kw in c.keywords)
+            f.sink(owner, qual, "code" if name in ("eval", "exec", "compile") else "deserialization", safe=safe_loader, reason=name + (" with SafeLoader" if safe_loader else ""), line=ln)
         elif re.match(r"^(requests|httpx|urllib\.request|aiohttp)\.", name) or last in ("urlopen",):
             url = literal(a0, f.constants) if a0 is not None else None
             if url and not url.startswith("{p}") and "://" not in url[:12] and not url.startswith("/"):
@@ -265,6 +348,22 @@ def extract_python(key, rel, text) -> Frag:
             if url is not None:
                 f.ref(type="http", src=owner, method=(last.upper() if last in HTTP_METHODS else "GET"), url=url, line=ln)
             f.sink(owner, qual, "ssrf", safe=url is not None and "{p}" not in (url or "")[:12], reason="dynamic URL" if url is None else "templated URL", line=ln, conf="low")
+        elif sec and (last in ("render_template_string", "from_string") or name in ("Template", "jinja2.Template", "mako.template.Template")) and a0 is not None \
+                and not (isinstance(a0, ast.Constant) and isinstance(a0.value, str)):
+            f.sink(owner, qual, "template", safe=False, reason=f"{name} with a non-constant template string", line=ln, conf="medium")
+        elif sec and last in ("mark_safe", "Markup", "SafeString") and a0 is not None and not isinstance(a0, ast.Constant):
+            f.sink(owner, qual, "xss", safe=False, reason=f"{name} marks dynamic text as safe HTML", line=ln, conf="medium")
+        elif sec and last in ("redirect", "HttpResponseRedirect", "RedirectResponse") and a0 is not None and not isinstance(a0, ast.Constant):
+            f.sink(owner, qual, "redirect", safe=False, reason="redirect to a non-constant URL", line=ln, conf="low")
+        elif sec and last in ("send_file", "send_from_directory", "FileResponse") and a0 is not None and not isinstance(a0, ast.Constant):
+            f.sink(owner, qual, "path", safe=False, reason=f"{name} with a non-constant path", line=ln, conf="low")
+        elif sec and name == "open" and isinstance(a0, (ast.JoinedStr, ast.BinOp)):
+            f.sink(owner, qual, "path", safe=False, reason="open() on a path built from strings", line=ln, conf="low")
+        elif sec and (re.search(r"(^|\.)(etree|ET|minidom|sax|xmlrpc)\.(parse|fromstring|XML|parseString|XMLParser)$", name) or name in ("parseString", "parse_xml")):
+            hard = defused or any(kw.arg in ("resolve_entities", "no_network") and isinstance(kw.value, ast.Constant) and kw.value.value in (False, True) and kw.arg == "resolve_entities" and kw.value.value is False for kw in c.keywords)
+            f.sink(owner, qual, "xxe", safe=bool(hard), reason="XML parser" + (" (defusedxml or resolve_entities=False)" if hard else " without visible hardening"), line=ln, conf="low")
+        elif sec and last in ("search_s", "search", "search_st") and "ldap" in name.lower() and isinstance(a0, (ast.JoinedStr, ast.BinOp)):
+            f.sink(owner, qual, "ldap", safe=False, reason="LDAP filter built from strings", line=ln, conf="medium")
         elif last in ("basic_publish", "publish", "produce", "send_message", "put_record"):
             kws = {kw.arg: kw.value for kw in c.keywords}
             key_ = literal(kws.get("routing_key") or kws.get("topic") or (c.args[1] if len(c.args) > 1 else a0), f.constants) if (kws or c.args) else None
@@ -275,6 +374,8 @@ def extract_python(key, rel, text) -> Frag:
             q = next((literal(kw.value, f.constants) for kw in c.keywords if kw.arg in ("queue", "topic", "topics")), None)
             if q:
                 f.edge(owner, "consumes", f.shared("topic", q, ln), ln, conf="medium")
+                if sec:
+                    f.consumer_for(owner, q, ln)
 
     for st in tree.body:
         if isinstance(st, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
@@ -299,7 +400,7 @@ RX = {
     "javascript": [
         re.compile(r"^\s*(?:export\s+)?(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)\s*\("),
         re.compile(r"^\s*(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)"),
-        re.compile(r"^\s+(?:async\s+)?(?!if\b|for\b|while\b|switch\b|catch\b|return\b)([A-Za-z_$][\w$]*)\s*\([^)]*\)\s*\{\s*$"),
+        re.compile(r"^\s+(?:(?:public|private|protected|static|async|readonly)\s+)*(?!if\b|for\b|while\b|switch\b|catch\b|return\b)([A-Za-z_$][\w$]*)\s*\([^{;]*\)\s*(?::\s*[^{;]+)?\{\s*$"),
     ],
     "go": [re.compile(r"^func\s+(?:\([^)]*\)\s*)?([A-Za-z_]\w*)\s*\(")],
     "java": [re.compile(r"^\s*(?:public|private|protected|static|final|\s)+[\w<>\[\],\s]+\s+([A-Za-z_]\w*)\s*\([^)]*\)\s*(?:throws [\w., ]+)?\{")],
@@ -309,12 +410,12 @@ RX = {
 }
 RX["typescript"] = RX["javascript"]
 RX["kotlin"] = [re.compile(r"^\s*(?:\w+\s+)*fun\s+(?:<[^>]+>\s*)?([A-Za-z_]\w*)\s*\(")]
-RX["csharp"] = RX["java"]
+RX["csharp"] = [re.compile(r"^\s*(?:(?:public|private|protected|internal|static|async|virtual|override|sealed|abstract|extern|unsafe|new|partial)\s+)+[\w<>\[\],.?\s]+?\s+([A-Za-z_]\w*)\s*(?:<[^>]*>)?\s*\(")]
 CLASS_RX = re.compile(r"^\s*(?:export\s+)?(?:public\s+|abstract\s+|final\s+)*(?:class|interface|struct)\s+([A-Za-z_]\w*)(?:\s+extends\s+([\w.]+))?")
 GO_TYPE_RX = re.compile(r"^type\s+([A-Za-z_]\w*)\s+(struct|interface)\b")
-ROUTE_JS = re.compile(r"\b(app|router|server|api|fastify)\.(get|post|put|patch|delete|all)\(\s*['\"`]([^'\"`]+)['\"`]")
-ROUTE_GO = re.compile(r"\.(HandleFunc|Handle|GET|POST|PUT|PATCH|DELETE)\(\s*\"([^\"]+)\"\s*,\s*([A-Za-z_][\w.]*)?")
 CALL_RX = re.compile(r"(?<![\w$.])([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\(")
+DECL_SKIP = {"if", "for", "while", "switch", "catch", "return", "else", "case", "throw", "function", "typeof", "delete", "void", "yield", "sizeof",
+             "foreach", "using", "lock", "synchronized", "elif", "when", "do", "try", "finally", "await", "new"}
 KEYWORDS = {"if", "for", "while", "switch", "catch", "return", "function", "typeof", "new", "await", "async", "func",
             "make", "len", "append", "cap", "panic", "recover", "defer", "go", "select", "range", "super", "this",
             "require", "import", "case", "else", "throw", "delete", "void", "yield", "sizeof", "print", "println"}
@@ -330,6 +431,7 @@ AMQP_BIND = re.compile(r"QueueBind\(\s*[^,]+,\s*\"([^\"]+)\"\s*,\s*\"([^\"]+)\""
 PUBLISH_RX = re.compile(r"\.(?:Publish|PublishWithContext|publish|send|produce)\(\s*[^)]*?['\"`]([a-z][\w.-]+\.[\w.-]+)['\"`]")
 SUBSCRIBE_RX = re.compile(r"\.(?:subscribe|consume)\(\s*\{?\s*(?:topic|queue)?\s*:?\s*['\"`]([\w.-]+)['\"`]")
 CMD_RX = re.compile(r"exec\.Command\(\s*\"?([^\",)]+)|child_process\.(exec|execSync|spawn)\(|\b(execSync|spawnSync)\(")
+GO_SHELL = re.compile(r"exec\.Command(?:Context)?\(\s*(?:ctx\s*,\s*)?\"(?:sh|bash|zsh|cmd|cmd\.exe|powershell|pwsh)\"\s*,\s*\"(?:-c|/c|-Command)\"\s*,\s*(?P<arg>[^)]*)")
 EVAL_RX = re.compile(r"(?<![\w.])(eval|new Function)\s*\(")
 SSRF_JS = re.compile(r"\b(axios|fetch|got)(?:\.\w+)?\(\s*([^,)]+)")
 
@@ -338,6 +440,12 @@ def extract_regex(key, rel, text, lang) -> Frag:
     f = Frag(key, rel, "regex")
     lines = text.splitlines()
     f.node(make_node("file", key, rel, "", rel, 1, max(1, len(lines)), extractor="regex", attrs={"language": lang}))
+    sec = not (TEST_PATH.search(rel) or GENERATED_NAME.search(rel))  # no entry points/sources/sinks from tests or generated code
+    entries = find_entries(lang, rel, lines) if sec else []
+    inline_at = {}
+    for e in entries:
+        if e["inline"] and e["kind"] == "endpoint":
+            inline_at.setdefault(e["line"], []).append(e)
     decls = []  # (line, name, kind)
     pats = RX.get(lang, [])
     for i, ln in enumerate(lines, 1):
@@ -349,13 +457,14 @@ def extract_regex(key, rel, text, lang) -> Frag:
             continue
         for p in pats:
             m = p.match(ln)
-            if m and m.group(1) not in KEYWORDS:
+            if m and m.group(1) not in DECL_SKIP:
                 decls.append((i, m.group(1), "function", None))
                 break
-        r = ROUTE_JS.search(ln)
-        if r:
-            decls.append((i, f"{r.group(2).upper()} {r.group(3)}", "route", r.group(3)))
+        if i in inline_at:
+            first = inline_at[i][0]
+            decls.append((i, first["name"], "route", first["path"]))
     owners = []
+    route_nids = set()
     for idx, (line, name, kind, extra) in enumerate(decls):
         end = (decls[idx + 1][0] - 1) if idx + 1 < len(decls) else len(lines)
         if kind == "class":
@@ -366,13 +475,12 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 f.ref(type="inherit", src=nid, name=extra, line=line)
             continue
         if kind == "route":
-            method, path = name.split(" ", 1)
             qual = f"route {name}"
             nid = f.node(make_node("function", key, rel, qual, qual, line, end, extractor="regex", confidence="medium",
                                    signature=lines[line - 1].strip()[:200], sig_hash=sig_hash(lines[line - 1]), attrs={"inline_handler": True}))
-            ep = f.node(make_node("endpoint", key, "", name, name, line, extractor="regex", citation=cite(key, rel, line),
-                                  attrs={"method": method if method != "ALL" else "ANY", "path": path, "norm": norm_path(path)}))
-            f.edge(ep, "routes_to", nid, line)
+            for e in inline_at[line]:
+                f.entry("endpoint", e["name"], line, handler_id=nid, conf="high", method=e["method"], path=e["path"], norm=norm_path(e["path"]), protocol="http")
+            route_nids.add(nid)
         else:
             sig = lines[line - 1].strip()
             doc = leading_comment(lines, line)
@@ -388,6 +496,31 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 return nid, name
         return f.file_id, "module"
 
+    # entry points that are not inline route callbacks: bind each to the handler declared right after the annotation/route line,
+    # or by name (resolved across files by the linker)
+    funcs = [(s_, nid, name) for s_, e_, nid, name in owners if nid not in route_nids]
+    for e in entries:
+        if e["inline"] and e["kind"] == "endpoint":
+            continue
+        hid, dist = None, None
+        if e["handler"] and not e["defer"]:
+            hid = next((nid for s_, nid, name in funcs if name == e["handler"]), None)
+        if hid is None and not e["defer"] and e.get("near", True):
+            cand = [(s_ - e["line"], nid) for s_, nid, name in funcs if 0 <= s_ - e["line"] <= 8]
+            if cand:
+                dist, hid = min(cand)
+        label = "observed" if (hid is not None and (dist is None or dist <= 3)) or e["handler"] else "inferred"
+        attrs = {"protocol": e["proto"]}
+        if e["kind"] == "endpoint":
+            attrs.update(method=e["method"] or "ANY", path=e["path"], norm=norm_path(e["path"]))
+        if e["queue"]:
+            attrs["queue"] = e["queue"]
+        eid = f.entry(e["kind"], e["name"], e["line"], handler_id=hid, conf="medium", label=label, **attrs)
+        if e["handler"] and e["handler"] != "func" and (e["defer"] or hid is None):
+            f.ref(type="route_handler", src=eid, name=e["handler"], line=e["line"], hint=(e.get("controller") or "").split("/")[-1].lower() or None)
+        if e["kind"] == "consumer" and e["queue"]:
+            f.edge(eid, "consumes", f.shared("topic", e["queue"], e["line"]), e["line"], conf="medium")
+
     for i, ln in enumerate(lines, 1):
         if len(ln) > 500:
             continue
@@ -398,16 +531,17 @@ def extract_regex(key, rel, text, lang) -> Frag:
             m = GO_IMPORT.match(ln)
             if m and ("import" in ln or (i > 1 and any("import (" in x for x in lines[max(0, i - 30):i]))):
                 f.ref(type="import", src=f.file_id, module=m.group(1), line=i, lang="go")
-            r = ROUTE_GO.search(ln)
-            if r:
-                meth = r.group(1).upper() if r.group(1).isupper() else "ANY"
-                ep = f.node(make_node("endpoint", key, "", f"{meth} {r.group(2)}", f"{meth} {r.group(2)}", i, extractor="regex",
-                                      citation=cite(key, rel, i), attrs={"method": meth, "path": r.group(2), "norm": norm_path(r.group(2))}))
-                if r.group(3):
-                    f.ref(type="route_handler", src=ep, name=r.group(3), line=i)
         for m in ENV_RX.finditer(ln):
             name = next(g for g in m.groups() if g)
             f.edge(own, "reads_env", f.env(name, i), i)
+        if sec and not ln.lstrip().startswith(("//", "#", "*", "/*", "<!--", "--")):
+            for stype, label in line_sources(lang, ln):
+                f.source(own, qual, stype, label, i)
+            old_sql = bool(SQL_DYN.search(ln) or SQL_STR.search(ln))
+            for stype, safe, reason, conf in line_sinks(lang, ln, text):
+                if stype == "sql" and old_sql:
+                    continue  # already reported by the SQL handlers below
+                f.sink(own, qual, stype, safe, reason, i, conf=conf)
         for m in HTTP_JS.finditer(ln):
             url = m.group(4)
             method = (m.group(2) or "get").upper()
@@ -432,12 +566,22 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 f.sql(own, body, i, safe=safe)
         for m in AMQP_BIND.finditer(ln):
             f.edge(own, "consumes", f.shared("topic", m.group(1), i, exchange=m.group(2)), i)
+            if sec:
+                f.consumer_for(own, m.group(1), i)
         for m in PUBLISH_RX.finditer(ln):
             f.edge(own, "publishes", f.shared("topic", m.group(1), i), i, conf="medium")
         for m in SUBSCRIBE_RX.finditer(ln):
             f.edge(own, "consumes", f.shared("topic", m.group(1), i), i, conf="medium")
+            if sec:
+                f.consumer_for(own, m.group(1), i)
         for m in CMD_RX.finditer(ln):
-            f.sink(own, qual, "command", safe=bool(m.group(1)), reason="exec.Command" if m.group(1) else "child_process", line=i)
+            shell = GO_SHELL.search(ln)
+            if shell:
+                dyn = arg_kind(shell.group("arg"), "go") != "literal"
+                f.sink(own, qual, "command", safe=not dyn, line=i, conf="high" if dyn and re.search(r"\b(r|req)\.|Query\(|FormValue|cmd\b", shell.group("arg")) else "medium",
+                       reason="shell -c with a non-literal command string" if dyn else "shell -c with a constant command")
+            else:
+                f.sink(own, qual, "command", safe=bool(m.group(1)), reason="exec.Command" if m.group(1) else "child_process", line=i)
             if m.group(1) and not m.group(1).startswith(("os.", "cfg")):
                 f.edge(own, "spawns", f.shared("external", Path(m.group(1).strip()).name, i, conf="low"), i, conf="low")
         if EVAL_RX.search(ln) and lang in ("javascript", "typescript"):

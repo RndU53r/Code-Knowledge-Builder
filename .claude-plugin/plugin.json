@@ -1,7 +1,7 @@
 {
   "name": "ckb",
   "displayName": "Code Knowledge Builder",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Turn repositories (a local folder by default, a workspace of git repos, a monorepo, or whole Azure DevOps projects, GitHub orgs and GitLab groups on main/master), plus architecture docs, diagrams, images, notes, cloud IaC and CSPM results, into a cited knowledge graph with function/file/repo call graphs, documentation-vs-code drift, a threat model, scanner-ready context.md files, and a supply-chain audit. Auto mode chooses capabilities from the environment and the code. Read-only on targets.",
   "author": {
     "name": "RndU53r",

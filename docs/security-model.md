@@ -31,6 +31,7 @@ Everything else is untrusted data: repo files (code, READMEs, comments, config, 
 ## What ckb cannot promise
 
 * **The guard is a strong safety net, not a sandbox.** It recognizes common toolchains and patterns; an unusual command could slip through. If an internal error occurs it fails open (allows) and reports the error so it can never wedge your session. For hostile code, run ckb inside a container or VM as defense in depth.
+* **Entry points, sources and sinks are pattern matches.** Python uses the AST; Java, Kotlin, C#, Ruby, PHP, Go and JS/TS use line-level patterns (confidence `medium` or `low`). A source-to-sink link is a candidate path, never proof, and "no auth evidence" means no authentication marker was found on the route or its class, not that none exists (global middleware and gateway auth are invisible). Core/utility labels are inferred.
 * **Static analysis is incomplete.** Reflection, dynamic dispatch, runtime configuration and generated code are marked `[inferred]` or `[unknown]`, not resolved.
 * **Agents can still be wrong.** The verifier proves a citation exists and a quote matches, not that the conclusion drawn from it is right. Read the cited lines before acting.
 * **Model providers see what agents read.** Agents send cited code excerpts to the model Claude Code is configured to use. If that is not acceptable for a repo, do not run agent-based stages on it (the deterministic scripts alone make the graph, call graphs, draft threat model and drift checks).

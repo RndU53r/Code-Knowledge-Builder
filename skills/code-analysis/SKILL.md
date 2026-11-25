@@ -27,6 +27,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/safety-contract.md` and `${CLAUDE_PLUGIN_RO
 ## Inputs
 
 - `repos/<repo>/overview.md` and `<out>/evidence/inventory-<repo>.json` (run `repo-inventory` first if they're missing).
+- `repos/<repo>/code-map.md` and `<out>/repos/<repo>/context-facts.md` (file roles, repo kind, entry points, taint sources and sinks from the graph; `graph_query.py entrypoints --repo <repo>` lists them with handlers and reachable sinks). Trace the `core` files and the listed entry points first; treat `core`/`utility` labels as inferred and confirm by reading. Test, fixture and generated files are for orientation only.
 - The registered repo root. Read with Read, Grep, and Glob only.
 
 ## Method

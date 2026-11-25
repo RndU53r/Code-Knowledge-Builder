@@ -1,0 +1,14 @@
+@Library('shared-lib') _
+pipeline {
+  agent { label 'build-agent' }
+  triggers { cron('H 2 * * *') }
+  stages {
+    stage('Deploy') {
+      steps {
+        withCredentials([string(credentialsId: 'prod-token', variable: 'T')]) {
+          sh "helm upgrade orders ./chart --set image.tag=${params.TAG}"
+        }
+      }
+    }
+  }
+}

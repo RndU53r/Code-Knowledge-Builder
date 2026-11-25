@@ -8,7 +8,8 @@ Usage:
   --extract          run graph_extract.py for every registered code repo first (ctx-* keys are skipped)
   --incremental      with --extract: re-extract only files changed since the last hash snapshot
   --structural-only  skip proposals (used by the git-commit auto-update hook)
-  --enrich           also run repo_context.py, doc_claims.py and threat_seed.py (draft threat model), then rebuild
+  --enrich           also run repo_context.py, doc_claims.py, pipeline_facts.py and threat_seed.py (draft threat model), rebuild, then
+                     write the per-repo context-facts tables (context_facts.py)
 
 Outputs: <out>/graph/graph.json, <out>/graph/graph.sqlite, <out>/system/graph.md
 """
@@ -231,6 +232,11 @@ class Linker:
                         self.add_edge(make_edge(r["src"], "inherits", tgt, c, extractor=ex, confidence=conf or "medium"))
                 elif r["type"] == "route_handler":
                     tgt, conf = self.resolve_name(f, r["name"], r["src"])
+                    if r.get("hint"):  # Rails controller#action / Laravel Controller@method: prefer the file that matches the controller name
+                        short = r["name"].split(".")[-1]
+                        hc = [c for c in self.defs_by_name.get((f["repo"], short), []) if r["hint"].replace("controller", "") in self.nodes[c].get("path", "").lower()]
+                        if len(hc) == 1:
+                            tgt, conf = hc[0], "medium"
                     if tgt:
                         self.add_edge(make_edge(r["src"], "routes_to", tgt, c, extractor=ex, confidence=conf or "medium"))
 
@@ -417,6 +423,10 @@ def report(graph: dict, out: Path, sec: dict, props: dict, carry: dict) -> str:
     lines += ["", "## Extractors", "", "| Extractor | Nodes | Edges |", "| --- | --- | --- |"]
     for ex in sorted(set(st["nodes_by_extractor"]) | set(st["edges_by_extractor"])):
         lines.append(f"| {ex} | {st['nodes_by_extractor'].get(ex, 0)} | {st['edges_by_extractor'].get(ex, 0)} |")
+    rk = [n for n in graph["nodes"] if n["kind"] == "repo" and (n.get("attrs") or {}).get("repo_kind")]
+    if rk:
+        lines += ["", "## Repo kinds [inferred]", "", "| Repo | Kind | Signals |", "| --- | --- | --- |"]
+        lines += [f"| {md_safe(n['name'])} | {md_safe(n['attrs']['repo_kind'])}{md_safe(' (' + n['attrs'].get('primary_kind', '') + ' + ' + ', '.join(n['attrs'].get('secondary_kinds', [])) + ')' if n['attrs']['repo_kind'] == 'mixed' else '')} | {md_safe('; '.join(n['attrs'].get('repo_kind_signals', [])))} |" for n in rk]
     eps = [n for n in graph["nodes"] if n["kind"] == "endpoint"][:40]
     lines += ["", "## Entry points (endpoints)", "", "| Endpoint | Repo | Source |", "| --- | --- | --- |"]
     lines += [f"| {md_safe(n['name'])} | {md_safe(n['repo'])} | `{n['citation']}` |" for n in eps] or ["| [unknown] none found | | |"]
@@ -440,6 +450,11 @@ def build(out: Path, structural_only=False) -> dict:
     roots = {k: v for k, v in repo_roots_for_output(out).items() if not k.startswith("ctx")}
     frags = load_fragments(out, roots)
     link = Linker(frags, roots, out).build()
+    try:
+        import roles
+        role_stats = roles.apply(link, roots, out)
+    except Exception as e:  # noqa: BLE001 - roles are derived labels; never fail the graph build
+        role_stats = {"error": f"{type(e).__name__}: {e}"}
     sec = attach_security(link, out)
     props = {} if structural_only else merge_proposals(link, out)
     pruned = prune_superseded_drafts(link, out)
@@ -476,7 +491,7 @@ def build(out: Path, structural_only=False) -> dict:
         cg_stats = callgraph.run(out)["stats"]
     except Exception as e:  # noqa: BLE001 - call graphs are derived; never fail the graph build
         cg_stats = {"error": f"{type(e).__name__}: {e}"}
-    return {"callgraph": cg_stats, **{"nodes": len(nodes), "edges": len(edges), "schema_problems": probs[:20], "security": sec, "proposals": props, "carry_over": carry}}
+    return {"callgraph": cg_stats, "roles": role_stats, **{"nodes": len(nodes), "edges": len(edges), "schema_problems": probs[:20], "security": sec, "proposals": props, "carry_over": carry}}
 
 
 def enrich(out: Path, structural_only=False) -> dict:
@@ -486,12 +501,19 @@ def enrich(out: Path, structural_only=False) -> dict:
     build(out, structural_only)
     import doc_claims
     import repo_context
+    import pipeline_facts
     import threat_seed
     steps["repo_context"] = repo_context.run(out)
+    steps["pipeline_facts"] = pipeline_facts.run(out)
     steps["doc_claims"] = doc_claims.run(out)
     build(out, structural_only)
     steps["threat_seed"] = threat_seed.run(out)
     res = build(out, structural_only)
+    try:
+        import context_facts
+        steps["context_facts"] = context_facts.run(out)
+    except Exception as e:  # noqa: BLE001 - derived tables; never fail the build
+        steps["context_facts"] = {"error": f"{type(e).__name__}: {e}"}
     res["enrich"] = steps
     return res
 

@@ -33,6 +33,8 @@ You are the ckb per-repo analyst. You turn one repository into cited, verifiable
 
 **Navigate with the graph:** `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/graph_query.py" --out <out> explain|neighbors|path|impact|taint ...` gives cited starting points. Open the cited lines before relying on any of them.
 
+**Start from the code map:** read `<out>/repos/<key>/code-map.md` (file roles and the repo kind, written by the graph build) and `<out>/repos/<key>/context-facts.md` if present. Spend your reading time on `core` files and entry points; skip `generated`, `fixture` and `test` files except to see what the tests cover. If the repo kind is `iac`, `gitops-config` or `cicd-pipeline`, describe resources/exposure or pipelines (triggers, runners, secrets, third-party code, deploy gates) in overview.md instead of endpoints and sinks. Roles and kinds are inferred: confirm what matters by reading.
+
 **Process**
 1. Check that `<out>/evidence/targets.json` contains the repo key. If it doesn't, stop and report: the orchestrator must register the source first.
 2. Follow the `repo-inventory` skill: run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/inventory.py" --root <root> --key <key> --json-out <out>/evidence/inventory-<key>.json`, confirm the candidates by reading, and write `repos/<key>/overview.md`.

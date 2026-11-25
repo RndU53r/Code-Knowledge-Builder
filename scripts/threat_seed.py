@@ -38,7 +38,11 @@ MARK = "<!-- ckb:threat-seed -->"
 RANK = {"low": 1, "medium": 2, "high": 3}
 INV = {1: "low", 2: "medium", 3: "high"}
 AUTH_RX = re.compile(r"(?i)(require_?auth|requires?_?login|login_required|authenticate|authorize|authorized|jwt|bearer|oauth|\bauth\b|current_?user|get_current|"
-                     r"depends\(.*(user|auth|token)|verify_?token|check_?permission|has_?role|require_?role|@secured|@preauthorize|isauthenticated|passport\.|session\.user)")
+                     r"depends\(.*(user|auth|token)|verify_?token|check_?permission|has_?role|require_?role|@secured|@preauthorize|@rolesallowed|isauthenticated|passport\.|session\.user|"
+                     r"\[authorize|before_action\s*:\s*authenticate|authenticate_user!|->middleware\(\s*['\"](auth|can|verified)|auth:(api|sanctum)|@useguards|permission_classes|"
+                     r"isauthenticated|requires_auth|verify_jwt|jwt_required|@permission_required|@loginrequired|hasauthority|hasrole|\.authorizerequests|\.authenticated\(\))")
+CLASS_AUTH_RX = re.compile(r"(?i)(before_action\s*:\s*authenticate|@PreAuthorize|\[Authorize[\](]|@UseGuards|->middleware\(\s*['\"]auth|permission_classes|@Secured|@RolesAllowed|authenticate_user!|\.authenticated\(\))")
+ANON_RX = re.compile(r"(?i)(\[AllowAnonymous\]|skip_before_action\s*:\s*authenticate|@PermitAll|permitAll\(\)|@Public\(\)|AllowAny)")
 HEALTH_RX = re.compile(r"(?i)/(health|healthz|ready|readyz|live|livez|ping|metrics|favicon|static|docs|openapi|swagger)")
 SWITCH_RX = re.compile(r"(?i)((AUTH|SECURITY|VERIFY|TLS|SSL|CSRF|SIGNATURE|CERT)\w*(DISABLE|OFF|SKIP|BYPASS|INSECURE|NOVERIFY)|(DISABLE|SKIP|BYPASS|NO|INSECURE)_?(AUTH|VERIFY|TLS|SSL|CSRF|SIGNATURE|CERT)\w*|\bDEBUG\b|ALLOW_ALL|TRUST_ALL)")
 IDHEADER_RX = re.compile(r"(?i)['\"`](x-(request-)?user(-id)?|x-forwarded-user|x-tenant(-id)?|x-auth-user|x-userid)['\"`]")
@@ -47,7 +51,25 @@ REQUEUE_RX = re.compile(r"(?i)(Nack\([^)]*,\s*true\)|requeue\s*[=:]\s*(true|True
 DLQ_RX = re.compile(r"(?i)(dead[-_ ]?letter|\bdlq\b|x-dead-letter|deadletter)")
 SECRET_ENV = re.compile(r"(?i)(PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|PRIVATE_?KEY|CREDENTIAL)")
 CWE = {"sql": ("CWE-89", "A03:2021 Injection"), "command": ("CWE-78", "A03:2021 Injection"), "ssrf": ("CWE-918", "A10:2021 SSRF"),
-       "code": ("CWE-94", "A03:2021 Injection"), "deserialization": ("CWE-502", "A08:2021 Software and Data Integrity Failures")}
+       "code": ("CWE-94", "A03:2021 Injection"), "deserialization": ("CWE-502", "A08:2021 Software and Data Integrity Failures"),
+       "template": ("CWE-1336", "A03:2021 Injection"), "xss": ("CWE-79", "A03:2021 Injection"), "path": ("CWE-22", "A01:2021 Broken Access Control"),
+       "redirect": ("CWE-601", "A01:2021 Broken Access Control"), "nosql": ("CWE-943", "A03:2021 Injection"), "ldap": ("CWE-90", "A03:2021 Injection"),
+       "xpath": ("CWE-643", "A03:2021 Injection"), "xxe": ("CWE-611", "A05:2021 Security Misconfiguration")}
+SINK_TITLE = {"sql": "SQL injection", "command": "COMMAND injection", "ssrf": "SSRF injection", "code": "CODE injection", "deserialization": "DESERIALIZATION injection",
+              "template": "Template injection", "xss": "Cross-site scripting", "path": "Path traversal", "redirect": "Open redirect", "nosql": "NoSQL injection",
+              "ldap": "LDAP injection", "xpath": "XPath injection", "xxe": "XML external entity processing"}
+SINK_STRIDE = {"sql": "Tampering / Information disclosure", "deserialization": "Tampering / Information disclosure", "command": "Elevation of privilege",
+               "code": "Elevation of privilege", "template": "Elevation of privilege", "xss": "Spoofing / Information disclosure", "path": "Information disclosure / Tampering",
+               "redirect": "Spoofing", "nosql": "Tampering / Information disclosure", "ldap": "Tampering / Information disclosure", "xpath": "Information disclosure",
+               "xxe": "Information disclosure", "ssrf": "Information disclosure"}
+SINK_CONTROL = {"sql": "Use parameterized queries / ORM bindings; validate id formats.", "command": "Avoid shells; pass argument arrays; allowlist inputs.",
+                "ssrf": "Allowlist destination hosts; block link-local/metadata addresses; do not take URLs from requests.",
+                "code": "Remove eval/exec on inputs; use safe parsers.", "deserialization": "Use safe formats (JSON) and type allowlists.",
+                "template": "Never build templates from user input; pass data as template variables.", "xss": "Encode output for its context; avoid raw HTML sinks; set a CSP.",
+                "path": "Resolve and check the final path stays under an allowed base directory; use generated file ids, not client paths.",
+                "redirect": "Redirect only to allowlisted or relative targets.", "nosql": "Validate operator-free input types; use typed query builders.",
+                "ldap": "Escape filter and DN values or use parameterized LDAP APIs.", "xpath": "Use parameterized XPath or escape values.",
+                "xxe": "Disable DTDs and external entities in the parser."}
 CLOUD_CHECK = {"SC-D07": ("CWE-284", "Information disclosure", "Public cloud storage or service", "Block public access; require authenticated access",
                           "A01:2021 Broken Access Control", "high", "high"),
                "SC-D08": ("CWE-269", "Elevation of privilege", "Wildcard IAM permissions", "Replace wildcard actions with least-privilege, resource-scoped permissions",
@@ -153,34 +175,78 @@ def rule_taint(c: Ctx, threats):
             continue
         seen.add(key)
         src = c.nodes[p["source"]["id"]]
-        exp, why = c.exposure(src["id"]) if src["kind"] == "endpoint" else ("internal", "message consumer")
+        if src["kind"] == "endpoint":
+            exp, why = c.exposure(src["id"])
+        elif src["kind"] == "consumer":
+            exp, why = "internal", "message consumer"
+        elif src["kind"] in ("cli_command", "cron_job"):
+            exp, why = "internal", "local command or scheduled job"
+        else:
+            exp, why = "internal", "input read inside a handler"
         lik = "high" if exp == "public-candidate" and p["label"] == "observed-path" else "medium"
         safe = safe_by.get((stype, sink["repo"]), [])
         hop_cites = [h["citation"] for h in p["hops"]][:6]
-        add(threats, component=f"{src['name']} → {sink['name']}", stride="Tampering / Information disclosure" if stype in ("sql", "deserialization") else "Elevation of privilege" if stype in ("command", "code") else "Information disclosure",
-            title=f"{stype.upper()} injection path from {src['name']} to an unsafe sink",
+        add(threats, component=f"{src['name']} → {sink['name']}", stride=SINK_STRIDE.get(stype, "Information disclosure"),
+            title=f"{SINK_TITLE.get(stype, stype)} path from {src['name']} to an unsafe sink",
             cwe=CWE[stype][0], owasp=CWE[stype][1], likelihood=lik, impact="high",
             evidence=[sink["citation"]] + hop_cites[:2], primary=sink["citation"], target=sink["id"],
             mitigations=[f"A safe pattern exists elsewhere in {sink['repo']}: `{s['citation']}` ({(s.get('attrs') or {}).get('reason')})" for s in safe[:1]],
             gaps=f"{(sink.get('attrs') or {}).get('reason', 'unsafe construction')}; endpoint exposure: {exp} ({why}). Taint is a candidate path: confirm the input reaches the sink.",
-            control={"sql": "Use parameterized queries / ORM bindings; validate id formats.", "command": "Avoid shells; pass argument arrays; allowlist inputs.",
-                     "ssrf": "Allowlist destination hosts; block link-local/metadata addresses; do not take URLs from requests.",
-                     "code": "Remove eval/exec on inputs; use safe parsers.", "deserialization": "Use safe formats (JSON) and type allowlists."}[stype],
+            control=SINK_CONTROL[stype],
             label="observed" if p["label"] == "observed-path" else "inferred", confidence="high" if p["label"] == "observed-path" else "medium")
+
+
+ROUTE_DECL_RX = re.compile(r"(?i)Route::|^\s*@\w*(Get|Post|Put|Delete|Patch|Request)Mapping|^\s*\[Http(Get|Post|Put|Delete|Patch)|\b(app|router)\.(get|post|put|patch|delete|all)\(|^\s*(get|post|put|patch|delete)\s+['\"]|^\s*@(app|router|bp|blueprint)\.|^\s*resources?\s+:")
+
+
+def route_window(c: Ctx, citation: str) -> str:
+    """The route declaration plus its own decorators/chain, without the neighbouring routes' middleware."""
+    m = re.match(r"^([^/]+)/(.+):(\d+)", citation or "")
+    if not m:
+        return ""
+    ls = c.lines(m.group(1), m.group(2))
+    i = int(m.group(3)) - 1
+    if not 0 <= i < len(ls):
+        return ""
+    before = []
+    for j in range(i - 1, max(-1, i - 3), -1):
+        if ls[j].rstrip().endswith((";", "}")) or ROUTE_DECL_RX.search(ls[j]) and ls[j].lstrip().startswith(("Route::", "get ", "post ")):
+            break
+        before.append(ls[j])
+    after = []
+    for j in range(i + 1, min(len(ls), i + 4)):
+        if ROUTE_DECL_RX.search(ls[j]) and not ls[j].lstrip().startswith(("@PreAuthorize", "@Secured")):
+            break
+        after.append(ls[j])
+    return "\n".join(list(reversed(before)) + [ls[i]] + after)
 
 
 def has_auth_evidence(c: Ctx, ep: dict) -> bool:
     """True if the route line, handler signature, or handler's callees show authentication/authorization."""
     hs = c.handler.get(ep["id"], [])
     chain = ""
-    window = c.window(ep["citation"], 1, 3)
+    window = route_window(c, ep["citation"])
     for h in hs:
         hn = c.nodes.get(h, {})
         window += "\n" + c.window(f"{hn.get('repo')}/{hn.get('path')}:{hn.get('range', {}).get('start', 1)}", 1, 3)
         for e in c.store.out_adj.get(h, []):
             if e["kind"] == "calls":
                 chain += " " + c.nodes.get(e["dst"], {}).get("name", "")
-    return bool(AUTH_RX.search(window) or AUTH_RX.search(chain))
+    if ANON_RX.search(window):
+        return False
+    if AUTH_RX.search(window) or AUTH_RX.search(chain):
+        return True
+    for h in hs:  # class-level annotation / controller filter: everything before the first function of the handler's file
+        hn = c.nodes.get(h, {})
+        key = ("first-fn", hn.get("repo"), hn.get("path"))
+        if key not in c.cache:
+            starts = [x["range"]["start"] for x in c.nodes.values() if x["kind"] in ("function", "method") and x.get("repo") == hn.get("repo")
+                      and x.get("path") == hn.get("path") and not (x.get("attrs") or {}).get("inline_handler")]
+            c.cache[key] = min(starts) if starts else 1
+        head = "\n".join(c.lines(hn.get("repo", ""), hn.get("path", ""))[: max(0, c.cache[key] - 1)])
+        if CLASS_AUTH_RX.search(head) and not ANON_RX.search(head):
+            return True
+    return False
 
 
 def rule_auth(c: Ctx, threats):
@@ -341,6 +407,58 @@ def rule_supply(c: Ctx, threats):
             target=next((e["dst"] for e in c.store.out_adj.get(n["id"], []) if e["kind"] == "finding_at"), None),
             gaps=f"Scanner class `{a.get('class')}`, severity {a.get('severity')} ({a.get('check')}). " + (a.get("remediation") or ""),
             control=a.get("remediation") or "See the supply-chain report.", label="observed", confidence="medium")
+
+
+PIPE_CWE = {"SC-C01": ("CWE-829", "A08:2021 Software and Data Integrity Failures", "Tampering", "Pipeline pulls actions/templates by a mutable reference", "Pin to a full commit SHA or immutable tag; review updates."),
+            "SC-C02": ("CWE-829", "A08:2021 Software and Data Integrity Failures", "Elevation of privilege", "Privileged pull_request_target workflow", "Avoid pull_request_target; never check out or run PR head code in it."),
+            "SC-C03": ("CWE-77", "A03:2021 Injection", "Elevation of privilege", "Untrusted event data interpolated into a pipeline script", "Pass untrusted values through environment variables and quote them."),
+            "SC-C04": ("CWE-250", "A05:2021 Security Misconfiguration", "Elevation of privilege", "Pipeline token has broad permissions", "Declare least-privilege permissions per workflow/job."),
+            "SC-C05": ("CWE-532", "A09:2021 Security Logging and Monitoring Failures", "Information disclosure", "Secrets exposed to scripts or logs", "Never echo secrets; scope them to the job that needs them; avoid secrets: inherit.")}
+PF_CWE = {"PF01": ("CWE-829", "A08:2021 Software and Data Integrity Failures", "Tampering", "Pipeline code is loaded from a mutable reference", "Pin templates/libraries/orbs to a tag or commit and protect the source repo branch."),
+          "PF02": ("CWE-77", "A03:2021 Injection", "Elevation of privilege", "Untrusted build variable expanded inside a pipeline script", "Pass the value as an environment variable and quote it; never expand branch names or commit messages inline."),
+          "PF03": ("CWE-250", "A05:2021 Security Misconfiguration", "Elevation of privilege", "Pull-request builds can run on a self-hosted runner", "Use ephemeral hosted runners for PR builds, or require approval before running fork/contributor code."),
+          "PF04": ("CWE-693", "A04:2021 Insecure Design", "Elevation of privilege", "Deploy step without an environment, approval or manual gate", "Deploy through a protected environment with required reviewers and branch rules."),
+          "PF05": ("CWE-532", "A09:2021 Security Logging and Monitoring Failures", "Information disclosure", "Secret-like variable printed to the build log", "Do not echo secrets; rely on masked variables and avoid printing them.")}
+
+
+def rule_pipeline(c: Ctx, threats):
+    """CI/CD pipeline threats: supply-chain scanner findings for CI (SC-C01..C05) plus pipeline_facts findings (PF01..PF05)."""
+    kinds = {n["repo"]: (n.get("attrs") or {}).get("repo_kind") for n in c.nodes.values() if n["kind"] == "repo"}
+    sec = defaultdict(list)
+    for n in sorted((n for n in c.nodes.values() if n["kind"] == "sc_finding"), key=lambda n: n["citation"]):
+        a = n.get("attrs") or {}
+        if a.get("check") in PIPE_CWE:
+            sec[(n["repo"], a["check"])].append(n)
+    for (repo, chk), ns in sorted(sec.items()):
+        pipeline_repo = kinds.get(repo) in ("cicd-pipeline", "gitops-config", "mixed")
+        ns = [n for n in ns if pipeline_repo or (n.get("attrs") or {}).get("severity") in ("high", "critical")]
+        if not ns:
+            continue
+        cwe, owasp, stride, what, ctrl = PIPE_CWE[chk]
+        worst = any((n.get("attrs") or {}).get("severity") in ("high", "critical") for n in ns)
+        add(threats, component=f"{repo} CI/CD pipeline", stride=stride, title=f"{what} ({repo}, {len(ns)} place(s))", cwe=cwe, owasp=owasp,
+            likelihood="high" if worst else "medium", impact="high" if pipeline_repo else "medium", evidence=[n["citation"] for n in ns[:3]], primary=ns[0]["citation"],
+            target=next((e["dst"] for e in c.store.out_adj.get(ns[0]["id"], []) if e["kind"] == "finding_at"), None),
+            gaps=f"Supply-chain scanner {chk}: {safe_str((ns[0].get('attrs') or {}).get('remediation') or ns[0]['name'], 160)}",
+            control=ctrl, label="observed", confidence="high" if worst else "medium")
+    for p in sorted((c.out / "evidence").glob("pipeline-facts-*.json")):
+        try:
+            d = json.loads(p.read_text())
+        except ValueError:
+            continue
+        repo = d.get("repo")
+        by = defaultdict(list)
+        for fnd in d.get("findings", []):
+            by[fnd["id"]].append(fnd)
+        for fid, fs in sorted(by.items()):
+            if fid not in PF_CWE:
+                continue
+            cwe, owasp, stride, what, ctrl = PF_CWE[fid]
+            cites = [f"{repo}/{x['path']}:{x['line']}" for x in fs[:3]]
+            high = any(x["severity"] == "high" for x in fs)
+            add(threats, component=f"{repo} CI/CD pipeline", stride=stride, title=f"{what} ({repo}, {len(fs)} place(s))", cwe=cwe, owasp=owasp,
+                likelihood="high" if high else "medium", impact="high", evidence=cites, primary=cites[0], target=None,
+                gaps=safe_str(fs[0]["message"], 220), control=ctrl, label="inferred", confidence="medium")
 
 
 def rule_drift(c: Ctx, threats):
@@ -534,7 +652,7 @@ def render(c: Ctx, threats, tbs, prop_lines) -> str:
 def run(out: Path, force=False) -> dict:
     c = Ctx(out)
     threats = []
-    for rule in (rule_taint, rule_auth, rule_switches, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_drift, rule_llm):
+    for rule in (rule_taint, rule_auth, rule_switches, rule_trust, rule_messaging, rule_timeouts, rule_cloud, rule_supply, rule_pipeline, rule_drift, rule_llm):
         rule(c, threats)
     tbs = boundaries(c)
     md = render(c, threats, tbs, 0)

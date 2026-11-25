@@ -178,6 +178,31 @@ redacted. Archives (docx/pptx/vsdx) are read in memory with size limits; XML wit
 ENTITY declarations is refused. Prints a JSON manifest.
 ```
 
+### `pipeline_facts.py`
+
+```text
+Structured facts about CI/CD pipeline files in every registered repo. Reads files only; never runs a pipeline.
+
+Usage:
+  pipeline_facts.py --out OUT_DIR [--repo KEY]
+
+Covers GitHub Actions, Azure Pipelines (YAML and templates), GitLab CI, Jenkinsfile / shared libraries, CircleCI and
+Bitbucket/other YAML pipelines at a basic level. For each pipeline file it records, with line citations:
+  triggers (push / PR / fork-reachable / schedule / manual), runners (hosted or self-hosted), permissions,
+  secret and variable names (never values), service connections and credentials ids, third-party actions /
+  templates / libraries and whether they are pinned, deploy-like commands and whether an environment or approval
+  gates them, and the repos/images the pipeline names (used to link pipelines to the repos they deploy).
+It also reports findings for platforms the supply-chain scanner does not cover (the scanner already handles GitHub
+Actions SC-C01..C05 and GitLab CI):
+  PF01 external template/library/include referenced by a mutable ref
+  PF02 untrusted build variable expanded inside a script (script injection)
+  PF03 self-hosted runner reachable from a pull-request trigger
+  PF04 deploy-like command with no environment, approval or protected-branch gate
+  PF05 secret-like variable echoed
+
+Writes <out>/evidence/pipeline-facts-<repo>.json. Heuristic, line-based (no YAML parser); results are [inferred].
+```
+
 ## Graph
 
 ### `graph_build.py`
@@ -192,7 +217,8 @@ Usage:
   --extract          run graph_extract.py for every registered code repo first (ctx-* keys are skipped)
   --incremental      with --extract: re-extract only files changed since the last hash snapshot
   --structural-only  skip proposals (used by the git-commit auto-update hook)
-  --enrich           also run repo_context.py, doc_claims.py and threat_seed.py (draft threat model), then rebuild
+  --enrich           also run repo_context.py, doc_claims.py, pipeline_facts.py and threat_seed.py (draft threat model), rebuild, then
+                     write the per-repo context-facts tables (context_facts.py)
 
 Outputs: <out>/graph/graph.json, <out>/graph/graph.sqlite, <out>/system/graph.md
 ```
@@ -230,6 +256,26 @@ Usage:
 Every node/edge citation (and dst_citation) is resolved with verify_citations.Verifier against the
 registered repos; quotes on LLM edges are checked too. Writes <out>/evidence/graph-verification.md
 with --report. Exit 1 on errors.
+```
+
+### `roles.py`
+
+```text
+Classify every file by role and every repo by kind. Reads files only; never executes them.
+
+Usage:
+  roles.py --out OUT_DIR [--repo KEY]      classify and write evidence/file-roles-<repo>.json + repos/<repo>/code-map.md
+                                           (the graph build calls this itself; run it by hand to refresh the code maps)
+
+File roles:  core, utility, test, fixture, config, build, iac, pipeline, migration, docs, generated, tooling, other
+Repo kinds:  application, service, library, iac, cicd-pipeline, gitops-config, docs, tooling, config, mixed
+
+How the labels are decided (every label carries its signals so a reader can see why):
+  * path and content rules decide test, fixture, generated, migration, docs, config, build, iac, pipeline, tooling
+    (high confidence);
+  * core vs utility is decided from the graph after it is linked: files that define an entry point, are reached from
+    one, or own I/O are core; helper-named or high fan-in files without entry points or I/O are utility. Those two
+    labels are always [inferred].
 ```
 
 ## Derivation
@@ -323,6 +369,29 @@ source like any proposal, so rebuild afterwards. All text is untrusted: lines th
 never used in a summary, secrets are redacted, strings are capped.
 ```
 
+### `context_facts.py`
+
+```text
+Deterministic fact tables for each repo's context.md, built from the knowledge graph and evidence files.
+
+Usage:
+  context_facts.py --out OUT_DIR [--repo KEY]
+
+Writes, per repo:
+  <out>/evidence/context-facts-<repo>.json   counts and rows (machine-readable)
+  <out>/repos/<repo>/context-facts.md        markdown tables between <!-- ckb:facts:begin ... --> / <!-- ckb:facts:end --> markers
+
+The tables depend on the repo kind (evidence/file-roles-<repo>.json):
+  application / service / library   code map, entry points (with auth evidence and exposure), taint sources, sinks
+                                    (CWE, safe/unsafe verdict, entry points that reach each sink), known-safe patterns
+  iac / gitops-config               provisioned resources with the scanner and CSPM findings against them
+  cicd-pipeline                     pipelines: triggers, runners, secrets, third-party code and pinning, deploy steps and gates
+  mixed                             every section that has content
+The context skill embeds these blocks verbatim into context.md and adds judgement beside them (never over them);
+check_outputs.py verifies the embedded counts against the facts JSON. Everything is [inferred] static analysis:
+source-to-sink paths are candidates, not proven dataflow.
+```
+
 ## Query, view and export
 
 ### `graph_query.py`
@@ -341,6 +410,8 @@ Usage:
   graph_query.py --out OUT_DIR impact <target ...> [--diff REV] [--depth 6]
   graph_query.py --out OUT_DIR taint [--source ID] [--sink ID] [--max-depth 10]
   graph_query.py --out OUT_DIR callgraph [function|file|repo] [--repo R] [--focus X] [--depth N]
+  graph_query.py --out OUT_DIR roles [--repo R] [--role core|utility|test|iac|pipeline|...] [--limit N]
+  graph_query.py --out OUT_DIR entrypoints [--repo R] [--kinds endpoint,consumer,cron_job,cli_command] [--limit N]
   graph_query.py --out OUT_DIR tour [name]
   graph_query.py --out OUT_DIR sql "<SELECT ...>"
   graph_query.py --out OUT_DIR cypher "<MATCH ...>"      (only when Neo4j is configured; see graph_neo4j.py)
@@ -460,6 +531,8 @@ Checks:
   L1 broken relative markdown link (target file missing)
   S1 secret-looking value present (type only; value is never printed)
   H1 active HTML (<script>, <iframe>, on*= handlers, javascript: URLs)
+  F1 generated facts block (<!-- ckb:facts:begin ... -->) that no longer matches evidence/context-facts-<repo>.json
+     (hand-edited, stale, or the file is missing)
 
 Exit 0 clean, 1 problems found, 2 usage. Idea inspired by arden/Codebase-Knowledge-Builder
 (deterministic doc checks); independent implementation.
@@ -506,3 +579,4 @@ Imported by the scripts above; not run directly.
 * `ckb_common.py`: Shared helpers for ckb scripts. Python 3 standard library only.
 * `graph_common.py`: Shared definitions for the ckb knowledge graph: schema, IDs, validation, safe strings.
 * `graph_security.py`: Security layer for the ckb knowledge graph (imported by graph_build.py).
+* `graph_patterns.py`: Entry-point, taint-source and sink patterns for the regex extractor (every language except the Python AST path).

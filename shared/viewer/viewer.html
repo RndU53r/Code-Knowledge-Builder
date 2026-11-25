@@ -17,6 +17,8 @@
     <input id="q" type="search" placeholder="function, endpoint, table, file…" autocomplete="off">
     <div id="results"></div>
     <div id="levelbox" hidden><h2>Level</h2><select id="level"><option value="full">Full graph</option></select></div>
+    <div id="rolebox" hidden><h2>File role</h2><select id="role"><option value="">All roles</option></select>
+      <div class="mut small">core/utility are inferred from graph signals; other roles come from path rules.</div></div>
     <h2>Show</h2>
     <div class="row"><button id="btn-overview" type="button">Overview</button><button id="btn-all" type="button">All (capped)</button></div>
     <label class="k"><input type="checkbox" id="lowconf" checked> include low-confidence edges</label>

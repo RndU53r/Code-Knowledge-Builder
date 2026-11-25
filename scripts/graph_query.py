@@ -12,6 +12,8 @@ Usage:
   graph_query.py --out OUT_DIR impact <target ...> [--diff REV] [--depth 6]
   graph_query.py --out OUT_DIR taint [--source ID] [--sink ID] [--max-depth 10]
   graph_query.py --out OUT_DIR callgraph [function|file|repo] [--repo R] [--focus X] [--depth N]
+  graph_query.py --out OUT_DIR roles [--repo R] [--role core|utility|test|iac|pipeline|...] [--limit N]
+  graph_query.py --out OUT_DIR entrypoints [--repo R] [--kinds endpoint,consumer,cron_job,cli_command] [--limit N]
   graph_query.py --out OUT_DIR tour [name]
   graph_query.py --out OUT_DIR sql "<SELECT ...>"
   graph_query.py --out OUT_DIR cypher "<MATCH ...>"      (only when Neo4j is configured; see graph_neo4j.py)
@@ -294,7 +296,9 @@ class GraphStore:
         return res
 
     def taint(self, source=None, sink=None, max_depth=10, limit=25):
-        srcs = self.resolve(source) if source else [nid for nid, n in self.nodes.items() if n["kind"] in ("endpoint", "taint_source")]
+        order = {"endpoint": 0, "consumer": 1, "cli_command": 1, "cron_job": 1, "taint_source": 2}
+        srcs = self.resolve(source) if source else sorted((nid for nid, n in self.nodes.items() if n["kind"] in order), key=lambda x: order[self.nodes[x]["kind"]])
+        seen_paths = set()
         sinks = set(self.resolve(sink)) if sink else {nid for nid, n in self.nodes.items()
                                                       if n["kind"] == "sink" and not (n.get("attrs") or {}).get("safe")}
         out = []
@@ -313,6 +317,10 @@ class GraphStore:
                     seen.add(nxt)
                     np_, nh = nodes + [nxt], hops + [e]
                     if nxt in sinks:
+                        sig = (nxt, tuple(np_[1:]))
+                        if sig in seen_paths:
+                            continue  # same route reached from an endpoint and from a source inside its handler
+                        seen_paths.add(sig)
                         all_high = all(h["confidence"] == "high" for h in nh)
                         out.append({"source": self.brief(s), "sink": self.brief(nxt),
                                     "sink_type": (self.nodes[nxt].get("attrs") or {}).get("sink_type"),
@@ -322,6 +330,53 @@ class GraphStore:
                     else:
                         q.append((nxt, np_, nh))
         return {"paths": out, "sources_considered": len(srcs), "sinks_considered": len(sinks)}
+
+    def roles(self, repo=None, role=None, limit=200):
+        """Repo kinds and file roles (core, utility, test, iac, pipeline, ...). Rows carry the signals behind each label ([inferred] for core/utility)."""
+        import json as _json
+        res = {"repos": [], "files": []}
+        for n in sorted((n for n in self.nodes.values() if n["kind"] == "repo" and (not repo or n["repo"] == repo)), key=lambda n: n["repo"]):
+            a = n.get("attrs") or {}
+            res["repos"].append({"repo": n["repo"], "repo_kind": a.get("repo_kind"), "secondary_kinds": a.get("secondary_kinds", []), "signals": a.get("repo_kind_signals", []),
+                                 "role_counts": a.get("role_counts", {})})
+        for r in res["repos"]:
+            p = self.out / "evidence" / f"file-roles-{r['repo']}.json"
+            if not p.is_file():
+                continue
+            try:
+                rows = _json.loads(p.read_text()).get("files", [])
+            except ValueError:
+                continue
+            for row in rows:
+                if (not role or row.get("role") == role) and len(res["files"]) < limit:
+                    res["files"].append({"repo": r["repo"], **row})
+        res["note"] = "core/utility are inferred from graph signals; other roles come from path/content rules"
+        return res
+
+    def entrypoints(self, repo=None, kinds=None, limit=100):
+        """Entry points (endpoints, consumers, cron jobs, CLI commands) with their handler, taint sources read and unsafe sinks reachable from them."""
+        kinds = set(kinds or ("endpoint", "consumer", "cron_job", "cli_command"))
+        handler = defaultdict(list)
+        sources = defaultdict(list)
+        for e in self.edges:
+            if e["kind"] == "routes_to":
+                handler[e["src"]].append(e["dst"])
+            elif e["kind"] == "flows_to" and self.nodes.get(e["src"], {}).get("kind") == "taint_source":
+                sources[e["dst"]].append(e["src"])
+        reach = defaultdict(list)
+        for p in self.taint(max_depth=10, limit=2000)["paths"]:
+            reach[p["source"]["id"]].append({"sink": p["sink"]["name"], "type": p["sink_type"], "citation": p["sink"].get("citation")})
+        out = []
+        for nid, n in sorted(self.nodes.items(), key=lambda kv: kv[1].get("citation", "")):
+            if n["kind"] not in kinds or (repo and n.get("repo") != repo and not n.get("citation", "").startswith((repo or "") + "/")):
+                continue
+            hs = handler.get(nid, [])
+            out.append({**self.brief(nid), "handler": [self.brief(h) for h in hs[:2]],
+                        "sources": sorted({(self.nodes[s].get("attrs") or {}).get("source_type") for h in hs for s in sources.get(h, []) if s in self.nodes}),
+                        "reaches_unsafe_sinks": reach.get(nid, [])[:6]})
+            if len(out) >= limit:
+                break
+        return {"entrypoints": out, "note": "sink reachability is a candidate path over the call graph, not proven dataflow"}
 
     def tour(self, name=None):
         if not self.tours:
@@ -335,10 +390,11 @@ class GraphStore:
         """Rolled-up call graph at function, file or repo level (see callgraph.py), optionally for one repo or around a focus."""
         if level not in ("function", "file", "repo"):
             return {"error": "level must be function, file or repo"}
-        from callgraph import compute
+        from callgraph import compute, deploy_links
         if getattr(self, "_cg_mtime", None) != self.mtime:
             roots = {k: v for k, v in repo_roots_for_output(self.out).items() if not k.startswith("ctx")}
-            self._cg = compute({"nodes": list(self.nodes.values()), "edges": self.edges}, roots)
+            g = {"nodes": list(self.nodes.values()), "edges": self.edges}
+            self._cg = compute(g, roots, deploy_links(self.out, g))
             self._cg_mtime = self.mtime
         lv = self._cg[level]
         nodes = {n["id"]: n for n in lv["nodes"]}
@@ -408,6 +464,8 @@ class GraphStore:
                "impact": lambda: self.impact(args.get("targets"), args.get("diff"), int(args.get("depth", 6))),
                "taint": lambda: self.taint(args.get("source"), args.get("sink"), int(args.get("max_depth", 10))),
                "callgraph": lambda: self.callgraph(args.get("level", "repo"), args.get("repo"), args.get("focus"), int(args.get("depth", 2)), int(args.get("limit", 200))),
+               "roles": lambda: self.roles(args.get("repo"), args.get("role"), int(args.get("limit", 200))),
+               "entrypoints": lambda: self.entrypoints(args.get("repo"), args.get("kinds"), int(args.get("limit", 100))),
                "tour": lambda: self.tour(args.get("name")), "subgraph": lambda: self.subgraph(args.get("ids"), args.get("kinds")),
                "sql": lambda: self.sql(args["query"]), "cypher": lambda: self.cypher(args["query"])}
         if op not in ops:
@@ -434,6 +492,7 @@ def main() -> int:
     ap.add_argument("--focus")
     ap.add_argument("--source")
     ap.add_argument("--sink")
+    ap.add_argument("--role")
     a = ap.parse_args()
     store = GraphStore(resolve_out(a.out))
     kinds = a.kinds.split(",") if a.kinds else None
@@ -446,6 +505,8 @@ def main() -> int:
         "impact": {"targets": p, "diff": a.diff, "depth": a.depth or 6},
         "taint": {"source": a.source, "sink": a.sink, "max_depth": a.max_depth or 10},
         "callgraph": {"level": p[0] if p else "repo", "repo": a.repo, "focus": a.focus, "depth": a.depth or 2, "limit": a.limit if a.limit != 20 else 200},
+        "roles": {"repo": a.repo, "role": a.role, "limit": a.limit if a.limit != 20 else 200},
+        "entrypoints": {"repo": a.repo, "kinds": kinds, "limit": a.limit if a.limit != 20 else 100},
         "tour": {"name": p[0] if p else None}, "sql": {"query": " ".join(p)}, "cypher": {"query": " ".join(p)}, "status": {},
     }
     print(json.dumps(store.dispatch(a.op, argmap.get(a.op, {})), indent=2, default=str))

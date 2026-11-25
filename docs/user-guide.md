@@ -88,6 +88,12 @@ Optional. Copy [`examples/code-knowledge-builder.local.md`](../examples/code-kno
 * The **draft threat model** is rule-based until the threat-modeler agent has refined it. Rows marked `[draft]` are leads to check.
 * **Documented vs observed** (`system/documented-vs-observed.md`) lists where your documents and the code disagree. The code wins.
 
+### Roles, repo kinds, entry points
+
+* `repos/<repo>/code-map.md` tells you what kind of repo each source is (application, service, library, IaC, CI/CD pipeline, GitOps config, or a mix) and which files are core, utility, tests, generated or infrastructure. Core versus utility is inferred; the signals are listed.
+* `repos/<repo>/context-facts.md` (also embedded in `context.md`) lists the entry points (HTTP and gRPC endpoints, queue consumers, cron jobs, CLI commands) with auth evidence and exposure, the user-controlled inputs they read, and the dangerous sinks they can reach. For IaC and pipeline repos it lists resources and pipelines instead.
+* Ask the graph directly: `/ckb:ask which are the core files of orders?`, `/ckb:ask list the unauthenticated endpoints`, or use `graph_query.py roles` and `entrypoints`.
+
 ## 7. What ckb will not do
 
 It will not install, build, run or test anything in your repos, follow instructions found inside them, write inside them, open secret files, send data anywhere except the git remotes you list (plus lookups you turn on), or analyze a repo you haven't confirmed. Details: [Security model](security-model.md).

@@ -33,7 +33,7 @@ CODE = {"function", "method"}
 RANK = {"high": 3, "medium": 2, "low": 1}
 INV = {3: "high", 2: "medium", 1: "low"}
 MECH_KIND = {"call": "calls", "http": "http_calls", "grpc": "grpc_calls", "spawn": "spawns", "event": "publishes",
-             "import": "imports", "table": "writes", "package": "imports"}
+             "import": "imports", "table": "writes", "package": "imports", "deploy": "deploys"}
 SAFE_LABEL = re.compile(r"[^A-Za-z0-9_./ :-]")
 
 
@@ -103,7 +103,52 @@ def package_names(roots: dict[str, Path]) -> dict[str, str]:
     return names
 
 
-def compute(graph: dict, roots: dict[str, Path] | None = None) -> dict:
+def deploy_links(out: Path, graph: dict) -> list[tuple]:
+    """Repo -> repo links from pipelines, IaC and GitOps content that names another registered repo: a checkout or repository
+    resource (medium), or an image/source/repoURL line that mentions the repo (low-medium). [inferred] unless named explicitly."""
+    keys = sorted({n["repo"] for n in graph["nodes"] if n["kind"] == "repo"})
+    kinds = {n["repo"]: (n.get("attrs") or {}) for n in graph["nodes"] if n["kind"] == "repo"}
+    links, seen = [], set()
+
+    def add(src, dst, conf, cite):
+        if src != dst and (src, dst) not in seen:
+            seen.add((src, dst))
+            links.append((src, dst, "deploy", conf, [cite]))
+    for p in sorted((out / "evidence").glob("pipeline-facts-*.json")):
+        try:
+            d = json.loads(p.read_text())
+        except ValueError:
+            continue
+        for pf in d.get("pipelines", []):
+            for t in pf.get("targets", []):
+                name = t.replace("\\", "/").rstrip("/").split("/")[-1].lower()
+                dst = next((k for k in keys if k.lower() == name), None)
+                if dst:
+                    add(d["repo"], dst, "medium", f"{d['repo']}/{pf['path']}:{(pf.get('target_lines') or {}).get(t, 1)}")
+    roots = repo_roots_for_output(out)
+    for repo, attrs in kinds.items():
+        k = attrs.get("repo_kind")
+        if k not in ("gitops-config", "iac", "cicd-pipeline", "mixed") or repo.startswith("ctx"):
+            continue
+        fr = out / "evidence" / f"file-roles-{repo}.json"
+        if not fr.is_file() or repo not in roots:
+            continue
+        files = [r["path"] for r in json.loads(fr.read_text()).get("files", []) if r.get("role") in ("iac", "pipeline")][:200]
+        for rel in files:
+            try:
+                lines = (Path(roots[repo]) / rel).read_text(errors="replace").splitlines()[:2000]
+            except OSError:
+                continue
+            for i, ln in enumerate(lines, 1):
+                if len(ln) > 400 or not re.search(r"(?i)\b(image|repoURL|repository|source|chart|name|checkout|git|url)\b", ln):
+                    continue
+                for dst in keys:
+                    if len(dst) >= 4 and dst != repo and not dst.startswith("ctx") and re.search(rf"(?<![\w-]){re.escape(dst)}(?![\w-])", ln, re.I):
+                        add(repo, dst, "low", f"{repo}/{rel}:{i}")
+    return links
+
+
+def compute(graph: dict, roots: dict[str, Path] | None = None, extra_repo_links: list | None = None) -> dict:
     nodes = {n["id"]: n for n in graph["nodes"]}
     edges = graph["edges"]
     handlers = defaultdict(list)
@@ -193,6 +238,8 @@ def compute(graph: dict, roots: dict[str, Path] | None = None) -> dict:
         if len(wrepos) >= 2 or (wrepos and rrepos - wrepos):
             shared.append({"table": nodes.get(t, {}).get("name"), "writers": sorted(wrepos), "readers": sorted(rrepos),
                            "evidence": [x["citation"] for x in (ws + rs)][:6]})
+    for s_, d_, mech_, conf_, cites_ in extra_repo_links or []:
+        rp.add(node_id("repo", s_, "", s_), node_id("repo", d_, "", d_), mech_, conf_, cites_)
     if roots:
         pkg = package_names(roots)
         for e in edges:
@@ -312,7 +359,7 @@ def write_outputs(out: Path, res: dict, max_rows: int, targets: dict) -> list[st
 def run(out: Path, max_rows: int = 80) -> dict:
     g = json.loads((graph_dir(out) / "graph.json").read_text())
     roots = repo_roots_for_output(out)
-    res = compute(g, {k: v for k, v in roots.items() if not k.startswith("ctx")})
+    res = compute(g, {k: v for k, v in roots.items() if not k.startswith("ctx")}, deploy_links(out, g))
     atomic_write(graph_dir(out) / "callgraph.json", json.dumps(res))
     targets = json.loads((out / "evidence" / "targets.json").read_text()).get("repos", {}) if (out / "evidence" / "targets.json").is_file() else {}
     written = write_outputs(out, res, max_rows, targets)
