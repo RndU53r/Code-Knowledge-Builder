@@ -30,7 +30,7 @@ REACH_EDGES = {"calls", "references", "routes_to", "dispatches", "invokes", "ffi
 ENTRY_KINDS = {"endpoint", "consumer", "cron_job", "cli_command", "agent", "command"}
 HOTSPOT = re.compile(r"(?<![\w.$])(getattr|setattr|__import__|importlib\.import_module|eval|exec)(?=\s*\()|(?<![\w.$])(Class\.forName|Activator\.CreateInstance|Type\.GetType|call_user_func(?:_array)?|"
                      r"const_get|constantize|public_send|send\(\s*[a-z_]+|instance_eval|class_eval|method_missing|reflect\.(?:ValueOf|TypeOf)|Reflect\.(?:get|apply)|"
-                     r"require\(\s*[a-zA-Z_$][\w$]*\s*\)|import\(\s*[a-zA-Z_$][\w$]*\s*\)|dlopen|GetProcAddress|NSClassFromString|performSelector|\$\$\w+|\$\{?\w+\}?\s*\()")
+                     r"->\$\w+\s*\(|&\$\w+|&\{\s*\$|AUTOLOAD|\*\{\s*[\"$]|CALL\s+METHOD\s*\(|PERFORM\s*\(|ASSIGN\s*\(|\(\*\w+\)\s*\(|dlsym|Function\.apply|require\(\s*[a-zA-Z_$][\w$]*\s*\)|import\(\s*[a-zA-Z_$][\w$]*\s*\)|dlopen|GetProcAddress|NSClassFromString|performSelector|\$\$\w+|\$\{?\w+\}?\s*\()")
 
 
 def run(out: Path) -> dict:

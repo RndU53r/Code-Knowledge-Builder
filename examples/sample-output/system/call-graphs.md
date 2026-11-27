@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment` @ `unversioned`, `gateway` @ `unversioned`, `orders` @ `unversioned`, `platform` @ `unversioned`
-> - Generated: 2026-11-27T00:54:02Z by ckb callgraph, stage `callgraph`
+> - Generated: 2026-11-27T01:30:47Z by ckb callgraph, stage `callgraph`
 > - Scope: registered code repos · Excluded: vendored, generated, binaries, symlinks
 > - Method: rolled up from the knowledge graph (static analysis; no target code executed); confidence is the weakest edge on each row
 > - Verification: see evidence/graph-verification.md

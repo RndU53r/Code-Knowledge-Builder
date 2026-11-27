@@ -40,7 +40,8 @@ INV = {1: "low", 2: "medium", 3: "high"}
 AUTH_RX = re.compile(r"(?i)(require_?auth|requires?_?login|login_required|authenticate|authorize|authorized|jwt|bearer|oauth|\bauth\b|current_?user|get_current|"
                      r"depends\(.*(user|auth|token)|verify_?token|check_?permission|has_?role|require_?role|@secured|@preauthorize|@rolesallowed|isauthenticated|passport\.|session\.user|"
                      r"authori[sz]ation|auth\w*(middleware|guard|layer|filter|interceptor)|\[authorize|before_action\s*:\s*authenticate|authenticate_user!|->middleware\(\s*['\"](auth|can|verified)|auth:(api|sanctum)|@useguards|permission_classes|"
-                     r"isauthenticated|requires_auth|verify_jwt|jwt_required|@permission_required|@loginrequired|hasauthority|hasrole|\.authorizerequests|\.authenticated\(\))")
+                     r"isauthenticated|requires_auth|verify_jwt|jwt_required|@permission_required|@loginrequired|hasauthority|hasrole|\.authorizerequests|\.authenticated\(\)|"
+                     r"authority-check|check_user_roles|require_login|->under\b|\bunder\s+sub|authmiddleware|shelf_auth|authenticated\s*\(|sap_authorized|ssf_|cl_http_server=>authenticate)")
 CLASS_AUTH_RX = re.compile(r"(?i)(before_action\s*:\s*authenticate|@PreAuthorize|\[Authorize[\](]|@UseGuards|->middleware\(\s*['\"]auth|permission_classes|@Secured|@RolesAllowed|authenticate_user!|\.authenticated\(\))")
 ANON_RX = re.compile(r"(?i)(\[AllowAnonymous\]|skip_before_action\s*:\s*authenticate|@PermitAll|permitAll\(\)|@Public\(\)|AllowAny)")
 HEALTH_RX = re.compile(r"(?i)/(health|healthz|ready|readyz|live|livez|ping|metrics|favicon|static|docs|openapi|swagger)")
@@ -56,8 +57,8 @@ CWE = {"sql": ("CWE-89", "A03:2021 Injection"), "command": ("CWE-78", "A03:2021 
        "template": ("CWE-1336", "A03:2021 Injection"), "xss": ("CWE-79", "A03:2021 Injection"), "path": ("CWE-22", "A01:2021 Broken Access Control"),
        "redirect": ("CWE-601", "A01:2021 Broken Access Control"), "nosql": ("CWE-943", "A03:2021 Injection"), "ldap": ("CWE-90", "A03:2021 Injection"),
        "xpath": ("CWE-643", "A03:2021 Injection"), "xxe": ("CWE-611", "A05:2021 Security Misconfiguration"),
-       "memory": ("CWE-787", "A06:2021 Vulnerable and Outdated Components"), "format": ("CWE-134", "A03:2021 Injection"),
-       "tls": ("CWE-295", "A02:2021 Cryptographic Failures"), "unsafe_code": ("CWE-119", "A04:2021 Insecure Design")}
+       "memory": ("CWE-787", "A04:2021 Insecure Design"), "format": ("CWE-134", "A03:2021 Injection"),
+       "tls": ("CWE-295", "A07:2021 Identification and Authentication Failures"), "unsafe_code": ("CWE-119", "A04:2021 Insecure Design")}
 SINK_TITLE = {"sql": "SQL injection", "command": "COMMAND injection", "ssrf": "SSRF injection", "code": "CODE injection", "deserialization": "DESERIALIZATION injection",
               "template": "Template injection", "xss": "Cross-site scripting", "path": "Path traversal", "redirect": "Open redirect", "nosql": "NoSQL injection",
               "ldap": "LDAP injection", "xpath": "XPath injection", "xxe": "XML external entity processing", "memory": "Memory-unsafe operation",
@@ -293,8 +294,8 @@ def has_auth_evidence(c: Ctx, ep: dict) -> bool:
 def rule_auth(c: Ctx, threats):
     n_added = 0
     for ep in sorted((n for n in c.nodes.values() if n["kind"] == "endpoint"), key=lambda n: n["citation"]):
-        if HEALTH_RX.search(ep.get("attrs", {}).get("path", "")):
-            continue
+        if HEALTH_RX.search(ep.get("attrs", {}).get("path", "")) or ep.get("attrs", {}).get("protocol") in ("ui", "signal"):
+            continue  # app screens and signal handlers are not network entry points
         hs = c.handler.get(ep["id"], [])
         if has_auth_evidence(c, ep):
             continue

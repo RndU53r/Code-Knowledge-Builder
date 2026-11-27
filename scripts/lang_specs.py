@@ -57,7 +57,7 @@ _reg("c", _BC_C, _LC_C, _STR_DQ, _CHAR)
 MASK_RX["cpp"], MASK_NB["cpp"] = MASK_RX["c"], MASK_NB["c"]
 _reg("dart", r"'''[\s\S]*?'''", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _STR_SQ)
 _reg("perl", r"(?m)^=\w+[\s\S]*?^=cut", r"(?<![\$@%&\w])#[^\n]*", _STR_DQ, _STR_SQ)
-_reg("abap", r"(?m)^\*[^\n]*", r'"[^\n]*', r"'(?:''|[^'\n])*'", r"\|(?:\\.|[^|\n])*\|")
+_reg("abap", r"(?m)^\*[^\n]*", r'"[^\n]*', r"'(?:''|[^'\n])*'", r"`(?:``|[^`\n])*`", r"\|(?:\\.|[^|\n])*\|")
 
 
 TQ = "'" * 3
@@ -72,8 +72,10 @@ def _unterminated(text: str, lang: str) -> bool:
         return True
     if lang == "ruby" and text.count("=begin") > text.count("=end") + 1:
         return True
-    if lang == "perl" and re.search(r"(?m)^=\w+", text) and text.count("\n=cut") + text.startswith("=cut") < len(re.findall(r"(?m)^=(?!cut)\w+", text)):
-        return True
+    if lang == "perl" and re.search(r"(?m)^=\w+", text):
+        blocks = len(re.findall(r"(?m)^=(?:pod|head\d|over|item|begin|for|encoding)\b", text))
+        if text.count("\n=cut") + text.startswith("=cut") == 0 and blocks:  # a pod block with no =cut anywhere swallows the rest of the file
+            return True
     if lang == "dart" and (TQ in text and text.count(TQ) % 2 == 1):
         return True
     return False
@@ -93,7 +95,8 @@ def mask(text: str, lang: str) -> str:
             inner = re.sub(_KEEP_BREAKS, " ", t[1:-1])
             return q + inner + (t[-1] if t[-1] == q else " ")
         return re.sub(_KEEP_BREAKS, " ", t)
-    return rx.sub(blank, text)
+    out = rx.sub(blank, text)
+    return out.lower() if lang == "abap" else out
 
 
 # ------------------------------------------------------------------ block extents
@@ -113,7 +116,12 @@ def block_end(mlines: list[str], idx: int, lang: str) -> int:
                 return j
         return idx + 1
     if lang == "abap":
-        kw = re.match(r"\s*(CLASS|METHOD|FORM|FUNCTION|MODULE|START-OF-SELECTION|INTERFACE)\b", mlines[idx], re.I)
+        if re.match(r"\s*(START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION)\b", mlines[idx], re.I):
+            for j in range(idx + 1, min(n, idx + 8000)):
+                if re.match(r"\s*(START-OF-SELECTION|END-OF-SELECTION|INITIALIZATION|FORM|CLASS|FUNCTION|MODULE|AT\s|TOP-OF-PAGE|LOAD-OF-PROGRAM|METHOD)\b", mlines[j], re.I):
+                    return j
+            return n
+        kw = re.match(r"\s*(CLASS|METHOD|FORM|FUNCTION|MODULE|INTERFACE)\b", mlines[idx], re.I)
         end = {"class": r"ENDCLASS", "method": r"ENDMETHOD", "form": r"ENDFORM", "function": r"ENDFUNCTION", "module": r"ENDMODULE", "interface": r"ENDINTERFACE"}
         if kw and kw.group(1).lower() in end:
             for j in range(idx + 1, min(n, idx + 8000)):
@@ -121,7 +129,11 @@ def block_end(mlines: list[str], idx: int, lang: str) -> int:
                     return j + 1
         return idx + 1
     if lang == "perl":
-        base = len(mlines[idx]) - len(mlines[idx].lstrip())
+        if re.match(r"\s*package\s+[\w:]+\s*(?:[\d._]+\s*)?;", mlines[idx]):  # `package X;` runs to the next package statement or the end of the file
+            for j in range(idx + 1, n):
+                if re.match(r"\s*package\s+[\w:]+", mlines[j]) or re.match(r"__(?:END|DATA)__", mlines[j]):
+                    return j
+            return n
         depth, started = 0, False
         for j in range(idx, min(n, idx + 3000)):
             for ch in mlines[j]:
@@ -151,6 +163,11 @@ def block_end(mlines: list[str], idx: int, lang: str) -> int:
 # ------------------------------------------------------------------ call-name normalisation
 
 def norm_call(lang: str, raw: str) -> str:
+    if lang == "perl":
+        raw = re.sub(r"->\{(\w+)\}", r".\1", raw)
+    if lang == "abap":
+        raw = raw.lower().replace("=>", ".").replace("->", ".")
+        return ("self." + raw[3:]) if raw.startswith("me.") else raw
     s = raw.replace("?.", ".").replace("!!.", ".").replace("!.", ".").replace("&.", ".").replace("->", ".").replace("::", ".")
     s = s.replace("\\", ".")
     if lang in ("php", "perl"):
@@ -310,7 +327,10 @@ def swift_imports(line: str, *_):
 
 def c_imports(line: str, *_):
     m = re.match(r'^\s*#\s*include\s*([<"])([^>"]+)[>"]', line)
-    return [_imp(("" if m.group(1) == '"' else "<") + m.group(2))] if m else []
+    if not m:
+        return []
+    stem = m.group(2).rsplit("/", 1)[-1].rsplit(".", 1)[0]
+    return [_imp(("" if m.group(1) == '"' else "<") + m.group(2), None, stem)]
 
 
 def dart_imports(line: str, *_):
@@ -323,9 +343,9 @@ def dart_imports(line: str, *_):
 
 def perl_imports(line: str, *_):
     out = []
-    m = re.match(r"^\s*(?:use|require)\s+(?:parent|base)\s+(?:-norequire\s*,\s*)?(?:qw\(([^)]*)\)|['\"]([\w:]+)['\"])", line)
+    m = re.match(r"^\s*(?:use|require)\s+(?:parent|base)\s+(?:-norequire\s*,?\s*)?(?:qw\(([^)]*)\)|['\"]([\w:]+)['\"])", line)
     if m:
-        for mod in (m.group(1) or m.group(2) or "").split():
+        for mod in [x for x in (m.group(1) or m.group(2) or "").split() if not x.startswith("-")]:
             out.append(_imp(mod.strip("'\","), None, mod.split("::")[-1]))
         return out
     m = re.match(r"^\s*(?:use|require)\s+([A-Z][\w:]*)\b", line)
@@ -340,6 +360,75 @@ def perl_imports(line: str, *_):
 def abap_imports(line: str, *_):
     m = re.match(r"^\s*INCLUDE\s+(\w+)\s*\.", line, re.I)
     return [_imp(m.group(1))] if m else []
+
+
+
+# ------------------------------------------------------------------ per-language extras (calls the generic call regex cannot see)
+
+_ABAP_STD = re.compile(r"^[a-xA-X]")  # customer namespace is Z*/Y*/ns; everything else is SAP standard
+
+
+def abap_extra_calls(line: str) -> list[dict]:
+    """PERFORM / CALL FUNCTION / CALL METHOD / SUBMIT / CREATE OBJECT / NEW: statements whose target is in a string or keyword form."""
+    out = []
+    low = line
+    for m in re.finditer(r"(?i)\bPERFORM\s+([A-Za-z_][\w-]*)", low):
+        if m.group(1).lower() not in ("on", "using", "changing", "tables", "in"):
+            out.append({"type": "call", "name": m.group(1).lower()})
+    for m in re.finditer(r"(?i)\bCALL\s+FUNCTION\s+'([^']+)'(.*)", low):
+        nm = m.group(1).lower()
+        rfc = bool(re.search(r"(?i)\bDESTINATION\b", m.group(2)))
+        d = {"type": "call", "name": nm}
+        if rfc:
+            d["pkg"] = "rfc"
+        elif _ABAP_STD.match(nm):
+            d["pkg"] = nm.split("_")[0] if nm.split("_")[0] in ("bapi", "rfc", "sxpg", "ssfc", "popup", "reuse", "gui", "ws") else "sap-standard"
+        out.append(d)
+    for m in re.finditer(r"(?i)\bCALL\s+METHOD\s+([A-Za-z_][\w-]*(?:(?:->|=>)[A-Za-z_~][\w~]*)+)", low):
+        d = {"type": "call", "name": m.group(1).lower().replace("=>", ".").replace("->", "."), "path_call": "=>" in m.group(1)}
+        out.append(d)
+    for m in re.finditer(r"(?i)\bSUBMIT\s+([A-Za-z_][\w/]*)", low):
+        nm = m.group(1).lower()
+        out.append({"type": "call", "name": nm, **({"pkg": "sap-standard"} if _ABAP_STD.match(nm) else {})})
+    for m in re.finditer(r"(?i)\b(?:CREATE\s+OBJECT\s+[\w-]+\s+TYPE\s+([A-Za-z_][\w/]*)|\bNEW\s+([A-Za-z_][\w/]*)\s*\()", low):
+        nm = (m.group(1) or m.group(2)).lower()
+        if nm not in ("#", "string", "i", "f", "c", "n", "d", "t", "x", "p"):
+            out.append({"type": "call", "name": nm + ".new", **({"pkg": nm} if _ABAP_STD.match(nm) else {})})
+    return out
+
+
+def perl_extra_calls(line: str) -> list[dict]:
+    out = []
+    for m in re.finditer(r"&([A-Za-z_][\w:]*)\s*\(", line):
+        out.append({"type": "call", "name": m.group(1).replace("::", ".")})
+    for m in re.finditer(r"\\&([A-Za-z_][\w:]*)", line):
+        out.append({"type": "arg_ref", "name": m.group(1).replace("::", ".")})
+    for m in re.finditer(r"->can\(\s*['\"](\w+)['\"]\s*\)", line):
+        out.append({"type": "arg_ref", "name": m.group(1)})
+    return out
+
+
+def c_extra_refs(line: str) -> list[dict]:
+    """Function-pointer tables: `.save = pg_save,` / `{ &handler, ... }` become references (the registered function)."""
+    out = []
+    for m in re.finditer(r"\.\s*([A-Za-z_]\w*)\s*=\s*&?([A-Za-z_]\w*)\s*[,}]", line):
+        out.append({"type": "arg_ref", "name": m.group(2)})
+    return out
+
+
+def dart_extra_refs(line: str) -> list[dict]:
+    out = []
+    for m in re.finditer(r"\b(?:onPressed|onTap|onChanged|onSubmitted|onGenerateRoute|builder|handler|listen|then|map)\s*[:(]\s*(?:_?[a-z]\w*\.)?(_?[a-z]\w*)\s*[,)]", line):
+        out.append({"type": "arg_ref", "name": m.group(1)})
+    return out
+
+
+LIBC_FUNCS = re.compile(r"^(?:strlen|strnlen|strcmp|strncmp|strcasecmp|strncasecmp|strcpy|strncpy|strcat|strncat|strchr|strrchr|strstr|strdup|strndup|strtok|strtok_r|strspn|strcspn|strpbrk|strerror|strtol|strtoul|strtoll|strtoull|strtod|strtof|"
+                       r"memcpy|memmove|memset|memcmp|memchr|printf|fprintf|sprintf|snprintf|vprintf|vfprintf|vsprintf|vsnprintf|dprintf|scanf|fscanf|sscanf|fopen|fclose|fread|fwrite|fgets|fputs|fseek|ftell|fflush|fgetc|fputc|getc|putc|puts|putchar|getchar|feof|ferror|"
+                       r"malloc|calloc|realloc|free|exit|abort|atexit|atoi|atol|atoll|atof|getenv|setenv|putenv|system|popen|pclose|open|close|read|write|lseek|socket|bind|listen|accept|connect|send|recv|sendto|recvfrom|setsockopt|getsockopt|shutdown|select|poll|"
+                       r"signal|sigaction|sigemptyset|sigaddset|sigprocmask|kill|fork|execl|execlp|execle|execv|execvp|execvpe|wait|waitpid|pipe|dup|dup2|time|clock|gettimeofday|sleep|usleep|nanosleep|qsort|bsearch|abs|labs|rand|srand|perror|assert|"
+                       r"gethostbyname|getaddrinfo|freeaddrinfo|inet_pton|inet_ntop|inet_addr|htons|htonl|ntohs|ntohl|opendir|readdir|closedir|stat|fstat|lstat|access|unlink|remove|rename|mkdir|rmdir|chdir|getcwd|realpath|basename|dirname|"
+                       r"setjmp|longjmp|syslog|openlog|closelog|getopt|getopt_long|getpid|getuid|setuid|chmod|chown|umask|mmap|munmap|dlopen|dlsym|dlclose|isalpha|isdigit|isalnum|isspace|isupper|islower|toupper|tolower|pthread_\w+|sem_\w+)$")
 
 
 # ------------------------------------------------------------------ the specs
@@ -454,6 +543,112 @@ SPEC["swift"] = {
     "exts": [".swift"],
 }
 
+
+_C_RET_SKIP = {"return", "else", "case", "goto", "sizeof", "typedef", "do", "new", "delete", "throw", "co_return", "co_await", "co_yield", "using", "namespace", "typeof"}
+_C_MODS = r"(?:(?:static|inline|extern|const|volatile|unsigned|signed|struct|enum|union|register|constexpr|virtual|explicit|friend|typename|class|noexcept|__inline__|__attribute__\(\([^)]*\)\))\s+)*"
+
+SPEC["c"] = {
+    "func": [_c(r"^[ \t]*" + _C_MODS + r"(?P<ret>[A-Za-z_]\w*)(?:[\s*]+)(?P<name>[A-Za-z_]\w*)\s*\((?:[^;]*|[^;{]*\)[^;{]*\{.*)$")],
+    "cls": [_c(r"^[ \t]*(?:typedef\s+)?(?P<kind>struct|union|enum)\s+(?P<name>[A-Za-z_]\w*)\s*\{?\s*$")],
+    "call": _c(r"(?<![\w.>])(?![A-Z][A-Z0-9_]*\s*\()(?P<name>[A-Za-z_]\w*(?:(?:->|\.)[A-Za-z_]\w*)*)\s*\("),
+    "imports": c_imports,
+    "types": [_c(r"\b(?:struct\s+)?(?P<type>[A-Za-z_]\w*)\s*\*+\s*(?P<var>[A-Za-z_]\w*)\s*[=,);\[]")],
+    "ret_skip": _C_RET_SKIP,
+    "skip": {"defined", "static_assert", "_Static_assert", "alignof", "offsetof", "__attribute__", "__typeof__", "va_start", "va_end", "va_arg", "__builtin_expect"},
+    "extra_refs": c_extra_refs,
+    "exts": [".c", ".h"],
+}
+
+SPEC["cpp"] = {
+    "func": [
+        _c(r"^[ \t]*(?:template\s*<[^>]*>\s*)?" + _C_MODS + r"(?P<ret>[A-Za-z_][\w:<>,]*?)(?:[\s*&]+)(?:(?P<owner>[A-Za-z_]\w*)(?:<[^>]*>)?::)?(?P<name>~?[A-Za-z_]\w*|operator\s*\S+?)\s*\((?:[^;]*|[^;{]*\)[^;{]*\{.*)$"),
+        _c(r"^[ \t]*(?:template\s*<[^>]*>\s*)?(?P<owner>[A-Za-z_]\w*)(?:<[^>]*>)?::(?P<name>~?[A-Za-z_]\w*)\s*\((?:[^;]*|[^;{]*\)[^;{]*\{.*)$"),
+        _c(r"^[ \t]*(?:explicit\s+)?(?P<name>~?[A-Z][a-z]\w*)\s*\([^;]*\)\s*(?:noexcept\s*)?(?::[^;{]*)?(?:\{.*)?$"),
+    ],
+    "cls": [_c(r"^[ \t]*(?:template\s*<[^>]*>\s*)?(?P<kind>class|struct|union)\s+(?:\[\[[^\]]*\]\]\s*)?(?:[A-Z_]+_API\s+)?(?P<name>[A-Za-z_]\w*)(?:\s+final)?(?P<bases>\s*:[^{;]*)?[ \t]*\{?[ \t]*$")],
+    "call": _c(r"(?<![\w.>:])(?![A-Z][A-Z0-9_]*\s*\()(?P<name>(?:this->)?[A-Za-z_]\w*(?:(?:->|\.|::)~?[A-Za-z_]\w*)*)\s*(?:<[^()<>;]*>)?\s*\("),
+    "imports": c_imports,
+    "types": [_c(r"\b(?P<type>(?:[A-Za-z_]\w*::)*[A-Za-z_]\w*)\s*(?:<[^;>()]*>)?\s*[*&]+\s*(?P<var>[A-Za-z_]\w*)\s*[;=,){(\[]"),
+              _c(r"\b(?:std::)?(?:unique_ptr|shared_ptr|weak_ptr|optional)\s*<\s*(?P<type>(?:\w+::)*\w+)\s*>\s+(?P<var>[A-Za-z_]\w*)"),
+              _c(r"(?P<var>[A-Za-z_]\w*)\s*=\s*(?:std::)?make_(?:unique|shared)\s*<\s*(?P<type>(?:\w+::)*\w+)\s*>"),
+              _c(r"(?P<var>[A-Za-z_]\w*)\s*=\s*new\s+(?P<type>(?:\w+::)*\w+)"),
+              _c(r"^[ \t]*(?:const\s+)?(?P<type>(?:[A-Za-z_]\w*::)*[A-Z]\w*|std::\w+)(?:<[^;>()]*>)?\s+(?P<var>[a-z_]\w*)\s*[;{(=]"),
+              _c(r"[(,]\s*(?:const\s+)?(?P<type>(?:[A-Za-z_]\w*::)*[A-Z]\w*|std::\w+)(?:<[^;>()]*>)?\s+(?P<var>[a-z_]\w*)\s*[,)=]")],
+    "ret_skip": _C_RET_SKIP | {"else", "static_cast", "dynamic_cast"},
+    "skip": {"static_cast", "dynamic_cast", "reinterpret_cast", "const_cast", "decltype", "noexcept", "alignas", "alignof", "typeid", "sizeof", "static_assert", "assert", "defined", "catch", "throw"},
+    "extra_refs": c_extra_refs,
+    "exts": [".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"],
+}
+
+SPEC["dart"] = {
+    "func": [
+        _c(r"^[ \t]*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:static|external|abstract|override|final|const|late|factory|async)\s+)*(?P<ret>[A-Za-z_][\w<>,.?]*(?:<[^>()]*>)?\??)\s+(?:get\s+|set\s+)?(?P<name>[A-Za-z_]\w*)\s*(?:<[^>(]*>)?\s*\((?![\s]*['\"])[^;]*?\)\s*(?:async\*?\s*|sync\*\s*)?(?:\{|=>)"),
+        _c(r"^[ \t]*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:static|external|abstract|override|final|const|late|factory|async)\s+)*(?P<ret>[A-Za-z_][\w<>,.?]*(?:<[^>()]*>)?\??)\s+(?:get\s+|set\s+)?(?P<name>[A-Za-z_]\w*)\s*(?:<[^>(]*>)?\s*\(\s*$"),
+        _c(r"^[ \t]*(?:const\s+|factory\s+)?(?P<name>[A-Z]\w*)(?:\.\w+)?\s*\((?![\s]*['\"])[^;]*\)\s*(?::\s*[^;{]*)?\{"),
+    ],
+    "cls": [_c(r"^[ \t]*(?:@\w+(?:\([^)]*\))?\s+)*(?:(?:abstract|base|final|sealed|interface|mixin)\s+)*(?P<kind>class|mixin|enum)\s+(?P<name>[A-Za-z_]\w*)(?:<[^{]*?>)?(?P<bases>[^{;]*)\{?")],
+    "owner": _c(r"^[ \t]*extension\s+(?:(?P<ext>\w+)\s+)?on\s+(?P<name>[A-Za-z_]\w*)"),
+    "call": _c(r"(?<![\w$.])(?P<name>(?:this\.|super\.)?[A-Za-z_$][\w$]*(?:(?:\?\.|!\.|\.)[A-Za-z_$][\w$]*)*)\s*(?:<[^()<>;]*>)?\s*\("),
+    "imports": dart_imports,
+    "types": [_c(r"(?:final|var|late)\s+(?P<type>[A-Z]\w*)(?:<[^>]*>)?\??\s+(?P<var>_?\w+)"),
+              _c(r"\b(?P<type>[A-Z]\w*)(?:<[^>]*>)?\??\s+(?P<var>_?[a-z]\w*)\s*[;=,)]"),
+              _c(r"(?:final|var)\s+(?P<var>_?\w+)\s*=\s*(?:await\s+)?(?:const\s+|new\s+)?(?P<type>[A-Z]\w*)(?:<[^>]*>)?\("),
+              _c(r"\b(?P<var>_?\w+)\s*=\s*(?:await\s+)?(?:const\s+|new\s+)?(?P<type>[A-Z]\w*)\(")],
+    "ret_skip": {"return", "await", "else", "throw", "new", "const", "yield", "case", "assert", "in", "is", "as"},
+    "skip": {"print", "debugPrint", "assert", "identical", "super"},
+    "extra_refs": dart_extra_refs,
+    "exts": [".dart"],
+}
+
+_PERL_BUILTINS = {"print", "printf", "push", "pop", "shift", "unshift", "splice", "keys", "values", "each", "defined", "exists", "delete", "scalar", "join", "split", "map", "grep", "sort",
+                  "reverse", "ref", "die", "warn", "eval", "bless", "sprintf", "lc", "uc", "lcfirst", "ucfirst", "length", "substr", "index", "rindex", "open", "close", "chomp", "chop",
+                  "chdir", "mkdir", "rmdir", "opendir", "readdir", "closedir", "unlink", "rename", "require", "return", "sub", "if", "elsif", "unless", "while", "until", "foreach", "for",
+                  "my", "our", "local", "use", "no", "package", "last", "next", "redo", "goto", "wantarray", "abs", "int", "sqrt", "sin", "cos", "atan2", "exp", "log", "hex", "oct",
+                  "rand", "srand", "time", "localtime", "gmtime", "sleep", "exit", "system", "exec", "fork", "wait", "waitpid", "kill", "read", "seek", "tell", "eof", "binmode", "select",
+                  "pos", "quotemeta", "pack", "unpack", "lock", "tie", "untie", "tied", "chr", "ord", "caller", "do", "qw", "q", "qq", "qr", "tr", "y", "m", "s", "undef", "exists", "local",
+                  "sprintf", "readline", "chmod", "chown", "utime", "truncate", "glob", "stat", "lstat", "wait", "alarm", "sysopen", "sysread", "syswrite"}
+
+SPEC["perl"] = {
+    "func": [_c(r"^\s*sub\s+(?P<name>[A-Za-z_]\w*)\b")],
+    "cls": [_c(r"^\s*package\s+(?:\w+::)*(?P<name>\w+)\s*(?:[\d._]+\s*)?(?:;|\{)")],
+    "call": _c(r"(?<![\w$@%&>])(?P<name>\$?[A-Za-z_]\w*(?:->\{\w+\}|->\w+|::\w+)*)(?:\s*\(|(?<=->new)(?=\s*[;,)]|\s*$))"),
+    "imports": perl_imports,
+    "types": [_c(r"(?:my\s+)?\$(?P<var>\w+)\s*=\s*(?P<type>(?:\w+::)*[A-Z]\w*)->(?:new|connect|instance|create|open)\b"),
+              _c(r"\$self->\{(?P<var>\w+)\}\s*(?://|\|\|)?=\s*(?P<type>(?:\w+::)*[A-Z]\w*)->new\b"),
+              _c(r"\b(?P<var>\w+)\s*=>\s*(?P<type>(?:\w+::)*[A-Z]\w*)->new\b"),
+              _c(r"\bhas\s+['\"]?(?P<var>\w+)['\"]?\s*=>\s*\([^)]*\bisa\s*=>\s*['\"](?P<type>(?:\w+::)*\w+)['\"]")],
+    "skip": _PERL_BUILTINS,
+    "extra_calls": perl_extra_calls,
+    "exts": [".pl", ".pm", ".t", ".psgi", ".cgi"],
+}
+
+_ABAP_BUILTINS = {"strlen", "lines", "line_exists", "line_index", "condense", "to_upper", "to_lower", "to_mixed", "from_mixed", "concat_lines_of", "boolc", "boolx", "xsdbool", "abs", "ceil",
+                  "floor", "sign", "frac", "trunc", "round", "ipow", "sqrt", "exp", "log", "log10", "sin", "cos", "tan", "nmax", "nmin", "matches", "match", "contains", "contains_any_of",
+                  "contains_any_not_of", "count", "count_any_of", "find", "find_any_of", "find_any_not_of", "insert", "repeat", "replace", "reverse", "segment", "shift_left", "shift_right",
+                  "substring", "substring_after", "substring_before", "substring_from", "substring_to", "translate", "escape", "cmax", "cmin", "char_off", "numofchar", "distance", "charlen",
+                  "dbmaxlen", "if", "elseif", "case", "when", "while", "xstrlen", "rescale", "present", "bit-set"}
+
+SPEC["abap"] = {
+    "func": [_c(r"^\s*METHOD\s+(?P<name>[\w~]+)\s*\.", re.I),
+             _c(r"^\s*FORM\s+(?P<name>[\w-]+)", re.I),
+             _c(r"^\s*FUNCTION\s+(?P<name>\w+)\s*\.", re.I),
+             _c(r"^\s*MODULE\s+(?P<name>\w+)\s+(?:OUTPUT|INPUT)\b", re.I),
+             _c(r"^\s*(?P<name>START-OF-SELECTION|INITIALIZATION|END-OF-SELECTION)\s*\.", re.I)],
+    "cls": [_c(r"^\s*CLASS\s+(?P<name>\w+)\s+DEFINITION\b(?!\s+(?:DEFERRED|LOAD))", re.I),
+            _c(r"^\s*(?P<kind>INTERFACE)\s+(?P<name>\w+)\s*(?:PUBLIC\b)?[^.]*\.?\s*$", re.I)],
+    "owner": _c(r"^\s*CLASS\s+(?P<name>\w+)\s+IMPLEMENTATION\b", re.I),
+    "call": _c(r"(?<![\w>~=-])(?P<name>[A-Za-z_][\w-]*(?:(?:->|=>)[A-Za-z_~][\w~]*)*)\(\s", re.I),
+    "imports": abap_imports,
+    "types": [_c(r"(?:DATA|CLASS-DATA|STATICS|FINAL)\s*\(?\s*(?P<var>[\w-]+)\s*\)?\s+TYPE\s+REF\s+TO\s+(?P<type>\w+)", re.I),
+              _c(r"\b(?P<var>\w+)\s+TYPE\s+REF\s+TO\s+(?P<type>\w+)", re.I),
+              _c(r"(?:DATA|FINAL)\(\s*(?P<var>\w+)\s*\)\s*=\s*NEW\s+(?P<type>\w+)\s*\(", re.I),
+              _c(r"CREATE\s+OBJECT\s+(?P<var>[\w-]+)\s+TYPE\s+(?P<type>\w+)", re.I)],
+    "skip": _ABAP_BUILTINS,
+    "not_after": re.compile(r"\b(?:new|cast|type|ref|to|conv|exact|value|cond|switch|reduce|filter|corresponding)\s*$", re.I),
+    "extra_calls": abap_extra_calls,
+    "exts": [".abap"],
+}
+
 # ------------------------------------------------------------------ bases / package names / keywords
 
 def _names(s: str) -> list[str]:
@@ -511,14 +706,29 @@ def parse_bases(lang: str, kind: str, decl: str) -> tuple[list[str], list[str]]:
             if m:
                 imp.extend(_names(m.group(1)))
     elif lang == "cpp":
-        m = re.search(r":\s*((?:(?:public|protected|private|virtual)\s+)*[\w:<>]+(?:\s*,\s*(?:(?:public|protected|private|virtual)\s+)*[\w:<>]+)*)", d)
+        m = re.search(r":\s*([^{;]+)", d)
         if m:
-            for it in m.group(1).split(","):
+            depth_, cur_, parts_ = 0, "", []
+            for ch_ in m.group(1):
+                depth_ += (ch_ == "<") - (ch_ == ">")
+                if ch_ == "," and depth_ <= 0:
+                    parts_.append(cur_)
+                    cur_ = ""
+                else:
+                    cur_ += ch_
+            parts_.append(cur_)
+            for it in parts_:
                 nm = re.sub(r"^(?:(?:public|protected|private|virtual)\s+)*", "", it.strip())
                 if nm:
                     (ext if not ext else imp).append(nm.split("<")[0])
     elif lang == "perl":
-        pass
+        m = re.search(r"\b(?:use\s+(?:parent|base)\b|use\s+Mojo::Base\b|@ISA\s*=|push\s+@ISA\s*,)\s*(?:-norequire\s*,\s*)?(?:qw\s*[(/]([^)/]*)|([^;]*))", d)
+        if m:
+            names = re.findall(r"[A-Za-z_][\w:]*", (m.group(1) or m.group(2) or "").replace("-norequire", ""))
+            names = [x for x in names if x[:1].isupper() and x not in ("Mojo::Base", "Moose", "Moo", "Role")]
+            if names:
+                ext.append(names[0])
+                imp.extend(names[1:])
     elif lang == "abap":
         m = re.search(r"INHERITING\s+FROM\s+(\w+)", d, re.I)
         if m:
@@ -532,6 +742,15 @@ KEYWORDS_BY_LANG = {"if", "for", "while", "switch", "catch", "return", "function
                     "unless", "until", "begin", "rescue", "ensure", "puts", "p", "fn", "let", "mut", "impl", "self", "Self", "init", "guard", "defer",
                     "echo", "isset", "empty", "unset", "array", "list", "die", "exit", "include", "require_once", "include_once", "assert", "instanceof",
                     "nameof", "typeof", "default", "operator", "in", "is", "as", "with", "where", "throws", "class", "struct", "enum", "interface", "package"}
+
+
+STD_CPP_HEADERS = {"string", "vector", "memory", "map", "set", "unordered_map", "unordered_set", "algorithm", "functional", "iostream", "fstream", "sstream", "thread", "mutex", "chrono", "optional", "variant",
+                   "utility", "array", "deque", "list", "queue", "stack", "tuple", "numeric", "iterator", "regex", "random", "atomic", "condition_variable", "future", "filesystem", "exception", "stdexcept",
+                   "typeinfo", "type_traits", "limits", "cassert", "span", "ranges", "format", "string_view", "bitset", "complex", "ostream", "istream", "iomanip", "initializer_list", "new", "numbers"}
+LIBC_DIRS = {"sys", "arpa", "netinet", "net", "linux", "asm", "bits"}
+LIBC_HEADERS = {"assert", "complex", "ctype", "errno", "fenv", "float", "inttypes", "iso646", "limits", "locale", "math", "setjmp", "signal", "stdalign", "stdarg", "stdatomic", "stdbool",
+                "stddef", "stdint", "stdio", "stdlib", "stdnoreturn", "string", "strings", "tgmath", "threads", "time", "uchar", "wchar", "wctype", "unistd", "fcntl", "pthread", "dirent",
+                "netdb", "poll", "semaphore", "sched", "regex", "glob", "dlfcn", "syslog", "termios", "getopt", "libgen", "utime", "grp", "pwd", "ifaddrs", "ftw", "fnmatch", "wordexp"}
 
 
 def pkg_of(lang: str, module: str) -> str | None:
@@ -554,11 +773,20 @@ def pkg_of(lang: str, module: str) -> str | None:
     if lang == "rust":
         return m.split("::")[0]
     if lang in ("c", "cpp"):
-        return m.lstrip("<").split("/")[0].split(".")[0]
+        h = m.lstrip("<")
+        last = h.rsplit("/", 1)[-1]
+        top = h.split("/")[0]
+        if "." not in last:  # extensionless: a C++ standard header (<string>, <vector>) or a framework header such as Qt's <QProcess>
+            return "std" if (last in STD_CPP_HEADERS or re.match(r"^c(?:std\w+|math|time|type|string|errno|limits|assert|signal|locale|wchar)$", last)) else last
+        if top in LIBC_DIRS or h.rsplit(".", 1)[0] in LIBC_HEADERS:
+            return "libc"
+        return top.split(".")[0] if "/" in h else last.split(".")[0]
     if lang == "dart":
-        return m.split(":", 1)[1].split("/")[0] if m.startswith("package:") else (m.split(":")[0] if m.startswith("dart:") else None)
+        return m.split(":", 1)[1].split("/")[0] if m.startswith("package:") else (m if m.startswith("dart:") else None)
     if lang == "perl":
         return m.split("::")[0]
+    if lang == "abap":
+        return None
     return m.split("/")[0].split(".")[0]
 
 

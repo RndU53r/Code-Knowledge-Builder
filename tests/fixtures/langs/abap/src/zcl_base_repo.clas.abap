@@ -1,0 +1,10 @@
+CLASS zcl_base_repo DEFINITION PUBLIC CREATE PUBLIC.
+  PUBLIC SECTION.
+    METHODS save IMPORTING iv_item TYPE string RETURNING VALUE(rv_id) TYPE string.
+ENDCLASS.
+
+CLASS zcl_base_repo IMPLEMENTATION.
+  METHOD save.
+    rv_id = iv_item.
+  ENDMETHOD.
+ENDCLASS.

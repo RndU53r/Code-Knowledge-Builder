@@ -1,0 +1,9 @@
+name: shop
+description: order service
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+dependencies:
+  shelf: ^1.4.0
+  shelf_router: ^1.1.0
+  http: ^1.1.0
+  sqflite: ^2.3.0

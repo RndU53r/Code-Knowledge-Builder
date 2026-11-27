@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment` @ `unversioned`, `gateway` @ `unversioned`, `orders` @ `unversioned`, `platform` @ `unversioned`
-> - Generated: 2026-11-27T00:54:02Z by ckb threat_seed, stage `threat-model-draft`
+> - Generated: 2026-11-27T01:30:47Z by ckb threat_seed, stage `threat-model-draft`
 > - Scope: registered repos, IaC, supplied CSPM/docs · Excluded: vendored, generated, binaries, symlinks
 > - Method: deterministic rules over the knowledge graph; no target code executed; ratings per the ckb rubric
 > - Verification: threats are mirrored as graph proposals (graph/proposals/seed-threats.jsonl) and verified by graph_merge

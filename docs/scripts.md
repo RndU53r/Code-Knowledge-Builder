@@ -648,4 +648,5 @@ Imported by the scripts above; not run directly.
 * `graph_common.py`: Shared definitions for the ckb knowledge graph: schema, IDs, validation, safe strings.
 * `graph_security.py`: Security layer for the ckb knowledge graph (imported by graph_build.py).
 * `graph_patterns.py`: Entry-point, taint-source and sink patterns for the regex extractor (every language except the Python AST path).
+* `graph_patterns_native.py`: Entry points, taint sources and sinks for C, C++, Dart/Flutter, Perl and ABAP (0.7.0).
 * `lang_specs.py`: Per-language parsing specs for the regex extractor: declarations, class spans, calls, imports, variable types, inheritance.

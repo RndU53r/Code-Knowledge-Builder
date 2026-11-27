@@ -29,12 +29,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ckb_common import is_binary, is_secret_file, read_text, repo_excludes, repo_roots_for_output, walk_files  # noqa: E402
 from graph_common import atomic_write, cite, make_edge, make_node, node_id, safe_str, sig_hash  # noqa: E402
 from graph_patterns import arg_kind, find_entries, line_sinks, line_sources  # noqa: E402
-from lang_specs import KEYWORDS_BY_LANG, SPEC, block_end, mask, norm_call, parse_bases, pkg_of  # noqa: E402
+from lang_specs import KEYWORDS_BY_LANG, LIBC_FUNCS, SPEC, block_end, mask, norm_call, parse_bases, pkg_of  # noqa: E402
 from roles import FIXTURE_PATH, GENERATED_NAME, TEST_PATH  # noqa: E402
 
 LANG = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript", ".jsx": "javascript",
         ".ts": "typescript", ".tsx": "typescript", ".go": "go", ".java": "java", ".kt": "kotlin", ".rb": "ruby",
-        ".php": "php", ".rs": "rust", ".cs": "csharp", ".scala": "scala", ".swift": "swift"}
+        ".php": "php", ".rs": "rust", ".cs": "csharp", ".scala": "scala", ".swift": "swift",
+        ".c": "c", ".h": "c", ".cc": "cpp", ".cpp": "cpp", ".cxx": "cpp", ".hpp": "cpp", ".hh": "cpp", ".hxx": "cpp", ".dart": "dart",
+        ".pl": "perl", ".pm": "perl", ".t": "perl", ".psgi": "perl", ".cgi": "perl", ".abap": "abap"}
+CPP_HINT = re.compile(r"^[ \t]*(?:class\s+\w+|namespace\s+\w+|template\s*<|using\s+namespace|#\s*include\s*<(?:iostream|string|vector|memory|map|functional)>)|\bstd::", re.M)
 PY_SOURCE = re.compile(r"^(?:flask\.)?request\.(args|form|json|values|files|headers|cookies|data|GET|POST|query_params|path_params|body|FILES|META|get_json)\b")
 HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options", "all", "route", "api_route", "websocket"}
 SQL_WRITE = re.compile(r"(?i)\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|REPLACE\s+INTO)\s+[`\"]?([A-Za-z_][\w.]*)")
@@ -611,7 +614,7 @@ EVAL_RX = re.compile(r"(?<![\w.])(eval|new Function)\s*\(")
 SSRF_JS = re.compile(r"\b(axios|fetch|got)(?:\.\w+)?\(\s*([^,)]+)")
 
 
-def extract_regex(key, rel, text, lang) -> Frag:
+def extract_regex(key, rel, text, lang, aux: str = "") -> Frag:
     f = Frag(key, rel, "regex")
     lines = text.splitlines()
     if len(text) > 800_000 or len(lines) > 20000:  # bound the work a single hostile or generated file can cause
@@ -643,10 +646,15 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 m = crx.match(ml)
                 if m and m.group("name") not in DECL_SKIP:
                     kind_ = (m.groupdict().get("kind") or "class")
-                    head = " ".join(mlines[i - 1:i + 3])
+                    head = " ".join((lines if lang == "perl" else mlines)[i - 1:i + 3])  # Perl base classes are strings: read the unmasked text
                     head = head.split("{")[0] if "{" in head else head
                     ext_, imp_ = parse_bases(lang, "interface" if kind_ in ("interface", "protocol", "trait") else "class", head if m.group("name") else ml)
                     end_ = block_end(mlines, i - 1, lang)
+                    if lang == "abap" and kind_ != "interface":  # INTERFACES statements sit inside the class definition body
+                        for ml2 in mlines[i:end_]:
+                            im_ = re.match(r"\s*interfaces\s*:?\s*([\w, ]+?)\s*\.\s*$", ml2)
+                            if im_:
+                                imp_ = imp_ + [x.strip() for x in im_.group(1).split(",") if x.strip()]
                     if lang == "go" and kind_ == "struct":  # embedded structs act as base types
                         for ml2 in mlines[i:end_ - 1]:
                             em = re.match(r"^\s+\*?(?:\w+\.)?([A-Z]\w*)\s*$", ml2)
@@ -664,6 +672,14 @@ def extract_regex(key, rel, text, lang) -> Frag:
                     tr = om.groupdict().get("trait")
                     if tr:
                         cinfo.setdefault(("impl", om.group("name").split("::")[-1]), []).append((tr.split("::")[-1], i))
+    if lang in ("cpp", "perl"):  # namespaces / package prefixes of this repo are never external libraries
+        for ml in mlines:
+            nm_ = re.match(r"\s*namespace\s+([A-Za-z_]\w*)", ml) if lang == "cpp" else re.match(r"\s*package\s+([\w:]+)", ml)
+            if nm_:
+                segs_ = nm_.group(1).split("::")
+                for k_ in range(len(segs_)):
+                    f.ref(type="ns", name=segs_[k_] if lang == "cpp" else "::".join(segs_[:k_ + 1]).replace("::", "."), line=1)
+                f.ref(type="ns", name=segs_[0], line=1)
     pats = spec["func"] if spec else RX.get(lang, [])
     class_lines = {d[0] for d in decls if d[2] == "class"}
     for i, ml in enumerate(mlines, 1):
@@ -680,7 +696,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 if not name or name in DECL_SKIP:
                     continue
                 ret = m.groupdict().get("ret")
-                if ret is not None and (ret in spec.get("ret_skip", ()) or ret in DECL_SKIP):
+                if ret is not None and (ret in spec.get("ret_skip", ()) or (ret in DECL_SKIP and ret != "void")):
                     continue
                 if lang == "java" and re.match(r"^\s*(return|new|throw|else|if|for|while|switch|catch|try|do)\b", ml):
                     continue
@@ -761,7 +777,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
     # variable types visible in this file (typed declarations, constructor assignments), conflicting names dropped
     vtypes = {}
     if spec:
-        for ml in mlines:
+        for ml in mlines + (mask(aux, lang).splitlines() if aux else []):  # aux: the same-stem header of a C++ source file (member declarations live there)
             if len(ml) > 600:
                 continue
             for trx in spec["types"]:
@@ -769,12 +785,15 @@ def extract_regex(key, rel, text, lang) -> Frag:
                     v_, t_ = m.group("var").lstrip("@$"), m.group("type")
                     if t_ in DECL_SKIP or v_ in DECL_SKIP:
                         continue
+                    t_ = t_.replace("::", ".")
+                    if lang == "perl":
+                        t_ = t_.split(".")[-1]
                     if v_ in vtypes and vtypes[v_] not in (None, t_):
                         vtypes[v_] = None
                     elif v_ not in vtypes:
                         vtypes[v_] = t_
     uses = set()
-    this_names = {"this", "self", "super", "cls", "Self", "$this", "base", "parent"}
+    this_names = {"this", "self", "super", "cls", "Self", "$this", "base", "parent", "me"}
     call_lines = {d[0] for d in decls if d[2] in ("function", "class")}
 
     # entry points that are not inline route callbacks: bind each to the handler declared right after the annotation/route line,
@@ -801,7 +820,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
             attrs["queue"] = e["queue"]
         eid = f.entry(e["kind"], e["name"], e["line"], handler_id=hid, conf="medium", label=label, **attrs)
         if e["handler"] and e["handler"] != "func" and (e["defer"] or hid is None):
-            f.ref(type="route_handler", src=eid, name=e["handler"], line=e["line"], hint=(e.get("controller") or "").split("/")[-1].lower() or None)
+            f.ref(type="route_handler", src=eid, name=e["handler"], line=e["line"], hint=(e.get("controller") or "").split("/")[-1].lower() or None, meth=e.get("method"))
         if e["kind"] == "consumer" and e["queue"]:
             f.edge(eid, "consumes", f.shared("topic", e["queue"], e["line"]), e["line"], conf="medium")
 
@@ -818,7 +837,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
         if lang in ("javascript", "typescript") and own != f.file_id:
             for m in re.finditer(r"<([A-Z][\w.]*)\b", mlines[i - 1] if spec else ln):
                 f.ref(type="arg_ref", src=own, name=m.group(1), line=i)  # React/JSX component use
-        if sec and not ln.lstrip().startswith(("//", "#", "*", "/*", "<!--", "--")):
+        if sec and not ln.lstrip().startswith(("//", "#", "*", "/*", "<!--", "--") + (('"',) if lang == "abap" else ())):
             for stype, label in line_sources(lang, ln):
                 f.source(own, qual, stype, label, i)
             old_sql = bool(SQL_DYN.search(ln) or SQL_STR.search(ln))
@@ -870,7 +889,19 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 f.edge(own, "spawns", f.shared("external", Path(m.group(1).strip()).name, i, conf="low"), i, conf="low")
         if EVAL_RX.search(ln) and lang in ("javascript", "typescript"):
             f.sink(own, qual, "code", safe=False, reason="eval/new Function", line=i)
-        decl_like = re.match(r"^\s*(?:(?:public|private|protected|static|abstract|virtual|override|internal|async|final|open|fun|def|func|extern|const)\s+)*[\w<>\[\],.?*&]+\s+\w+\s*\(", mlines[i - 1]) if own in class_ids.values() else None
+        if spec and spec.get("extra_refs"):
+            for r_ in spec["extra_refs"](mlines[i - 1]):
+                f.ref(src=own, line=i, **r_)
+        if own != f.file_id and spec and spec.get("extra_calls") and not ln.lstrip().startswith(("*", '"', "#", "=")):
+            code_ = re.sub(r'\s"[^\n]*$' if lang == "abap" else r"\s#[^\n]*$", "", ln)  # trailing comment
+            for r_ in spec["extra_calls"](code_):
+                f.ref(src=own, line=i, **r_)
+        if lang in ("dart", "kotlin", "java", "swift"):  # Flutter platform channels: the Dart side and the native handler meet on the channel name
+            for m in re.finditer(r"""MethodChannel\(\s*(?:[\w.]+\s*,\s*)?(?:name:\s*)?["']([\w./:-]+)["']""", ln):
+                tail = " ".join(lines[i - 1:i + 3])
+                kind_ = "consumes" if "setMethodCallHandler" in tail else "publishes"
+                f.edge(own, kind_, f.shared("topic", "channel:" + m.group(1), i), i, conf="medium")
+        decl_like = re.match(r"^\s*(?:(?:public|private|protected|static|abstract|virtual|override|internal|async|final|open|fun|def|func|extern|const|inline|explicit)\s+)*[\w<>\[\],.?*&:]+\s+\w+\s*\(", mlines[i - 1]) if own in class_ids.values() else None
         if own != f.file_id and spec and i not in call_lines and not decl_like:
             ml = mlines[i - 1]
             for m in spec["call"].finditer(ml):
@@ -879,17 +910,27 @@ def extract_regex(key, rel, text, lang) -> Frag:
                 parts = name.split(".")
                 if not name or name in KEYWORDS_BY_LANG or ((parts[0] in KEYWORDS_BY_LANG or parts[0] in DECL_SKIP) and parts[0] not in this_names and len(parts) == 1):
                     continue
+                if name in spec.get("skip", ()) or (len(parts) == 1 and parts[0] in spec.get("skip", ())):
+                    continue
+                if spec.get("not_after") and spec["not_after"].search(ml[:m.start()]):
+                    continue
+                if lang in ("c", "cpp") and re.match(r"^\s*(?:(?:const|static|struct|unsigned|signed|volatile|enum|auto|register)\s+)*[\w:]+(?:<[^;()]*>)?(?:\s*[*&]+\s*|\s+)$", ml[:m.start()]) \
+                        and not re.match(r"^\s*(?:return|else|case|new|delete|throw|co_return|co_await|co_yield|sizeof|do|goto|and|or|not)\s+$", ml[:m.start()]):
+                    continue  # `Type name(args);` declares a variable, it does not call `name`
+                libc_ = lang in ("c", "cpp") and len(parts) == 1 and bool(LIBC_FUNCS.match(name))
                 if parts[0] in DECL_SKIP and parts[0] not in this_names:
                     continue
                 if lang in ("rust",) and parts[0] == "Self":
                     parts[0] = next((c_ for s_, e_, c_ in cspans if s_ <= i <= e_), "Self")
                     name = ".".join(parts)
                 ref = {"type": "call", "src": own, "name": name, "line": i}
+                if libc_:
+                    ref["pkg"] = "libc"
                 if len(parts) == 2 and vtypes.get(parts[0]):
                     ref.update(recv_type=vtypes[parts[0]], recv_conf="medium")
                 elif len(parts) == 3 and vtypes.get(parts[1]):
                     ref.update(recv_type=vtypes[parts[1]], recv_conf="medium")
-                if "::" in raw and lang in ("rust", "cpp", "php", "ruby", "perl"):
+                if ("::" in raw and lang in ("rust", "cpp", "php", "ruby", "perl")) or ("=>" in raw and lang == "abap"):
                     ref["path_call"] = True
                 f.ref(**ref)
                 if parts[-1][:1].isupper() and (len(parts) == 1 or lang in ("java", "kotlin", "csharp", "scala", "swift", "php", "javascript", "typescript")) \
@@ -907,7 +948,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
                             break
                     buf += ch
                 for tok in re.split(r",(?![^(]*\))", buf)[:6]:
-                    tok = tok.strip()
+                    tok = tok.strip().lstrip("&").replace("::", ".")
                     if re.match(r"^[A-Za-z_$][\w$.]*$", tok) and tok not in KEYWORDS_BY_LANG and tok not in ("true", "false", "null", "nil", "None", "undefined"):
                         f.ref(type="arg_ref", src=own, name=norm_call(lang, tok), line=i)
     for own_id, tname in sorted(uses):
@@ -916,7 +957,7 @@ def extract_regex(key, rel, text, lang) -> Frag:
         for s_, e_, cname in cspans:
             if cname not in class_ids:
                 continue
-            for ml in mlines[s_ - 1:min(e_, s_ + 2)]:
+            for ml in mlines[s_ - 1:min(e_, s_ + (120 if lang in ("c", "cpp", "dart", "perl", "abap") else 2))]:
                 for trx in spec["types"]:
                     for m in trx.finditer(ml):
                         t_ = m.group("type")
@@ -1004,6 +1045,7 @@ def extract_file(key, root: Path, rel: str, backend: str, tsmod: str | None) -> 
     if not lang:
         return None
     p = root / rel
+    aux = ""
     if is_secret_file(rel) or is_binary(p):
         SKIPS.append({"path": rel, "reason": "secret-bearing or binary file (not read)"})
         return None
@@ -1013,6 +1055,14 @@ def extract_file(key, root: Path, rel: str, backend: str, tsmod: str | None) -> 
         return None
     if not text.strip():
         return None  # empty files (e.g. bare __init__.py) have no citable lines
+    if rel.lower().endswith(".h") and CPP_HINT.search(text[:200_000]):
+        lang = "cpp"  # a header that declares classes/namespaces or uses the C++ standard library
+    if lang == "cpp" and Path(rel).suffix.lower() in (".cpp", ".cc", ".cxx"):
+        for ext_ in (".h", ".hpp", ".hh", ".hxx"):
+            hp = p.with_suffix(ext_)
+            if hp.is_file() and not hp.is_symlink():
+                aux = read_text(hp, max_bytes=300_000) or ""
+                break
     try:
         if lang == "python" and backend in ("auto", "ast"):
             try:
@@ -1026,7 +1076,7 @@ def extract_file(key, root: Path, rel: str, backend: str, tsmod: str | None) -> 
             except Exception:  # noqa: BLE001 - any tree-sitter API/version problem falls back to regex
                 pass
         if lang in RX or lang in SPEC or lang == "python":
-            return extract_regex(key, rel, text, lang if (lang in RX or lang in SPEC) else "javascript").dump()
+            return extract_regex(key, rel, text, lang if (lang in RX or lang in SPEC) else "javascript", aux).dump()
     except RecursionError:
         return None
     return None

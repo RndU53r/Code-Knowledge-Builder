@@ -4,7 +4,7 @@ A Claude Code plugin that turns one repository, a workspace of repos, or a whole
 
 * a **cited knowledge graph** and knowledge base: inventory, per-repo and system HLD/LLD, cross-repo data flows, outputs and the conditions that change them;
 * a **code map** for every repo: its kind (application, service, library, IaC, CI/CD pipeline, GitOps config, mixed) and each file's role (core, utility, test, generated, infrastructure, ...);
-* every **entry point** (HTTP/gRPC endpoint, queue consumer, cron job, CLI command), the **taint sources** it reads and the **sinks** it can reach, across Python, JS/TS, Go, Java, Kotlin, Scala, C#, Ruby, PHP, Rust and Swift, with calls resolved through typed receivers, class hierarchies and library calls ([language matrix](docs/languages.md));
+* every **entry point** (HTTP/gRPC endpoint, queue consumer, cron job, CLI command), the **taint sources** it reads and the **sinks** it can reach, across Python, JS/TS, Go, Java, Kotlin, Scala, C#, Ruby, PHP, Rust, Swift, C, C++, Dart/Flutter, Perl and ABAP, with calls resolved through typed receivers, class hierarchies and library calls ([language matrix](docs/languages.md));
 * **deployment context and controls outside the code** (Kubernetes, compose, Helm, ECS/Lambda, load balancers, gateways, WAF, NetworkPolicy), linked to the repos they run and used to judge exposure and authentication;
 * the **agent, skill and tool graph** of Claude Code plugins and of agent frameworks in code, and a **coverage report** that says what could not be resolved;
 * **call graphs** at function, file and repo level;
@@ -91,7 +91,7 @@ python3 tests/test_graph.py     # graph, queries, viewer, servers, MCP
 python3 tests/test_auto.py      # auto mode, branch rule, enumeration, threat draft, call graphs, drift
 python3 tests/test_entrypoints.py  # file roles, repo kinds, entry points/sources/sinks in 8 languages, pipeline facts, context facts
 python3 tests/test_calls.py     # receiver typing, class hierarchy, callbacks, library calls, resolution accounting, library reachability
-python3 tests/test_langs.py     # the eleven-row depth matrix for each of the twelve languages
+python3 tests/test_langs.py     # the eleven-row depth matrix for each of the seventeen languages, plus framework variants for C, C++, Dart, Perl and ABAP
 python3 tests/test_agents.py    # agent/skill/tool graph for plugins and agent frameworks
 python3 tests/test_deploy.py    # deployment facts, exposure, controls, env bridging, threat-model effects
 ```

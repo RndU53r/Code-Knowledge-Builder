@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment` @ `unversioned`, `gateway` @ `unversioned`, `orders` @ `unversioned`, `platform` @ `unversioned`
-> - Generated: 2026-11-27T00:54:02Z by ckb graph 1, stage `graph`
+> - Generated: 2026-11-27T01:30:47Z by ckb graph 1, stage `graph`
 > - Scope: registered code repos · Excluded: vendored, generated, binaries, symlinks, secret files
 > - Method: static extraction (ast / tree-sitter if installed / regex); agent proposals merged only after citation verification
 > - Verification: see evidence/graph-verification.md

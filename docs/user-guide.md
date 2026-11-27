@@ -99,7 +99,7 @@ Optional. Copy [`examples/code-knowledge-builder.local.md`](../examples/code-kno
 * `repos/<repo>/context-facts.md` has a "Deployment and controls outside application code" table when IaC, Kubernetes, compose or Helm files in the sources run that repo: exposure, injected config, identity and the controls in front of it. `system/threat-model.md` uses it (an Ingress with auth-url in front of a service is "authentication outside the code", not "no authentication").
 * `system/agents.md` shows agents, skills, commands, hooks and tools (Claude Code plugins and agent frameworks): who calls whom, risky tool combinations, orphans, dangling references.
 * `system/coverage.md` says how much of the code could be resolved. Read it before relying on the **Attack paths** table in the threat model: ckb cannot prove every path was found, and lists what it could not follow.
-* Supported languages and depth: [language support](languages.md).
+* Supported languages and depth: [language support](languages.md). Seventeen languages are covered to the same eleven-row standard. Three results need extra care: **C** has no classes (functions are the units and HTTP handler registrations do not say which verb they serve, so routes read `ANY`); **C++** and **Dart** attribute calls into third-party libraries by the headers/packages a file imports, and say so in `coverage.md` when only one library was in scope; **ABAP** lists the function modules of a function group as RFC *candidates* because the remote-enabled flag is metadata ckb does not parse.
 
 ## 7. What ckb will not do
 

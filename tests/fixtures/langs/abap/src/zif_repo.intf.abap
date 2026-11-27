@@ -1,0 +1,3 @@
+INTERFACE zif_repo PUBLIC.
+  METHODS save IMPORTING iv_item TYPE string RETURNING VALUE(rv_id) TYPE string.
+ENDINTERFACE.

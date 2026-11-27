@@ -2,6 +2,30 @@
 
 Versions follow `plugin.json`. Newest first.
 
+## 0.7.0
+
+### Added
+- **C, C++, Dart/Flutter, Perl and ABAP** at the same depth as the twelve languages of 0.6.0 (declarations, imports, calls through typed receivers and the class hierarchy, library calls, entry points, sources, sinks, authentication evidence, roles, coverage accounting), proven by the same eleven-row matrix plus framework-variant fixtures. [Language matrix](docs/languages.md).
+  - C: civetweb, libevent, mongoose, libmicrohttpd, nginx module handlers, signal handlers, getopt; function-pointer tables and callbacks as `references`; `memory` (unbounded copy/format), `format` and `tls` sink types.
+  - C++: classes/templates, `Class::method` definitions matched to the header, `override`, typed members (pointers, references, smart pointers) including those declared in the same-stem header; Pistache, cpp-httplib, Crow, Drogon, oatpp, gRPC services.
+  - Dart/Flutter: `package:` imports via `pubspec.yaml`, Shelf/`shelf_router`, Dart Frog, Serverpod, Flutter named routes and `GoRoute`, `MethodChannel` platform channels as shared nodes.
+  - Perl: packages, `use parent`/`base`/Mojo::Base inheritance, typed receivers from `Class->new`, Mojolicious (controller routes and Lite), Dancer2, Catalyst, PSGI, CGI; DBI/LWP/Storable/YAML sinks.
+  - ABAP: class definitions/implementations, interfaces, `PERFORM`, `CALL FUNCTION` (RFC and SAP standard objects as library packages), REST routers, ICF handlers, OData, function groups, reports; `AUTHORITY-CHECK` counts as authentication evidence.
+- New `scripts/graph_patterns_native.py` holds the entry points, sources and sink rules of these languages.
+- Linker: methods defined in a different file from their class (C++ `.cpp`, Swift extensions, Go receivers) are found by qualified name, so overrides and typed-receiver calls work across files; calls into third-party libraries are attributed by the headers/packages a file imports; methods inherited from an external framework base class are external library calls; route handlers can be `Class.method` names or a REST resource class.
+
+### Review pass
+- Library attribution is conservative: a call is tied to a library only when its name matches an imported header/package; the only-third-party-library case is recorded as a low-confidence edge and still counted as unresolved. Quoted includes that are not in the sources, and generated headers, no longer become packages. Namespaces and Perl packages declared in the repo are never libraries; libc is matched by explicit function names.
+- Methods defined in another file than their class are looked up across files only for C/C++, Swift and Go; other languages keep per-file class scoping.
+- Calls after `&&`, `>` or `*` in C/C++ are no longer mistaken for declarations; callbacks passed to libc functions (`pthread_create`, `qsort`, `signal`) become `references`; commented-out ABAP/Perl calls and `NEW` inside message text are ignored; builtin skip lists no longer hide user-defined or library calls.
+- Sinks: format-string detection is positional, numeric/`sizeof` lengths are constants, keyword-prefixed Perl identifiers no longer match, and rules that always fired (File::Copy, LaunchMode, HttpOverrides, `SSL_VERIFY_NONE` alone, ABAP quote/escape) were removed.
+- Entry points: Dart/httplib client calls are not routes, Catalyst `:Private` actions are not endpoints, route handlers bound to a controller class use only the endpoint's verb, app screens and signal handlers are not reported as unauthenticated network endpoints.
+- Linear-time hardening of the `.h` C++ detector, the C++ class pattern and Perl POD masking; coverage hotspots now include Perl, C and ABAP dynamic dispatch.
+
+### Changed
+- Memory-safety sinks map to CWE-787 / A04, disabled TLS verification to A07.
+- `void` return types no longer hide C/C++/Dart functions; `.h` files that declare classes or namespaces are parsed as C++.
+
 ## 0.6.0
 
 ### Fixed (review pass)

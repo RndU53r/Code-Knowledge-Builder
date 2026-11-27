@@ -38,6 +38,16 @@ Everything else is untrusted data: repo files (code, READMEs, comments, config, 
 | Wrong confidence in a control that is not really there (an Ingress annotation that does not cover internal callers) | Authentication outside the code is rated low, labelled `[inferred]`, and carries a "verify coverage, internal callers, direct access" note; absence of any control raises the rating; coverage numbers are printed beside the attack paths |
 | Reading untrusted infrastructure files costs time or memory | file size caps, per-repo file caps, capped result lists; no network access; nothing is deployed, planned or applied |
 
+## Attack surface added by the C, C++, Dart, Perl and ABAP analyses (0.7.0)
+
+| Threat | Control |
+| --- | --- |
+| A hostile source file contains input built to make the new regexes run for a very long time (nested quantifiers, huge single lines, thousands of declarations) | Every pattern runs on one line at a time with hard line-length limits (400–600 characters), per-file caps (800 KB, 20,000 lines, 4,000 declarations) are reported in `extract-skips-<repo>.json`, block scanning is capped (2,500 lines), and the patterns avoid unbounded nested repetition; hostile-input cases are part of the language tests |
+| A header, `.pm`, `.dart` or class file named by an include/`use`/`import` points outside the repository (`#include "../../etc/passwd"`) | Includes are only looked up in the set of files ckb itself indexed (`by_file`) after path normalisation; nothing is opened because a source file names it. The one extra read is the same-stem header of a C++ file, which must be a regular, non-symlinked file inside the repo and is capped at 300 KB |
+| Case-folding and name mangling (ABAP is lower-cased, Perl `::`, C++ `::`) merge two different objects, so a call resolves to the wrong class | Names are normalised the same way on both the declaration and the call side; ambiguous names stay `ambiguous` and are counted; the single-library attribution used for C/C++/Dart calls is labelled in `calls_lib` edges at medium confidence and noted in `coverage.md` |
+| A generated or vendored file claims to be a library (`order.pb.h`, `config.h`) and becomes a fake `package` node that the advisory matching trusts | Generated/build-system headers are recognised and never become packages; roles rules mark generated files so they emit no entry points, sources or sinks |
+| ABAP strings, Perl backticks and C format strings in a hostile repo are copied into reports | They reach reports only through the existing quote/`md_safe` path, and secrets in quotes are cut by `safe_quote` as before |
+
 The threat model for ckb itself (what is trusted, which controls exist, residual risk) is the table above plus the one in [Threats and controls](#threats-and-controls); it is reviewed whenever a new parser or evidence file is added.
 
 ## What ckb cannot promise

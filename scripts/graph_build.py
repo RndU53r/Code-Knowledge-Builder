@@ -63,6 +63,12 @@ class Linker:
         self.by_file = {}          # (repo, path) -> frag
         self.defs_by_name = defaultdict(list)   # (repo, name) -> [node ids]
         self.file_defs = defaultdict(dict)       # (repo, path) -> {name: id}
+        self.ns = defaultdict(set)               # repo -> namespace / package prefixes declared in it (never external libraries)
+        self._pk_cache = {}
+        self.ext_pkgs = defaultdict(set)         # (repo, path) -> external packages the file imports (aliased or not)
+        self.ext_base = defaultdict(list)        # class id -> base classes that are not in the repo (external frameworks)
+        self.repo_defs = {}                      # (repo, qualname) -> id (methods defined in a different file than their class: C++ .cpp, Swift extensions, Go receivers)
+        self.class_methods = defaultdict(dict)   # (repo, class qualname) -> {method name: id}
         self.go_module = {}
         self._jsons = {}
         self._dircache = {}
@@ -74,6 +80,15 @@ class Linker:
                     short = n.get("qualname", n["name"]).split(".")[-1]
                     self.defs_by_name[(f["repo"], short)].append(n["id"])
                     self.file_defs[(f["repo"], f["path"])][n.get("qualname", n["name"])] = n["id"]
+                    q_ = n.get("qualname", n["name"])
+                    cross = f["path"].lower().endswith(self.CROSS_FILE)  # C/C++ out-of-class definitions, Swift extensions, Go receivers
+                    if cross:
+                        self.repo_defs.setdefault((f["repo"], q_), n["id"])
+                    if n["kind"] == "method" and "." in q_:
+                        cq_, mn_ = q_.rsplit(".", 1)
+                        self.class_methods[(f["repo"], f["path"], cq_)].setdefault(mn_, n["id"])
+                        if cross:
+                            self.class_methods[(f["repo"], "*", cq_)].setdefault(mn_, n["id"])
             for e in f["edges"]:
                 self.edges[e["id"]] = e
         for key, root in repos.items():
@@ -284,6 +299,8 @@ class Linker:
             return any(mod == p or mod.startswith(p + "\\") for p in pres if p)
         if lang == "go":
             return bool(self.go_module.get(repo)) and mod.startswith(self.go_module[repo])
+        if lang in ("c", "cpp"):  # generated or build-system headers are not libraries
+            return bool(re.search(r"(?:\.pb|\.grpc\.pb|_generated|\.gen)\.h$|^config\.h$|^version\.h$", mod.lstrip("<")))
         if lang == "dart":
             own = self._pubspec_name(repo)
             return bool(own) and mod.startswith(f"package:{own}/")
@@ -296,6 +313,12 @@ class Linker:
             m = re.search(r"(?m)^name:\s*(\S+)", fp.read_text(errors="replace"))
             return m.group(1) if m else None
         return None
+
+    def collect_namespaces(self):
+        for f in self.frags:
+            for r in f["refs"]:
+                if r["type"] == "ns":
+                    self.ns[f["repo"]].add(r["name"])
 
     def imports(self):
         self.aliases = defaultdict(dict)  # (repo,path) -> alias -> (target_path or None, name)
@@ -313,6 +336,8 @@ class Linker:
                     self.aliases[(f["repo"], f["path"])][alias] = (tgt, r.get("name"))
                 else:
                     pkg = pkg_of(lang_of(f["path"], r), r.get("module") or r.get("name") or "") if not (r.get("module") or "").startswith(".") else None
+                    if lang_of(f["path"], r) in ("c", "cpp") and not (r.get("module") or "").startswith("<") and "/" not in (r.get("module") or ""):
+                        pkg = None  # a quoted include that is not in the sources: generated or vendored, not evidence of a library
                     if pkg and not path_py(f["path"]) and self.internal_import(f, r):
                         pkg = None
                     if pkg:
@@ -322,6 +347,7 @@ class Linker:
                                            confidence="medium", citation=c)
                             self.add_node(pn)
                         self.add_edge(make_edge(src, "imports", pid, c, extractor=f["extractor"], confidence="medium"))
+                        self.ext_pkgs[(f["repo"], f["path"])].add(pkg)
                         if r.get("alias"):
                             self.aliases[(f["repo"], f["path"])][r["alias"]] = (None, pkg)
 
@@ -405,10 +431,24 @@ class Linker:
             q += self.bases.get(b, [])
         return out
 
+    def meth(self, n, name):
+        """Method `name` of class node n: in the class's own file first, then anywhere in the repo (C++ out-of-class definitions, extensions)."""
+        q = f"{n.get('qualname', n['name'])}.{name}"
+        t = self.file_defs[(n["repo"], n["path"])].get(q)
+        if t or not n["path"].lower().endswith(self.CROSS_FILE):
+            return t
+        return self.repo_defs.get((n["repo"], q))
+
+    def methods_of(self, n):
+        q = n.get("qualname", n["name"])
+        if n["path"].lower().endswith(self.CROSS_FILE):
+            return self.class_methods.get((n["repo"], "*", q), {})
+        return self.class_methods.get((n["repo"], n["path"], q), {})
+
     def find_method(self, cid, name):
         for c in [cid] + self.mro(cid):
             n = self.nodes[c]
-            t = self.file_defs[(n["repo"], n["path"])].get(f"{n.get('qualname', n['name'])}.{name}")
+            t = self.meth(n, name)
             if t:
                 return t, c == cid
         seen, q = {cid}, list(self.subs.get(cid, []))  # polymorphic call through an interface/base type: first implementation that has the method
@@ -418,7 +458,7 @@ class Linker:
                 continue
             seen.add(c)
             n = self.nodes[c]
-            t = self.file_defs[(n["repo"], n["path"])].get(f"{n.get('qualname', n['name'])}.{name}")
+            t = self.meth(n, name)
             if t:
                 return t, False
             q += self.subs.get(c, [])
@@ -448,7 +488,7 @@ class Linker:
             cid = node_id("class", sn["repo"], sn["path"], sn["qualname"].rsplit(".", 1)[0])
             for b in self.mro(cid):
                 bn = self.nodes[b]
-                t = self.file_defs[(bn["repo"], bn["path"])].get(f"{bn.get('qualname', bn['name'])}.{short}")
+                t = self.meth(bn, short)
                 if t:
                     return t, "medium", "resolved"
             return None, "", "unresolved"
@@ -472,23 +512,86 @@ class Linker:
         tgt, conf = self.resolve_name(f, name, src)
         if tgt:
             return tgt, conf, "resolved"
+        if len(parts) == 2 and parts[0] in ("self", "this", "cls", "me") and self.nodes.get(src, {}).get("qualname", "").count("."):  # a method inherited from an external framework base class
+            sn = self.nodes[src]
+            cid = node_id("class", sn["repo"], sn["path"], sn["qualname"].rsplit(".", 1)[0])
+            ebs = [b for c_ in [cid] + self.mro(cid) for b in self.ext_base.get(c_, [])]
+            if ebs:
+                from lang_specs import ext_lang_map, pkg_of as _pkg_of
+                r["_pkg"] = _pkg_of(ext_lang_map().get(Path(f["path"]).suffix.lower(), ""), ebs[0].replace(".", "::" if f["path"].endswith((".pm", ".pl", ".t")) else ".")) or ebs[0]
+                return None, "", "external"
         al = self.aliases[(f["repo"], f["path"])]
         if parts[0] in al and not al[parts[0]][0]:
             return None, "", "external"
         repo = f["repo"]
-        in_repo = lambda n_: bool(self.defs_by_name.get((repo, n_)))  # noqa: E731
+        in_repo = lambda n_: bool(self.defs_by_name.get((repo, n_))) or n_ in self.ns[repo]  # noqa: E731
         if len(parts) >= 2 and parts[0][:1].isupper() and not in_repo(parts[0]):  # static call on a type that is not ours: Net::HTTP.get, URLSession.shared
-            r["_pkg"] = parts[0]
-            return None, "", "external"
+            hint_ = ("dart:core" if parts[0] in self.DART_CORE and f["path"].endswith(".dart") else None) or self.lib_hint(f, parts[0], True)
+            if hint_ or not f["path"].endswith(".dart"):  # Dart: a class that no import can be tied to stays unresolved rather than becoming a package named after it
+                r["_pkg"] = hint_ or parts[0]
+                return None, "", "external"
         if len(parts) >= 2 and r.get("path_call") and parts[0][:1].islower() and parts[0] not in ("crate", "self", "super") and not in_repo(parts[0]):
             r["_pkg"] = parts[0]  # crate/module path call: reqwest::get
             return None, "", "external"
-        if r.get("recv_type") and r["recv_type"][:1].isupper() and not in_repo(re.split(r"[.\\:]+", r["recv_type"])[-1]):
+        if r.get("recv_type") and (r["recv_type"][:1].isupper() or f["path"].endswith(".abap")) and not in_repo(re.split(r"[.\\:]+", r["recv_type"])[-1]):
             head_ = re.split(r"[.\\:]+", r["recv_type"])[0]
-            r["_pkg"] = self.aliases[(repo, f["path"])].get(head_, (None, None))[1] or head_  # a typed receiver of a class we have no import for: named after the class
-            return None, "", "external"
+            pk_ = (self.aliases[(repo, f["path"])].get(head_, (None, None))[1] or ("dart:core" if head_ in self.DART_CORE and f["path"].endswith(".dart") else None)
+                   or self.lib_hint(f, head_, True) or (None if f["path"].endswith((".dart", ".abap")) and not re.match(r"^[a-x]", head_) else head_))  # a typed receiver of a class we have no import for: the library its header/package provides, else named after the class
+            if pk_:
+                r["_pkg"] = pk_
+                return None, "", "external"
         cands = [c for c in self.defs_by_name.get((f["repo"], short), []) if c != src]
+        if r.get("pkg") and not cands:  # the extractor named the library (libc, RFC destination, SAP standard object)
+            r["_pkg"] = r["pkg"]
+            return None, "", "external"
+        if len(parts) == 1 and not cands:
+            hint = self.lib_hint(f, name)
+            if hint:
+                r["_pkg"] = hint
+                if self.lib_hint(f, name, True) != hint:
+                    r["_guess"] = True  # the only third-party library in scope: recorded as a low-confidence edge, counted as unresolved
+                return None, "", "external"
         return (None, "", "ambiguous") if len(cands) > 1 else (None, "", "unresolved")
+
+    CROSS_FILE = (".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx", ".swift", ".go")
+    C_FAMILY = (".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx")
+    DART_CORE = {"Uri", "DateTime", "Duration", "List", "Map", "Set", "String", "Future", "Stream", "Exception", "Error", "RegExp", "Object", "Iterable", "BigInt", "StringBuffer"}
+
+    def lib_hint(self, f, name, exact_only=False) -> str | None:
+        """The third-party library a call to something this repo does not define belongs to: a package the file (or a header it includes) imports whose name matches
+        the call (curl_easy_* -> curl). With exact_only=False and a single third-party package in scope that package is returned as a guess (r['_guess'])."""
+        path = f["path"].lower()
+        if not (path.endswith(self.C_FAMILY) or path.endswith(".dart")):
+            return None
+        key = (f["repo"], f["path"])
+        if key not in self._pk_cache:
+            pk, seen, stack = set(), set(), [(f["repo"], f["path"], 0)]
+            while stack:
+                rp, pth, depth = stack.pop()
+                if (rp, pth) in seen:
+                    continue
+                seen.add((rp, pth))
+                pk |= self.ext_pkgs[(rp, pth)]
+                if depth < 2 and path.endswith(self.C_FAMILY):
+                    stack += [(rp, tgt, depth + 1) for tgt, _n in self.aliases[(rp, pth)].values() if tgt]
+                    if depth == 0:  # the same-stem header of a .cpp file
+                        stem = Path(pth).with_suffix("")
+                        stack += [(rp, str(stem) + e, 1) for e in (".h", ".hpp", ".hh") if (rp, str(stem) + e) in self.by_file]
+            self._pk_cache[key] = sorted(pk - {"libc", "std", "dart:core"})
+        pk = self._pk_cache[key]
+        low = re.sub(r"[_.]", "", name).lower()
+        for p_ in pk:
+            k = re.sub(r"[_.:]", "", p_).lower()
+            if len(k) >= 3 and (low.startswith(k) or k in low or (len(low) >= 4 and low in k)):
+                return p_
+        return pk[0] if (len(pk) == 1 and not exact_only) else None
+
+    def normalise_pkg(self, f, pkg):
+        """Package names the extractor derived from a class/namespace head match the library's real (case-insensitive) import name."""
+        if not f["path"].lower().endswith(self.C_FAMILY + (".dart",)):
+            return pkg
+        known = {p_.lower(): p_ for p_ in self.ext_pkgs[(f["repo"], f["path"])]}
+        return known.get((pkg or "").lower(), pkg)
 
     def calls(self):
         self.bases = defaultdict(list)
@@ -507,6 +610,8 @@ class Linker:
                 conf = "medium"
                 if not tgt:
                     tgt, conf = self.resolve_name(f, r["name"], r["src"])
+                if not tgt and f["path"].endswith((".pm", ".pl", ".t")):
+                    self.ext_base[r["src"]].append(r["name"])  # only bases the file names through an external import (Perl `use parent`/Mojo::Base, or an imported framework class)
                 if tgt and tgt != r["src"]:
                     self.bases[r["src"]].append(tgt)
                     self.subs[tgt].append(r["src"])
@@ -514,14 +619,14 @@ class Linker:
         for cid in list(self.bases):
             cn = self.nodes[cid]
             q = cn.get("qualname", cn["name"])
-            own = self.file_defs[(cn["repo"], cn["path"])]
+            own = {f"{q}.{m_}": mid_ for m_, mid_ in self.methods_of(cn).items()}
             for key, mid in own.items():
                 if not key.startswith(q + ".") or "." in key[len(q) + 1:] or key.endswith((".__init__", ".constructor", ".__new__")):
                     continue
                 mname = key[len(q) + 1:]
                 for b in self.mro(cid):
                     bn = self.nodes[b]
-                    t = self.file_defs[(bn["repo"], bn["path"])].get(f"{bn.get('qualname', bn['name'])}.{mname}")
+                    t = self.meth(bn, mname)
                     if t:
                         self.add_edge(make_edge(mid, "overrides", t, self.nodes[mid]["citation"], extractor="rule", confidence="medium"))
                         break
@@ -547,7 +652,7 @@ class Linker:
                         pkg_known = False
                         al = self.aliases[(f["repo"], f["path"])]
                         head = (r.get("recv_type") or r["name"]).split(".")[0]
-                        pkg = al.get(head, (None, None))[1] or r.get("_pkg")
+                        pkg = self.normalise_pkg(f, al.get(head, (None, None))[1] or r.get("_pkg"))
                         pid = node_id("package", f["repo"], "", pkg) if pkg else None
                         if pid and pid not in self.nodes and pkg:
                             pn = make_node("package", f["repo"], "", pkg, pkg, r["line"], extractor=ex if ex != "tree-sitter" else "regex", confidence="low", citation=c)
@@ -557,7 +662,7 @@ class Linker:
                             e = lib.setdefault((r["src"], pid), {"apis": set(), "n": 0, "cite": c, "ex": ex})
                             e["apis"].add(".".join(r["name"].split(".")[1:]) or r["name"])
                             e["n"] += 1
-                        if not pkg_known:  # an external call whose package could not be named leaves no edge: do not count it as covered
+                        if not pkg_known or r.get("_guess"):  # no package named, or only guessed: do not count it as covered
                             status = "unresolved"
                     self.call_stats[(f["repo"], lang)][status] += 1
                     if status in ("unresolved", "ambiguous", "dynamic"):
@@ -572,12 +677,28 @@ class Linker:
                     if tgt and tgt != r["src"] and self.nodes.get(tgt, {}).get("kind") in ("function", "method"):
                         self.add_edge(make_edge(r["src"], "references", tgt, c, extractor=ex, confidence="low" if conf != "high" else "medium", label="inferred"))
                 elif t == "route_handler":
-                    tgt, conf = self.resolve_name(f, r["name"], r["src"])
+                    tgt, conf = None, ""
+                    if "." in r["name"]:  # Class.method handlers (Pistache/Drogon `&Controller::action`)
+                        cid_ = self.resolve_class(f, r["name"].rsplit(".", 1)[0])
+                        fm_ = self.find_method(cid_, r["name"].rsplit(".", 1)[1]) if cid_ else None
+                        if fm_:
+                            tgt, conf = fm_[0], "medium"
+                    if not tgt:
+                        tgt, conf = self.resolve_name(f, r["name"], r["src"])
                     if r.get("hint"):  # Rails controller#action / Laravel Controller@method: prefer the file that matches the controller name
                         short = r["name"].split(".")[-1]
                         hc = [c_ for c_ in self.defs_by_name.get((f["repo"], short), []) if r["hint"].replace("controller", "") in self.nodes[c_].get("path", "").lower()]
                         if len(hc) == 1:
                             tgt, conf = hc[0], "medium"
+                    if tgt and self.nodes.get(tgt, {}).get("kind") == "class":  # a REST resource / controller class: its verb methods are the handlers
+                        cn_ = self.nodes[tgt]
+                        cm_ = self.methods_of(cn_)
+                        want = (r.get("meth") or "ANY").lower()
+                        verbs = [m_ for m_ in cm_ if re.search(r"(?:~|^)(get|post|put|patch|delete|handle_request|call)$", m_) and (want in ("any", "") or m_.lower().endswith(want) or m_.lower().endswith(("handle_request", "call")))]
+                        if verbs:
+                            for m_ in verbs:
+                                self.add_edge(make_edge(r["src"], "routes_to", cm_[m_], c, extractor=ex, confidence="medium"))
+                            continue
                     if tgt:
                         self.add_edge(make_edge(r["src"], "routes_to", tgt, c, extractor=ex, confidence=conf or "medium"))
         for (src, pid), e in lib.items():
@@ -633,6 +754,7 @@ class Linker:
 
     def build(self):
         self.structure()
+        self.collect_namespaces()
         self.imports()
         self.calls()
         self.http()

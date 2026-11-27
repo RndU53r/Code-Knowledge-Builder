@@ -65,6 +65,8 @@ The PreToolUse guard denies install/build/run/test commands, shell writes and gi
 
 ## Call graph and coverage
 
+* **C or C++ shows many unresolved calls:** macros are not expanded (ALL-CAPS macro calls are skipped, not counted), headers that are not in the sources cannot be followed, and a function called through a function-pointer field is a `references` edge to its registration, not a call. Add the third-party headers' repositories as sources, or accept the lower number.
+* **A Perl, Dart or ABAP result looks thin:** Perl calls written without parentheses (`foo $x;`), Dart classes that no import can be tied to, and ABAP chained or multi-line statements are not seen; the coverage report counts what could not be resolved instead of hiding it.
 * **Few call edges / low resolved percentage:** open `system/coverage.md` and `evidence/call-resolution-<repo>.json`. Typical causes: dynamic dispatch (reflection, DI containers, `getattr`), generated code, or a language construct the spec does not parse. The names listed under "top unresolved" show where to look.
 * **A library call is missing:** `calls_lib` edges need an import or a typed receiver that resolves to an external class; a dynamically built name will not.
 * **Deployment facts are empty:** the deployment files must be inside a registered source (an infra repo or a `deploy/` directory); workloads are linked to the application repo by image name, build context, chart name or name equality.

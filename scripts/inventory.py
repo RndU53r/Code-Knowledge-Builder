@@ -25,7 +25,8 @@ LANG = {".py": "python", ".go": "go", ".js": "javascript", ".mjs": "javascript",
         ".rs": "rust", ".rb": "ruby", ".php": "php", ".cs": "csharp", ".c": "c", ".h": "c", ".cc": "cpp",
         ".cpp": "cpp", ".hpp": "cpp", ".swift": "swift", ".scala": "scala", ".sh": "shell", ".bash": "shell",
         ".ps1": "powershell", ".sql": "sql", ".tf": "terraform", ".proto": "protobuf", ".graphql": "graphql",
-        ".gql": "graphql", ".lua": "lua", ".ex": "elixir", ".exs": "elixir", ".dart": "dart"}
+        ".gql": "graphql", ".lua": "lua", ".ex": "elixir", ".exs": "elixir", ".dart": "dart", ".cxx": "cpp", ".hh": "cpp", ".hxx": "cpp",
+        ".pl": "perl", ".pm": "perl", ".t": "perl", ".psgi": "perl", ".cgi": "perl", ".abap": "abap"}
 MANIFESTS = {"package.json", "package-lock.json", "yarn.lock", "pnpm-lock.yaml", "requirements.txt", "pyproject.toml",
              "poetry.lock", "uv.lock", "Pipfile", "setup.py", "setup.cfg", "go.mod", "go.sum", "Cargo.toml", "Cargo.lock",
              "pom.xml", "build.gradle", "build.gradle.kts", "settings.gradle", "Gemfile", "Gemfile.lock", "composer.json",

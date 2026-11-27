@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment`, `gateway`, `orders`, `platform`
-> - Generated: 2026-11-27T00:54:01Z by ckb coverage_report, stage `coverage`
+> - Generated: 2026-11-27T01:30:46Z by ckb coverage_report, stage `coverage`
 > - Method: counts from the graph build and a text scan for dynamic dispatch; static analysis cannot prove that every path was found, so this page lists what was and was not resolved.
 
 ## fulfillment

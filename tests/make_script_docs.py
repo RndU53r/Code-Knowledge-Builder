@@ -15,7 +15,7 @@ GROUPS = [
     ("Query, view and export", ["graph_query", "graph_viewer", "graph_serve", "graph_mcp", "graph_export", "graph_neo4j"]),
     ("Assurance", ["verify_citations", "check_outputs", "hash_index", "guard"]),
 ]
-INTERNAL = ["ckb_common", "graph_common", "graph_security", "graph_patterns", "lang_specs"]
+INTERNAL = ["ckb_common", "graph_common", "graph_security", "graph_patterns", "graph_patterns_native", "lang_specs"]
 
 
 def doc(name: str) -> str:

@@ -36,7 +36,7 @@ python3 tests/test_graph.py        # graph: extraction, linking, IDs, merge, que
 python3 tests/test_auto.py         # auto mode: probe, branch rule + snapshots, enumeration (mock server), plans, threat draft, call graphs, drift, repo context
 python3 tests/test_entrypoints.py  # file roles, repo kinds, entry points / sources / sinks in 8 languages, pipeline facts, deploys links, context facts + F1
 python3 tests/test_calls.py        # receiver typing, hierarchy, callbacks, library calls, resolution accounting, class/library call graph, library reachability
-python3 tests/test_langs.py        # the eleven-row depth matrix for each language (fixtures in tests/fixtures/langs)
+python3 tests/test_langs.py        # the eleven-row depth matrix for each language (fixtures in tests/fixtures/langs) and framework variants (tests/fixtures/frameworks)
 python3 tests/test_agents.py       # agent / skill / tool graph (fixtures in tests/fixtures/agents)
 python3 tests/test_deploy.py       # deployment facts and their effect on exposure, authentication and toggles (fixtures in tests/fixtures/deploy)
 python3 tests/make_language_docs.py --check   # docs/languages.md matches tests/test_langs.py
@@ -85,7 +85,7 @@ Patterns live in `scripts/graph_patterns.py`: `find_entries()` (routes, consumer
 
 ### Add a language
 
-Add a spec to `scripts/lang_specs.py` (`SPEC[lang]`: `func`/`cls` regexes, `call` regex, `types` regexes with `var`/`type` groups, an `imports` parser, `exts`; `MASK_RX` for comments and strings; `parse_bases`, `block_end`, `pkg_of`), entries/sources/sinks in `scripts/graph_patterns.py`, import resolution in `Linker.resolve_import` (`scripts/graph_build.py`) if the language needs it, and role rules in `scripts/roles.py`. Then add a fixture under `tests/fixtures/langs/<lang>` following the standard scenario, a `CFG` entry in `tests/test_langs.py` and an entry in `tests/make_language_docs.py`. A language is done when all eleven matrix rows pass.
+Add a spec to `scripts/lang_specs.py` (`SPEC[lang]`: `func`/`cls` regexes, `call` regex, `types` regexes with `var`/`type` groups, an `imports` parser, `exts`; `MASK_RX` for comments and strings; `parse_bases`, `block_end`, `pkg_of`), entries/sources/sinks in `scripts/graph_patterns.py` (the C, C++, Dart, Perl and ABAP ones live in `scripts/graph_patterns_native.py`), import resolution in `Linker.resolve_import` (`scripts/graph_build.py`) if the language needs it, and role rules in `scripts/roles.py`. Then add a fixture under `tests/fixtures/langs/<lang>` following the standard scenario, a `CFG` entry in `tests/test_langs.py` and an entry in `tests/make_language_docs.py`. A language is done when all eleven matrix rows pass. Languages without classes (C) use the `procedural` option in the `CFG` entry; languages that cannot know the HTTP verb of a route (C handler registration, ABAP REST routers) use `method="ANY"`. Add framework variants (one file per framework idiom) under `tests/fixtures/frameworks/<lang>` and an entry in `EXPECT`.
 
 ### Add a role or repo-kind rule
 

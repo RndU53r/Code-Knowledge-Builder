@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import re
 
+from graph_patterns_native import NATIVE_SINK_RULES, NATIVE_SOURCES, native_entries
+
 HTTP_VERBS = ("get", "post", "put", "patch", "delete", "head", "options")
 
 
@@ -28,6 +30,12 @@ def arg_kind(arg: str, lang: str = "") -> str:
     a = (arg or "").strip()
     if not a:
         return "variable"
+    if lang == "abap":
+        if a[:1] == "|":
+            return "inline" if "{" in a else "literal"
+        if a[:1] in "'`":
+            return "inline" if re.search(r"['`]\s*&&?\s*\w", a) else "literal"
+        return "variable"
     if re.match(r"^&?(?:format!|String::from\(.*\)\s*\+|\w+\.to_string\(\)\s*\+)", a):
         return "inline"
     m = re.match(r'^(?:@|\$|f|r|b|F)?("""|\'\'\'|"|\'|`)', a)
@@ -39,6 +47,12 @@ def arg_kind(arg: str, lang: str = "") -> str:
     rest = a[end + len(q):] if end != -1 else ""
     interp = bool(re.search(r"\$\{|#\{|%s|%d|%\(|\{\w", body)) and not (a[0] == "'" and lang in ("php",))
     if lang == "php" and q == '"' and re.search(r"\$\w|\{\$", body):
+        interp = True
+    if lang == "perl" and q == '"' and re.search(r"[$@][\w{]", body):
+        interp = True
+    if lang == "dart" and q in ("'", '"') and re.search(r"\$\w|\$\{", body):
+        interp = True
+    if lang == "abap" and a.startswith("|") and "{" in a:
         interp = True
     if a[0] in "$fF" and "{" in body:
         interp = True
@@ -616,6 +630,9 @@ def _kt_scala_entries(lang, lines):
 
 
 def find_entries(lang: str, rel: str, lines: list[str]) -> list[dict]:
+    native = native_entries(lang, rel, lines)
+    if native is not None:
+        return native
     if lang == "rust":
         return _rust_entries(lines)
     if lang == "swift":
@@ -696,6 +713,7 @@ SOURCES = {
         ("file_read", re.compile(r"\bString\(contentsOfFile:|\bFileManager\.default\.contents\(")),
     ],
 }
+SOURCES.update(NATIVE_SOURCES)
 SOURCES["typescript"] = SOURCES["javascript"]
 SOURCES["kotlin"] = SOURCES["java"]
 SOURCES["scala"] = SOURCES["java"]
@@ -795,6 +813,7 @@ SINK_RULES = [
     (ALL_JS | JVM | L("php", "csharp"), re.compile(r"\b(?:ldap_search|ldap_list|ldap_read|DirectorySearcher|SearchControls)\b.*(?:\+|\$|\{)|\bctx\.search\(\s*(?P<arg>[^;]*)"), "ldap", "dyn", "LDAP search"),
     (ALL_JS | JVM | L("php", "csharp"), re.compile(r"\b(?:xpath\.(?:select|evaluate)|XPath(?:Expression)?\.(?:evaluate|compile)|SelectNodes|SelectSingleNode|->xpath)\(\s*(?P<arg>[^;]*)"), "xpath", "dyn", "XPath query"),
 ]
+SINK_RULES += NATIVE_SINK_RULES
 _ARG_GROUPS = re.compile(r"^arg\d*$")
 MITIGATION = {
     "path": re.compile(r"\b(basename|realpath|normalize|filepath\.(Base|Clean)|path\.basename|path\.resolve|getCanonicalPath|toRealPath|GetFileName|secure_filename)\b"),
@@ -816,7 +835,7 @@ def _hardened(text: str) -> bool:
     key = (id(text), len(text))
     if _XXE_CACHE[0] != key:
         _XXE_CACHE[0] = key
-        _XXE_CACHE[1] = bool(XXE_HARDEN.search(re.sub(r"(?m)(?<![:\w])//.*$|^\s*#.*$", "", text)))
+        _XXE_CACHE[1] = bool(XXE_HARDEN.search(re.sub(r"(?m)(?<![:\w])//.*$|^[ \t]*#.*$", "", text)))
     return _XXE_CACHE[1]
 
 

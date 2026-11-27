@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: code `fulfillment`, `gateway`, `orders`, `platform`; context `ctx-platform`, `ctx-platform-src`
-> - Generated: 2026-11-27T00:54:02Z by ckb doc_claims, stage `context-from-docs`
+> - Generated: 2026-11-27T01:30:46Z by ckb doc_claims, stage `context-from-docs`
 > - Scope: claims extracted from supplied documents, diagrams and notes · Excluded: statements the patterns do not recognize
 > - Method: deterministic claim extraction and checks against the knowledge graph; documents record intent, code and IaC record what is built
 > - Verification: drift items are mirrored as graph proposals (graph/proposals/seed-docs.jsonl), verified by graph_merge
