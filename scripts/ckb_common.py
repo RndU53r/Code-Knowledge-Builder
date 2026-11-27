@@ -80,6 +80,9 @@ def is_secret_file(rel: str) -> bool:
     return any(p.search(rel) for p in SECRET_FILE_PATTERNS)
 
 
+_CTRL_NAME = re.compile(r"[\x00-\x1f\x7f\u2028\u2029\x85]")
+
+
 def walk_files(root: Path, extra_excludes: list[str] | None = None):
     """Yield (abs_path, rel_posix) for regular files under root.
 
@@ -95,6 +98,8 @@ def walk_files(root: Path, extra_excludes: list[str] | None = None):
             if p.is_symlink() or not p.is_file():
                 continue
             rel = p.relative_to(root).as_posix()
+            if _CTRL_NAME.search(rel):  # newlines/control characters in a path would forge lines in citations and reports
+                continue
             if any(r.search(rel) for r in extra):
                 continue
             yield p, rel

@@ -135,12 +135,16 @@ class Linker:
             val = {}
             root = self.repos.get(repo)
             fp = Path(root) / name if root else None
-            if fp and fp.is_file():
-                try:
-                    val = json.loads(re.sub(r"(?m)^\s*//.*$|/\*.*?\*/", "", fp.read_text(errors="replace"), flags=re.S))
-                except ValueError:
-                    val = {}
-            self._jsons[key] = val
+            try:
+                if fp and fp.is_file() and not fp.is_symlink() and fp.stat().st_size <= 200_000:
+                    raw = fp.read_text(errors="replace")
+                    try:
+                        val = json.loads(raw)
+                    except (ValueError, RecursionError):  # tsconfig allows comments: strip them line by line (linear) and retry
+                        val = json.loads("\n".join(re.sub(r"^\s*//.*$", "", ln) for ln in raw.splitlines()))
+            except (ValueError, RecursionError, OSError):
+                val = {}
+            self._jsons[key] = val if isinstance(val, dict) else {}
         return self._jsons[key]
 
     def resolve_import(self, f, r) -> str | None:
@@ -288,7 +292,7 @@ class Linker:
     def _pubspec_name(self, repo):
         root = self.repos.get(repo)
         fp = Path(root) / "pubspec.yaml" if root else None
-        if fp and fp.is_file():
+        if fp and fp.is_file() and not fp.is_symlink() and fp.stat().st_size <= 100_000:
             m = re.search(r"(?m)^name:\s*(\S+)", fp.read_text(errors="replace"))
             return m.group(1) if m else None
         return None
@@ -374,6 +378,8 @@ class Linker:
         if len(parts) == 1 and parts[0] in local and self.nodes[local[parts[0]]]["kind"] == "class":
             return local[parts[0]]
         al = self.aliases[(repo, path)]
+        if parts[0] in al and not al[parts[0]][0] and parts[0] not in local:
+            return None  # an imported external class must not be replaced by a same-named class of this repo
         if parts[0] in al and al[parts[0]][0]:
             tgt, imported = al[parts[0]]
             defs = self.file_defs[(repo, tgt)]
@@ -434,7 +440,8 @@ class Linker:
             al_ = self.aliases[(f["repo"], f["path"])]
             if h_ in al_ and not al_[h_][0]:
                 return None, "", "external"
-        if ((parts[0] in ("super", "base", "parent") and len(parts) == 2) or name == "super") and self.nodes.get(src, {}).get("qualname", "").count("."):
+        sup_ok = {"super": True, "base": f["path"].endswith(".cs"), "parent": f["path"].endswith(".php")}
+        if ((sup_ok.get(parts[0], False) and len(parts) == 2) or name == "super") and self.nodes.get(src, {}).get("qualname", "").count("."):
             sn = self.nodes[src]
             if name == "super":
                 short = sn["qualname"].rsplit(".", 1)[-1]
@@ -477,8 +484,8 @@ class Linker:
             r["_pkg"] = parts[0]  # crate/module path call: reqwest::get
             return None, "", "external"
         if r.get("recv_type") and r["recv_type"][:1].isupper() and not in_repo(re.split(r"[.\\:]+", r["recv_type"])[-1]):
-            ext = [m_ for m_ in self.aliases[(repo, f["path"])].values() if not m_[0] and m_[1]]
-            r["_pkg"] = ext[0][1] if ext else r["recv_type"].split(".")[0]  # typed receiver of an unknown (library) class
+            head_ = re.split(r"[.\\:]+", r["recv_type"])[0]
+            r["_pkg"] = self.aliases[(repo, f["path"])].get(head_, (None, None))[1] or head_  # a typed receiver of a class we have no import for: named after the class
             return None, "", "external"
         cands = [c for c in self.defs_by_name.get((f["repo"], short), []) if c != src]
         return (None, "", "ambiguous") if len(cands) > 1 else (None, "", "unresolved")

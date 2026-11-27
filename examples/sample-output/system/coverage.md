@@ -2,15 +2,15 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment`, `gateway`, `orders`, `platform`
-> - Generated: 2026-11-25T22:12:20Z by ckb coverage_report, stage `coverage`
+> - Generated: 2026-11-27T00:54:01Z by ckb coverage_report, stage `coverage`
 > - Method: counts from the graph build and a text scan for dynamic dispatch; static analysis cannot prove that every path was found, so this page lists what was and was not resolved.
 
 ## fulfillment
 
 | Measure | Value |
 | --- | --- |
-| Calls seen | 34 (resolved 1, library 19, ambiguous 0, dynamic 0, unresolved 14) |
-| Resolved or library | 58.8% |
+| Calls seen | 31 (resolved 1, library 19, ambiguous 0, dynamic 0, unresolved 11) |
+| Resolved or library | 64.5% |
 | Entry points | 1 (`fulfillment/internal/queue/consumer.go:30`) |
 | Functions reachable from an entry point | 1 of 3 |
 | Unsafe sinks reached by an entry point | 0 of 0 |
@@ -21,14 +21,12 @@ Top unresolved calls:
 | Name | Count | First seen |
 | --- | --- | --- |
 | m.Nack | 2 | `fulfillment/internal/queue/consumer.go:41` |
-| map | 2 | `fulfillment/cmd/pricing/main.go:25` |
 | conn.Channel | 1 | `fulfillment/internal/queue/consumer.go:22` |
 | ch.QueueDeclare | 1 | `fulfillment/internal/queue/consumer.go:26` |
 | ch.QueueBind | 1 | `fulfillment/internal/queue/consumer.go:30` |
 | ch.Consume | 1 | `fulfillment/internal/queue/consumer.go:33` |
 | handle | 1 | `fulfillment/internal/queue/consumer.go:44` |
 | m.Ack | 1 | `fulfillment/internal/queue/consumer.go:49` |
-| items | 1 | `fulfillment/cmd/pricing/main.go:17` |
 | req.Header.Set | 1 | `fulfillment/cmd/worker/main.go:29` |
 | client.Do | 1 | `fulfillment/cmd/worker/main.go:30` |
 | db.Exec | 1 | `fulfillment/cmd/worker/main.go:35` |
@@ -80,24 +78,17 @@ Top unresolved calls:
 
 | Name | Count | First seen |
 | --- | --- | --- |
-| conn.cursor | 2 | `orders/app/db.py:13` |
 | cur.execute | 2 | `orders/app/db.py:14` |
+| conn.cursor | 2 | `orders/app/db.py:13` |
 | conn.commit | 1 | `orders/app/db.py:18` |
 | cur.fetchone | 1 | `orders/app/db.py:24` |
 | int | 1 | `orders/app/main.py:10` |
 | str | 1 | `orders/app/main.py:30` |
-| len | 1 | `orders/app/main.py:27` |
 | i.model_dump | 1 | `orders/app/main.py:29` |
-| ch.exchange_declare | 1 | `orders/app/events.py:17` |
+| len | 1 | `orders/app/main.py:27` |
 | ch.basic_publish | 1 | `orders/app/events.py:24` |
+| ch.exchange_declare | 1 | `orders/app/events.py:17` |
 | RuntimeError | 1 | `orders/app/pricing.py:12` |
-
-Dynamic-dispatch hotspots (paths through these are invisible to the call graph):
-
-| What | Source |
-| --- | --- |
-| exec | `orders/app/db.py:14` |
-| exec | `orders/app/db.py:23` |
 
 Classes nothing instantiates, extends or references: `Item`
 

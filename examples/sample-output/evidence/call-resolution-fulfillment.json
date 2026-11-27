@@ -1,18 +1,18 @@
 {
  "repo": "fulfillment",
  "summary": {
-  "calls": 34,
+  "calls": 31,
   "resolved": 1,
   "external": 19,
   "ambiguous": 0,
   "dynamic": 0,
-  "unresolved": 14,
-  "resolved_pct": 58.8
+  "unresolved": 11,
+  "resolved_pct": 64.5
  },
  "by_language": {
   "go": {
    "external": 19,
-   "unresolved": 14,
+   "unresolved": 11,
    "resolved": 1
   }
  },
@@ -21,11 +21,6 @@
    "name": "m.Nack",
    "count": 2,
    "citation": "fulfillment/internal/queue/consumer.go:41"
-  },
-  {
-   "name": "map",
-   "count": 2,
-   "citation": "fulfillment/cmd/pricing/main.go:25"
   },
   {
    "name": "conn.Channel",
@@ -56,11 +51,6 @@
    "name": "m.Ack",
    "count": 1,
    "citation": "fulfillment/internal/queue/consumer.go:49"
-  },
-  {
-   "name": "items",
-   "count": 1,
-   "citation": "fulfillment/cmd/pricing/main.go:17"
   },
   {
    "name": "req.Header.Set",

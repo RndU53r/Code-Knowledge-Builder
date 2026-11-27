@@ -1,7 +1,7 @@
 {
  "schema_version": "1.0",
  "generator": "ckb-graph/1",
- "generated": "2026-11-25T22:12:20Z",
+ "generated": "2026-11-27T00:54:02Z",
  "repos": {
   "fulfillment": {
    "revision": "unversioned",
@@ -35,7 +35,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -66,7 +66,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -88,7 +88,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -110,7 +110,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -136,7 +136,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -159,7 +159,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -184,7 +184,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -215,7 +215,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -237,7 +237,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -259,7 +259,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -284,7 +284,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -309,7 +309,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -340,7 +340,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -362,7 +362,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -382,7 +382,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -402,7 +402,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -422,7 +422,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -442,7 +442,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -467,7 +467,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -492,7 +492,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -523,7 +523,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -545,7 +545,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -567,7 +567,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -587,7 +587,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -607,7 +607,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -632,7 +632,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -663,7 +663,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -688,7 +688,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -714,7 +714,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -739,7 +739,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -765,7 +765,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -790,7 +790,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -816,7 +816,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -841,7 +841,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -867,7 +867,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -887,7 +887,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -907,7 +907,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -932,7 +932,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -957,7 +957,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -982,7 +982,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1007,7 +1007,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1032,7 +1032,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1063,7 +1063,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1083,7 +1083,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1105,7 +1105,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1127,7 +1127,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1152,7 +1152,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1174,7 +1174,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1199,7 +1199,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1230,7 +1230,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1250,7 +1250,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1272,7 +1272,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1294,7 +1294,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1316,7 +1316,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1341,7 +1341,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1366,7 +1366,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1388,7 +1388,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1413,7 +1413,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1438,7 +1438,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1469,7 +1469,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1489,7 +1489,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1509,7 +1509,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1531,7 +1531,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1562,7 +1562,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1582,7 +1582,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1606,7 +1606,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1631,7 +1631,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1654,7 +1654,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1693,7 +1693,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1733,7 +1733,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1773,7 +1773,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -1807,7 +1807,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1826,7 +1826,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1845,7 +1845,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1864,7 +1864,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1883,7 +1883,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1902,7 +1902,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1921,7 +1921,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed"
@@ -1940,7 +1940,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1960,7 +1960,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -1980,7 +1980,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2000,7 +2000,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2020,7 +2020,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2040,7 +2040,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2060,7 +2060,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2080,7 +2080,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2100,7 +2100,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2120,7 +2120,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2140,7 +2140,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2160,7 +2160,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2180,7 +2180,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2200,7 +2200,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2220,7 +2220,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2240,7 +2240,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2260,7 +2260,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2280,7 +2280,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2300,7 +2300,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2320,7 +2320,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2340,7 +2340,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -2360,7 +2360,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "observed",
@@ -2380,7 +2380,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "observed",
@@ -2400,7 +2400,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2422,7 +2422,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2450,7 +2450,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2479,7 +2479,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2501,7 +2501,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2528,7 +2528,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2555,7 +2555,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2577,7 +2577,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2604,7 +2604,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2631,7 +2631,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2653,7 +2653,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2681,7 +2681,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2708,7 +2708,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2736,7 +2736,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2764,7 +2764,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2791,7 +2791,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2819,7 +2819,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2841,7 +2841,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2869,7 +2869,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2896,7 +2896,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2924,7 +2924,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2951,7 +2951,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -2978,7 +2978,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3005,7 +3005,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3032,7 +3032,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3059,7 +3059,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3086,7 +3086,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3113,7 +3113,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3140,7 +3140,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3167,7 +3167,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3194,7 +3194,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3221,7 +3221,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3248,7 +3248,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3275,7 +3275,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3302,7 +3302,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3329,7 +3329,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3356,7 +3356,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3383,7 +3383,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3410,7 +3410,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -3437,7 +3437,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3464,7 +3464,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3492,7 +3492,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3520,7 +3520,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3548,7 +3548,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3576,7 +3576,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3604,7 +3604,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3632,7 +3632,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3660,7 +3660,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3688,7 +3688,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3716,7 +3716,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -3744,7 +3744,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3774,7 +3774,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3804,7 +3804,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3834,7 +3834,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3864,7 +3864,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3894,7 +3894,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3924,13 +3924,13 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
    "qualname": "D-01-private-vpc-no-public-ingress-is-docume",
    "attrs": {
-    "claim": "'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (TLS), Postgres shop (encrypted))",
+    "claim": "'Private VPC (no public ingress)' is documented as private / no public ingress (contains: API Gateway (Express), Orders service, Fulfillment worker, RabbitMQ (T\u2026",
     "observed": "3 ingress rule(s) open to the internet in IaC (e.g. `sourceAddressPrefix: 'Internet'`)",
     "doc_citation": "ctx-platform/architecture.drawio.md:13",
     "security": "yes",
@@ -3952,7 +3952,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -3980,7 +3980,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4008,7 +4008,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4036,7 +4036,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4064,7 +4064,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4092,7 +4092,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4120,7 +4120,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4148,7 +4148,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4176,7 +4176,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4204,7 +4204,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4232,7 +4232,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4257,7 +4257,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "documented",
@@ -4282,7 +4282,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4307,7 +4307,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4332,7 +4332,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4357,7 +4357,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4382,7 +4382,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4407,7 +4407,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4432,7 +4432,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4457,7 +4457,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4482,7 +4482,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4507,7 +4507,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4532,7 +4532,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -4557,7 +4557,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "documented",
@@ -4582,7 +4582,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4613,7 +4613,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4644,7 +4644,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4675,7 +4675,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4706,7 +4706,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -4737,7 +4737,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4768,7 +4768,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4799,7 +4799,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4830,7 +4830,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4861,7 +4861,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4892,7 +4892,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4923,7 +4923,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -4954,7 +4954,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -4985,7 +4985,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5016,7 +5016,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5047,7 +5047,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5078,7 +5078,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5109,7 +5109,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5140,7 +5140,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5171,7 +5171,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5202,7 +5202,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5233,7 +5233,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5264,7 +5264,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5295,7 +5295,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5326,7 +5326,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5357,7 +5357,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5388,7 +5388,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5419,7 +5419,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5450,7 +5450,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5468,71 +5468,9 @@
    "quote": "const ORDERS_URL = process.env.ORDERS_URL || 'http://orders:8000';"
   },
   {
-   "id": "threat:_system::T-30-dynamic-dispatch-at-app-db-py-14-exec-is",
+   "id": "threat:_system::T-30-no-authentication-evidence-on-post-order",
    "kind": "threat",
-   "name": "T-30 Dynamic dispatch at app/db.py:14 (exec) is invisible to the call graph",
-   "repo": "_system",
-   "path": "",
-   "range": {
-    "start": 14,
-    "end": 14
-   },
-   "citation": "orders/app/db.py:14",
-   "provenance": {
-    "extractor": "rule",
-    "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
-   },
-   "confidence": "low",
-   "label": "inferred",
-   "qualname": "T-30-dynamic-dispatch-at-app-db-py-14-exec-is",
-   "attrs": {
-    "stride": "Tampering",
-    "cwe": "CWE-470",
-    "owasp": "A03:2021 Injection",
-    "likelihood": "low",
-    "impact": "medium",
-    "priority": "medium",
-    "draft": true,
-    "component": "orders dynamic dispatch"
-   },
-   "quote": "cur.execute("
-  },
-  {
-   "id": "threat:_system::T-31-dynamic-dispatch-at-app-db-py-23-exec-is",
-   "kind": "threat",
-   "name": "T-31 Dynamic dispatch at app/db.py:23 (exec) is invisible to the call graph",
-   "repo": "_system",
-   "path": "",
-   "range": {
-    "start": 23,
-    "end": 23
-   },
-   "citation": "orders/app/db.py:23",
-   "provenance": {
-    "extractor": "rule",
-    "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
-   },
-   "confidence": "low",
-   "label": "inferred",
-   "qualname": "T-31-dynamic-dispatch-at-app-db-py-23-exec-is",
-   "attrs": {
-    "stride": "Tampering",
-    "cwe": "CWE-470",
-    "owasp": "A03:2021 Injection",
-    "likelihood": "low",
-    "impact": "medium",
-    "priority": "medium",
-    "draft": true,
-    "component": "orders dynamic dispatch"
-   },
-   "quote": "cur.execute(f\"SELECT id, status, total_cents FROM orders WHERE id = '{order_id}'\")"
-  },
-  {
-   "id": "threat:_system::T-32-no-authentication-evidence-on-post-order",
-   "kind": "threat",
-   "name": "T-32 No authentication evidence on POST /orders",
+   "name": "T-30 No authentication evidence on POST /orders",
    "repo": "_system",
    "path": "",
    "range": {
@@ -5543,11 +5481,11 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
-   "qualname": "T-32-no-authentication-evidence-on-post-order",
+   "qualname": "T-30-no-authentication-evidence-on-post-order",
    "attrs": {
     "stride": "Spoofing / Elevation of privilege",
     "cwe": "CWE-306",
@@ -5561,9 +5499,9 @@
    "quote": "@app.post(\"/orders\", status_code=201)"
   },
   {
-   "id": "threat:_system::T-33-no-authentication-evidence-on-get-orders",
+   "id": "threat:_system::T-31-no-authentication-evidence-on-get-orders",
    "kind": "threat",
-   "name": "T-33 No authentication evidence on GET /orders/{order_id}",
+   "name": "T-31 No authentication evidence on GET /orders/{order_id}",
    "repo": "_system",
    "path": "",
    "range": {
@@ -5574,11 +5512,11 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
-   "qualname": "T-33-no-authentication-evidence-on-get-orders",
+   "qualname": "T-31-no-authentication-evidence-on-get-orders",
    "attrs": {
     "stride": "Spoofing / Elevation of privilege",
     "cwe": "CWE-306",
@@ -5592,9 +5530,9 @@
    "quote": "@app.get(\"/orders/{order_id}\")"
   },
   {
-   "id": "threat:_system::T-34-encryption-or-tls-disabled-microsoft-sto",
+   "id": "threat:_system::T-32-encryption-or-tls-disabled-microsoft-sto",
    "kind": "threat",
-   "name": "T-34 Encryption or TLS disabled: Microsoft.Storage/storageAccounts reports",
+   "name": "T-32 Encryption or TLS disabled: Microsoft.Storage/storageAccounts reports",
    "repo": "_system",
    "path": "",
    "range": {
@@ -5605,11 +5543,11 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
-   "qualname": "T-34-encryption-or-tls-disabled-microsoft-sto",
+   "qualname": "T-32-encryption-or-tls-disabled-microsoft-sto",
    "attrs": {
     "stride": "Information disclosure",
     "cwe": "CWE-311",
@@ -5623,9 +5561,9 @@
    "quote": "minimumTlsVersion: 'TLS1_0'"
   },
   {
-   "id": "threat:_system::T-35-no-networkpolicy-restricts-traffic-to-or",
+   "id": "threat:_system::T-33-no-networkpolicy-restricts-traffic-to-or",
    "kind": "threat",
-   "name": "T-35 No NetworkPolicy restricts traffic to or from gateway",
+   "name": "T-33 No NetworkPolicy restricts traffic to or from gateway",
    "repo": "_system",
    "path": "",
    "range": {
@@ -5636,11 +5574,11 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
-   "qualname": "T-35-no-networkpolicy-restricts-traffic-to-or",
+   "qualname": "T-33-no-networkpolicy-restricts-traffic-to-or",
    "attrs": {
     "stride": "Lateral movement / Information disclosure",
     "cwe": "CWE-284",
@@ -5654,9 +5592,9 @@
    "quote": "kind: Deployment"
   },
   {
-   "id": "threat:_system::T-36-encryption-or-tls-disabled-aws-db-instan",
+   "id": "threat:_system::T-34-encryption-or-tls-disabled-aws-db-instan",
    "kind": "threat",
-   "name": "T-36 Encryption or TLS disabled: aws_db_instance shop",
+   "name": "T-34 Encryption or TLS disabled: aws_db_instance shop",
    "repo": "_system",
    "path": "",
    "range": {
@@ -5667,11 +5605,11 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
-   "qualname": "T-36-encryption-or-tls-disabled-aws-db-instan",
+   "qualname": "T-34-encryption-or-tls-disabled-aws-db-instan",
    "attrs": {
     "stride": "Information disclosure",
     "cwe": "CWE-311",
@@ -5698,7 +5636,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5723,7 +5661,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5748,7 +5686,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5773,7 +5711,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5798,7 +5736,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5823,7 +5761,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5848,7 +5786,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -5870,7 +5808,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5888,7 +5826,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5906,7 +5844,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -5924,7 +5862,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5942,7 +5880,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5960,7 +5898,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5978,7 +5916,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -5996,7 +5934,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6014,7 +5952,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6032,7 +5970,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6050,7 +5988,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6068,7 +6006,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6086,7 +6024,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6104,7 +6042,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6122,7 +6060,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6140,7 +6078,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:19Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6158,7 +6096,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6176,7 +6114,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6194,7 +6132,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6212,7 +6150,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6230,7 +6168,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6248,7 +6186,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6266,7 +6204,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6284,7 +6222,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6302,7 +6240,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6320,7 +6258,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6338,7 +6276,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6356,7 +6294,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6374,7 +6312,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6392,7 +6330,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6410,7 +6348,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6428,7 +6366,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6446,7 +6384,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6464,7 +6402,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6482,7 +6420,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6500,7 +6438,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6518,7 +6456,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6536,7 +6474,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6554,7 +6492,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6572,7 +6510,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6590,7 +6528,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6608,7 +6546,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6626,7 +6564,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6644,7 +6582,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6662,7 +6600,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6680,7 +6618,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6698,7 +6636,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6716,7 +6654,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6734,7 +6672,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6752,7 +6690,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6770,7 +6708,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6788,7 +6726,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6806,7 +6744,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6824,7 +6762,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6842,7 +6780,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6860,7 +6798,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6878,7 +6816,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6896,7 +6834,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6914,7 +6852,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6932,7 +6870,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6950,7 +6888,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -6968,7 +6906,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -6986,7 +6924,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7004,7 +6942,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:01Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7022,7 +6960,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7040,7 +6978,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7058,7 +6996,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7076,7 +7014,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7094,7 +7032,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7112,7 +7050,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7130,7 +7068,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7148,7 +7086,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7166,7 +7104,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7184,7 +7122,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7202,7 +7140,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7220,7 +7158,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7238,7 +7176,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7256,7 +7194,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7274,7 +7212,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7292,7 +7230,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7310,7 +7248,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7328,7 +7266,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7346,7 +7284,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7364,7 +7302,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7382,7 +7320,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7400,7 +7338,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7418,7 +7356,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7436,7 +7374,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7454,7 +7392,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7472,7 +7410,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7490,7 +7428,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7508,7 +7446,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7526,7 +7464,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7544,7 +7482,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7562,7 +7500,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7580,7 +7518,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7598,7 +7536,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7616,7 +7554,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7634,7 +7572,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7652,7 +7590,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7670,7 +7608,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7688,7 +7626,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7706,7 +7644,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7724,7 +7662,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7742,7 +7680,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7760,7 +7698,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7778,7 +7716,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7796,7 +7734,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -7814,7 +7752,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7832,7 +7770,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7850,7 +7788,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7868,7 +7806,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7886,7 +7824,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7904,7 +7842,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7922,7 +7860,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -7940,7 +7878,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -7958,7 +7896,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -7976,7 +7914,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -7994,7 +7932,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8012,7 +7950,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8022,33 +7960,15 @@
    }
   },
   {
-   "id": "a2cf92321245c25b",
+   "id": "b96c8c46028ebfbd",
    "src": "function:orders:app/main.py:create_order",
-   "dst": "function:orders:app/pricing.py:price_items",
+   "dst": "function:orders:app/events.py:publish_order_created",
    "kind": "calls",
-   "citation": "orders/app/main.py:29",
+   "citation": "orders/app/main.py:33",
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
-   },
-   "confidence": "high",
-   "label": "observed",
-   "verified": {
-    "status": "mechanical",
-    "by": "extractor"
-   }
-  },
-  {
-   "id": "1dfc69649bfb8bb6",
-   "src": "function:orders:app/main.py:create_order",
-   "dst": "function:orders:app/db.py:get_conn",
-   "kind": "calls",
-   "citation": "orders/app/main.py:31",
-   "provenance": {
-    "extractor": "ast",
-    "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8066,7 +7986,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8076,15 +7996,33 @@
    }
   },
   {
-   "id": "b96c8c46028ebfbd",
+   "id": "1dfc69649bfb8bb6",
    "src": "function:orders:app/main.py:create_order",
-   "dst": "function:orders:app/events.py:publish_order_created",
+   "dst": "function:orders:app/db.py:get_conn",
    "kind": "calls",
-   "citation": "orders/app/main.py:33",
+   "citation": "orders/app/main.py:31",
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
+   },
+   "confidence": "high",
+   "label": "observed",
+   "verified": {
+    "status": "mechanical",
+    "by": "extractor"
+   }
+  },
+  {
+   "id": "a2cf92321245c25b",
+   "src": "function:orders:app/main.py:create_order",
+   "dst": "function:orders:app/pricing.py:price_items",
+   "kind": "calls",
+   "citation": "orders/app/main.py:29",
+   "provenance": {
+    "extractor": "ast",
+    "tool_version": "ckb-graph/1",
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8102,7 +8040,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8120,7 +8058,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8138,7 +8076,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8162,7 +8100,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8186,7 +8124,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8210,7 +8148,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8235,7 +8173,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8260,7 +8198,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8284,7 +8222,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8308,7 +8246,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8332,7 +8270,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8356,7 +8294,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8380,7 +8318,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8404,7 +8342,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8428,7 +8366,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8452,7 +8390,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8476,7 +8414,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8500,7 +8438,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8524,7 +8462,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8548,7 +8486,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8572,7 +8510,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8598,7 +8536,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8622,7 +8560,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8639,15 +8577,15 @@
    }
   },
   {
-   "id": "715e8e29c78b174d",
+   "id": "1e89141fe288c010",
    "src": "function:orders:app/events.py:publish_order_created",
    "dst": "package:orders::pika",
    "kind": "calls_lib",
-   "citation": "orders/app/events.py:15",
+   "citation": "orders/app/events.py:25",
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8674,7 +8612,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8690,30 +8628,6 @@
    }
   },
   {
-   "id": "b0a441d29be043c7",
-   "src": "function:orders:app/pricing.py:price_items",
-   "dst": "package:orders::subprocess",
-   "kind": "calls_lib",
-   "citation": "orders/app/pricing.py:10",
-   "provenance": {
-    "extractor": "ast",
-    "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
-   },
-   "confidence": "medium",
-   "label": "observed",
-   "verified": {
-    "status": "mechanical",
-    "by": "extractor"
-   },
-   "attrs": {
-    "apis": [
-     "run"
-    ],
-    "count": 1
-   }
-  },
-  {
    "id": "4941e5620416547a",
    "src": "function:orders:app/pricing.py:price_items",
    "dst": "package:orders::json",
@@ -8722,7 +8636,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8739,6 +8653,30 @@
    }
   },
   {
+   "id": "b0a441d29be043c7",
+   "src": "function:orders:app/pricing.py:price_items",
+   "dst": "package:orders::subprocess",
+   "kind": "calls_lib",
+   "citation": "orders/app/pricing.py:10",
+   "provenance": {
+    "extractor": "ast",
+    "tool_version": "ckb-graph/1",
+    "run": "2026-11-27T00:54:02Z"
+   },
+   "confidence": "medium",
+   "label": "observed",
+   "verified": {
+    "status": "mechanical",
+    "by": "extractor"
+   },
+   "attrs": {
+    "apis": [
+     "run"
+    ],
+    "count": 1
+   }
+  },
+  {
    "id": "bae0ca64015b58ee",
    "src": "function:fulfillment:cmd/worker/main.go:main",
    "dst": "external:_system::/shipments",
@@ -8747,7 +8685,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
@@ -8769,7 +8707,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8792,7 +8730,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -8815,7 +8753,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
@@ -8837,7 +8775,7 @@
    "provenance": {
     "extractor": "ast",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -8859,7 +8797,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8877,7 +8815,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8895,7 +8833,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8913,7 +8851,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8931,7 +8869,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8949,7 +8887,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8967,7 +8905,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -8985,7 +8923,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9003,7 +8941,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9021,7 +8959,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9039,7 +8977,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9057,7 +8995,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9075,7 +9013,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9093,7 +9031,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9111,7 +9049,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9129,7 +9067,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9147,7 +9085,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9165,7 +9103,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9183,7 +9121,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9201,7 +9139,7 @@
    "provenance": {
     "extractor": "regex",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9219,7 +9157,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9237,7 +9175,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9255,7 +9193,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9273,7 +9211,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9291,7 +9229,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9309,7 +9247,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9327,7 +9265,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9345,7 +9283,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9363,7 +9301,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9381,7 +9319,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9399,7 +9337,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9417,7 +9355,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9435,7 +9373,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9453,7 +9391,7 @@
    "provenance": {
     "extractor": "scanner",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -9471,7 +9409,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9490,7 +9428,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9509,7 +9447,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9528,7 +9466,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9547,7 +9485,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9566,7 +9504,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9585,7 +9523,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9604,7 +9542,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9623,7 +9561,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9642,7 +9580,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9661,7 +9599,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9680,7 +9618,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9699,7 +9637,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9718,7 +9656,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9737,7 +9675,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9756,7 +9694,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9775,7 +9713,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9794,7 +9732,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9813,7 +9751,7 @@
    "provenance": {
     "extractor": "context",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9832,7 +9770,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
@@ -9854,7 +9792,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
@@ -9876,7 +9814,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "low",
    "label": "inferred",
@@ -9898,7 +9836,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9921,7 +9859,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9929,11 +9867,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "ORDERS_URL: http://orders:8000",
+   "quote": "ORDERS_URL",
    "dst_citation": "platform/docker-compose.yml:2",
    "attrs": {
-    "source": "literal",
-    "value": "http://orders:8000"
+    "source": "literal"
    }
   },
   {
@@ -9945,7 +9882,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9953,7 +9890,7 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "JWT_SECRET: ${JWT_SECRET}",
+   "quote": "JWT_SECRET",
    "dst_citation": "platform/docker-compose.yml:2",
    "attrs": {
     "source": "variable"
@@ -9968,7 +9905,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -9991,7 +9928,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -9999,11 +9936,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "DATABASE_URL: postgresql://orders@db:5432/shop",
+   "quote": "DATABASE_URL",
    "dst_citation": "platform/docker-compose.yml:8",
    "attrs": {
-    "source": "literal",
-    "value": "postgresql://orders@db:5432/shop"
+    "source": "literal"
    }
   },
   {
@@ -10015,7 +9951,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10023,11 +9959,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "RABBITMQ_URL: amqp://rabbitmq:5672/",
+   "quote": "RABBITMQ_URL",
    "dst_citation": "platform/docker-compose.yml:8",
    "attrs": {
-    "source": "literal",
-    "value": "amqp://rabbitmq:5672/"
+    "source": "literal"
    }
   },
   {
@@ -10039,7 +9974,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10062,7 +9997,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10070,11 +10005,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "DATABASE_URL: postgresql://fulfillment@db:5432/shop",
+   "quote": "DATABASE_URL",
    "dst_citation": "platform/docker-compose.yml:13",
    "attrs": {
-    "source": "literal",
-    "value": "postgresql://fulfillment@db:5432/shop"
+    "source": "literal"
    }
   },
   {
@@ -10086,7 +10020,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10094,11 +10028,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "RABBITMQ_URL: amqp://rabbitmq:5672/",
+   "quote": "RABBITMQ_URL",
    "dst_citation": "platform/docker-compose.yml:13",
    "attrs": {
-    "source": "literal",
-    "value": "amqp://rabbitmq:5672/"
+    "source": "literal"
    }
   },
   {
@@ -10110,7 +10043,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10118,11 +10051,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "SHIPPING_API_URL: https://api.shipping.example.com",
+   "quote": "SHIPPING_API_URL",
    "dst_citation": "platform/docker-compose.yml:13",
    "attrs": {
-    "source": "literal",
-    "value": "https://api.shipping.example.com"
+    "source": "literal"
    }
   },
   {
@@ -10134,7 +10066,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10157,7 +10089,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10165,11 +10097,10 @@
     "status": "mechanical",
     "by": "extractor"
    },
-   "quote": "- name: ORDERS_URL",
+   "quote": "ORDERS_URL",
    "dst_citation": "platform/k8s/gateway.yaml:2",
    "attrs": {
-    "source": "literal",
-    "value": "http://orders:8000"
+    "source": "literal"
    }
   },
   {
@@ -10181,7 +10112,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10201,7 +10132,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10221,7 +10152,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10241,7 +10172,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10261,7 +10192,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10281,7 +10212,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10301,7 +10232,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10321,7 +10252,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10341,7 +10272,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10361,7 +10292,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10381,7 +10312,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10401,7 +10332,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10420,7 +10351,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "documented",
@@ -10439,7 +10370,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10458,7 +10389,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10477,7 +10408,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10496,7 +10427,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10515,7 +10446,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10534,7 +10465,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10553,7 +10484,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10572,7 +10503,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10591,7 +10522,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10610,7 +10541,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10629,7 +10560,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "documented",
@@ -10648,7 +10579,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "documented",
@@ -10667,7 +10598,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10687,7 +10618,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10707,7 +10638,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10727,7 +10658,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10747,7 +10678,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10767,7 +10698,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10787,7 +10718,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10807,7 +10738,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10827,7 +10758,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10847,7 +10778,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10867,7 +10798,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10887,7 +10818,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10907,7 +10838,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10927,7 +10858,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10947,7 +10878,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -10967,7 +10898,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -10987,7 +10918,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "observed",
@@ -10999,15 +10930,15 @@
    "rationale": "Plain HTTP between gateway and orders"
   },
   {
-   "id": "d0c5c9ec4a2aef4a",
-   "src": "threat:_system::T-32-no-authentication-evidence-on-post-order",
+   "id": "808608db818c8013",
+   "src": "threat:_system::T-30-no-authentication-evidence-on-post-order",
    "dst": "function:orders:app/main.py:create_order",
    "kind": "threatens",
    "citation": "orders/app/main.py:25",
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11019,15 +10950,15 @@
    "rationale": "No authentication evidence on POST /orders"
   },
   {
-   "id": "a4b266eea11b76c3",
-   "src": "threat:_system::T-33-no-authentication-evidence-on-get-orders",
+   "id": "5d7aa670b219f979",
+   "src": "threat:_system::T-31-no-authentication-evidence-on-get-orders",
    "dst": "function:orders:app/main.py:read_order",
    "kind": "threatens",
    "citation": "orders/app/main.py:37",
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11039,15 +10970,15 @@
    "rationale": "No authentication evidence on GET /orders/{order_id}"
   },
   {
-   "id": "0e80abba3c55cdf1",
-   "src": "threat:_system::T-34-encryption-or-tls-disabled-microsoft-sto",
+   "id": "d1287b9712fb733a",
+   "src": "threat:_system::T-32-encryption-or-tls-disabled-microsoft-sto",
    "dst": "cloud_resource:platform:azure/main.bicep:Microsoft.Storage/storageAccounts.reports",
    "kind": "threatens",
    "citation": "platform/azure/main.bicep:11",
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -11059,15 +10990,15 @@
    "rationale": "Encryption or TLS disabled: Microsoft.Storage/storageAccounts reports"
   },
   {
-   "id": "1478645c2eaddf7f",
-   "src": "threat:_system::T-36-encryption-or-tls-disabled-aws-db-instan",
+   "id": "97de4e2f80648d43",
+   "src": "threat:_system::T-34-encryption-or-tls-disabled-aws-db-instan",
    "dst": "cloud_resource:platform:terraform/aws/main.tf:aws_db_instance.shop",
    "kind": "threatens",
    "citation": "platform/terraform/aws/main.tf:30",
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "high",
    "label": "observed",
@@ -11087,7 +11018,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11106,7 +11037,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11125,7 +11056,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11144,7 +11075,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11163,7 +11094,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11182,7 +11113,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11201,7 +11132,7 @@
    "provenance": {
     "extractor": "rule",
     "tool_version": "ckb-graph/1",
-    "run": "2026-11-25T22:12:20Z"
+    "run": "2026-11-27T00:54:02Z"
    },
    "confidence": "medium",
    "label": "inferred",
@@ -11215,7 +11146,7 @@
  "layers": [],
  "tours": [],
  "stats": {
-  "nodes": 225,
+  "nodes": 223,
   "edges": 277,
   "nodes_by_kind": {
    "file": 14,
@@ -11238,7 +11169,7 @@
    "service": 6,
    "drift": 11,
    "doc_section": 14,
-   "threat": 36,
+   "threat": 34,
    "trust_boundary": 7
   },
   "edges_by_kind": {
@@ -11269,13 +11200,13 @@
   },
   "call_resolution": {
    "fulfillment": {
-    "calls": 34,
+    "calls": 31,
     "resolved": 1,
     "external": 19,
     "ambiguous": 0,
     "dynamic": 0,
-    "unresolved": 14,
-    "resolved_pct": 58.8
+    "unresolved": 11,
+    "resolved_pct": 64.5
    },
    "gateway": {
     "calls": 24,
@@ -11310,7 +11241,7 @@
    "ast": 34,
    "scanner": 20,
    "context": 10,
-   "rule": 74
+   "rule": 72
   },
   "edges_by_extractor": {
    "regex": 116,

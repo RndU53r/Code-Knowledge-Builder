@@ -35,7 +35,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from ckb_common import now_iso, read_text, repo_roots_for_output, walk_files  # noqa: E402
 from graph_common import atomic_write, graph_dir, md_safe, safe_quote  # noqa: E402
 
-RISKY_TOOLS = {"Bash", "Write", "Edit", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch"}
+RISKY_TOOLS = {"*", "Bash", "Write", "Edit", "MultiEdit", "NotebookEdit", "WebFetch", "WebSearch"}
 READ_TOOLS = {"Read", "Grep", "Glob", "WebFetch", "WebSearch"}
 HTML_COMMENT = re.compile(r"<!--.*?-->", re.S)
 
@@ -112,8 +112,9 @@ def scan_plugin(root: Path, repo: str, known_files: set[str]) -> tuple[Graph, di
     ns = repo
     if pf["manifest"]:
         try:
-            ns = json.loads(pf["manifest"][0].read_text()).get("name") or repo
-        except ValueError:
+            mf = json.loads(read_text(pf["manifest"][0], max_bytes=200_000) or "{}")
+            ns = mf.get("name") if isinstance(mf, dict) and isinstance(mf.get("name"), str) and re.fullmatch(r"[\w.-]{1,64}", mf["name"]) else repo
+        except (ValueError, OSError):
             pass
     docs = {}
     for kind in ("agent", "skill", "command"):
@@ -122,6 +123,9 @@ def scan_plugin(root: Path, repo: str, known_files: set[str]) -> tuple[Graph, di
             fm, body_line = frontmatter(text)
             name = fm.get("name") or (Path(rel).parent.name if kind == "skill" else Path(rel).stem)
             tools = tool_list(fm.get("tools") or fm.get("allowed-tools") or "")
+            unrestricted = kind == "agent" and not (fm.get("tools") or fm.get("allowed-tools"))
+            if unrestricted:  # an agent without a tools field inherits every tool of the session
+                tools = ["*"]
             nline = next((i for i, ln in enumerate(text.splitlines(), 1) if re.match(r"^name\s*:", ln)), 1)
             g.node(kind, name, rel, nline, text.splitlines()[nline - 1] if text.splitlines() else name, tools=tools[:20], user_invocable=("disable-model-invocation" in fm and "true" in fm["disable-model-invocation"].lower()) or kind == "command",
                    description=(fm.get("description") or "")[:160])
@@ -137,6 +141,7 @@ def scan_plugin(root: Path, repo: str, known_files: set[str]) -> tuple[Graph, di
         for i, ln in enumerate(clean.splitlines(), 1):
             if i < body_line:
                 continue
+            ln = ln[:2000]  # bound regex work on pathological lines
             # `ns:name` tokens and /ns:name commands
             for m in re.finditer(rf"`{re.escape(ns)}:([\w-]+)`|(?<![\w/])/{re.escape(ns)}:([\w-]+)", ln):
                 tgt = m.group(1) or m.group(2)

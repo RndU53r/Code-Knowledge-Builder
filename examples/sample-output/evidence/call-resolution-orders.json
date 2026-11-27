@@ -18,14 +18,14 @@
  },
  "top_unresolved": [
   {
-   "name": "conn.cursor",
-   "count": 2,
-   "citation": "orders/app/db.py:13"
-  },
-  {
    "name": "cur.execute",
    "count": 2,
    "citation": "orders/app/db.py:14"
+  },
+  {
+   "name": "conn.cursor",
+   "count": 2,
+   "citation": "orders/app/db.py:13"
   },
   {
    "name": "conn.commit",
@@ -48,24 +48,24 @@
    "citation": "orders/app/main.py:30"
   },
   {
-   "name": "len",
-   "count": 1,
-   "citation": "orders/app/main.py:27"
-  },
-  {
    "name": "i.model_dump",
    "count": 1,
    "citation": "orders/app/main.py:29"
   },
   {
-   "name": "ch.exchange_declare",
+   "name": "len",
    "count": 1,
-   "citation": "orders/app/events.py:17"
+   "citation": "orders/app/main.py:27"
   },
   {
    "name": "ch.basic_publish",
    "count": 1,
    "citation": "orders/app/events.py:24"
+  },
+  {
+   "name": "ch.exchange_declare",
+   "count": 1,
+   "citation": "orders/app/events.py:17"
   },
   {
    "name": "RuntimeError",

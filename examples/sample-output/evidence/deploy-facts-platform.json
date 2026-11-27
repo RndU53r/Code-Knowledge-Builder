@@ -17,8 +17,7 @@
     {
      "name": "ORDERS_URL",
      "source": "literal",
-     "line": 6,
-     "value": "http://orders:8000"
+     "line": 6
     },
     {
      "name": "JWT_SECRET",
@@ -54,14 +53,12 @@
     {
      "name": "DATABASE_URL",
      "source": "literal",
-     "line": 11,
-     "value": "postgresql://orders@db:5432/shop"
+     "line": 11
     },
     {
      "name": "RABBITMQ_URL",
      "source": "literal",
-     "line": 12,
-     "value": "amqp://rabbitmq:5672/"
+     "line": 12
     }
    ],
    "env_file": null,
@@ -90,20 +87,17 @@
     {
      "name": "DATABASE_URL",
      "source": "literal",
-     "line": 16,
-     "value": "postgresql://fulfillment@db:5432/shop"
+     "line": 16
     },
     {
      "name": "RABBITMQ_URL",
      "source": "literal",
-     "line": 17,
-     "value": "amqp://rabbitmq:5672/"
+     "line": 17
     },
     {
      "name": "SHIPPING_API_URL",
      "source": "literal",
-     "line": 18,
-     "value": "https://api.shipping.example.com"
+     "line": 18
     }
    ],
    "env_file": null,
@@ -181,8 +175,7 @@
     {
      "name": "ORDERS_URL",
      "source": "literal",
-     "line": 18,
-     "value": "http://orders:8000"
+     "line": 18
     }
    ],
    "env_from": [],

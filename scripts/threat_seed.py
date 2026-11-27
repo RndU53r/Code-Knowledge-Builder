@@ -49,6 +49,7 @@ IDHEADER_RX = re.compile(r"(?i)['\"`](x-(request-)?user(-id)?|x-forwarded-user|x
 SIGN_RX = re.compile(r"(?i)(hmac|signature|sign\(|verify\(|jwt|checksum|schema\.validate|jsonschema|validate\()")
 REQUEUE_RX = re.compile(r"(?i)(Nack\([^)]*,\s*true\)|requeue\s*[=:]\s*(true|True)|basic_nack\([^)]*requeue\s*=\s*True|\.nack\([^)]*true|reject\([^)]*true)")
 DLQ_RX = re.compile(r"(?i)(dead[-_ ]?letter|\bdlq\b|x-dead-letter|deadletter)")
+SECRET_ENV_BENIGN = re.compile(r"(?i)(_FILE|_PATH|_URL|_URI|_NAME|_HEADER|_ENABLED|_TTL|_EXPIRY|_ENDPOINT|_ARN|_SECRET_ID|_REF)$")
 SECRET_ENV = re.compile(r"(?i)(PASSWORD|PASSWD|SECRET|TOKEN|API_?KEY|PRIVATE_?KEY|CREDENTIAL)")
 CWE = {"sql": ("CWE-89", "A03:2021 Injection"), "command": ("CWE-78", "A03:2021 Injection"), "ssrf": ("CWE-918", "A10:2021 SSRF"),
        "code": ("CWE-94", "A03:2021 Injection"), "deserialization": ("CWE-502", "A08:2021 Software and Data Integrity Failures"),
@@ -169,13 +170,14 @@ class Ctx:
         return None
 
     def exposure(self, endpoint_id: str) -> tuple[str, str]:
-        ws = self.deploy.get(self.repo_of_entry(endpoint_id), [])
+        ws_all = self.deploy.get(self.repo_of_entry(endpoint_id), [])
+        ws = [w for w in ws_all if w.get("source") != "dockerfile"] or ws_all  # a Dockerfile only declares ports; Services/Ingresses decide exposure
         pub = [w for w in ws if (w.get("exposure") or {}).get("public")]
         if pub:
             ex = pub[0]["exposure"]
             via = ("ingress " + ", ".join(ex.get("hosts", [])[:2])) if ex.get("hosts") else ex.get("kind", "public")
             return "public", f"deployed as {pub[0]['name']} ({via}; {ex.get('citation') or pub[0]['citation']})"
-        if ws and all((w.get("exposure") or {}).get("kind") in ("cluster-internal", "none") for w in ws):
+        if ws and all((w.get("exposure") or {}).get("kind") in ("cluster-internal", "none", "container-ports") for w in ws) and any(w.get("deploy_repo") == self.repo_of_entry(endpoint_id) or w.get("resolved_by") in ("image", "build context", "chart") for w in ws):
             return "internal", f"deployed as {ws[0]['name']} with no public Service/Ingress ({ws[0]['citation']})"
         callers = [e for e in self.in_http.get(endpoint_id, []) if self.nodes.get(e["src"], {}).get("repo") != self.nodes[endpoint_id].get("repo")]
         if callers:
@@ -341,7 +343,7 @@ def rule_deploy(c: Ctx, threats):
         has_np = any(x["kind"] == "network-policy" for x in d.get("controls", []))
         for w in d.get("workloads", []):
             cite = w["citation"]
-            secrets = [e for e in w.get("env", []) if SECRET_ENV.search(e["name"]) and e["source"] == "literal"]
+            secrets = [e for e in w.get("env", []) if SECRET_ENV.search(e["name"]) and not SECRET_ENV_BENIGN.search(e["name"]) and e["source"] == "literal"]
             if secrets:
                 add(threats, component=f"{drepo} workload {w['name']}", stride="Information disclosure", title=f"Secret-like variable set as a literal in deployment config ({w['name']}: {', '.join(e['name'] for e in secrets[:3])})",
                     cwe="CWE-798", owasp="A07:2021 Identification and Authentication Failures", likelihood="high", impact="high", evidence=[cite], primary=cite, target=None,
@@ -391,8 +393,11 @@ def rule_agents(c: Ctx, threats):
     hooks = [n for n in c.nodes.values() if n["kind"] == "hook"]
     covered = set()
     for h in hooks:
-        for tool in re.split(r"[|,]", (h.get("attrs") or {}).get("matcher", "") or ""):
-            covered.add(tool.strip())
+        m_ = ((h.get("attrs") or {}).get("matcher") or "*").strip()
+        for tool in re.split(r"[|,]", m_):
+            tool = tool.strip()
+            covered.add("*" if tool in ("", "*", ".*") else tool)
+    covered_all = "*" in covered
     for d in _evidence_json(c, "agent-graph-*.json"):
         for f in d.get("risk_flags", []):
             if f["reads_untrusted"]:
@@ -400,7 +405,7 @@ def rule_agents(c: Ctx, threats):
                     cwe="CWE-1427", owasp="OWASP LLM Top 10: LLM01 prompt injection, LLM06 excessive agency", likelihood="medium", impact="high", evidence=[f["citation"]], primary=f["citation"], target=None,
                     gaps="Text it reads (repo files, web pages, tool output) can carry instructions; with write, shell or network tools those instructions become actions.",
                     control="Give reading agents no write/shell/network tools; split them from the agent that acts, and require approval for destructive actions.", label="inferred", confidence="medium")
-            unguarded = [t for t in f["risky_tools"] if t not in covered and not any(t in x for x in covered)]
+            unguarded = [t for t in f["risky_tools"] if not covered_all and t not in covered and not any(t in x for x in covered)]
             if unguarded and hooks:
                 add(threats, component=f"{d['repo']} {f['kind']} {f['node']}", stride="Elevation of privilege", title=f"Tool(s) {', '.join(unguarded)} used by {f['node']} are not covered by any hook",
                     cwe="CWE-693", owasp="OWASP LLM Top 10: LLM06 excessive agency", likelihood="medium", impact="medium", evidence=[f["citation"]], primary=f["citation"], target=None,
@@ -416,15 +421,15 @@ def rule_library(c: Ctx, threats):
     called = defaultdict(list)
     for e in c.store.edges:
         if e["kind"] == "calls_lib" and e["dst"] in c.nodes:
-            called[(c.nodes[e["dst"]].get("repo"), c.nodes[e["dst"]]["name"].lower())].append(e)
+            called[(c.nodes[e["dst"]].get("repo"), re.sub(r"[-_.]+", "-", c.nodes[e["dst"]]["name"].lower()))].append(e)
     for d in _evidence_json(c, "sc-*.json"):
         repo = d.get("repo")
         for dep in d.get("dependencies", []):
             adv = dep.get("advisories") or []
             if not adv:
                 continue
-            nm = str(dep.get("name", "")).lower()
-            hits = called.get((repo, nm)) or called.get((repo, nm.split("/")[-1])) or []
+            nm = re.sub(r"[-_.]+", "-", str(dep.get("name", "")).lower())
+            hits = called.get((repo, nm)) or called.get((repo, nm.split("/")[-1])) or called.get((repo, nm.replace("-", "_"))) or []
             ids = ", ".join(a if isinstance(a, str) else str(a.get("id", "")) for a in adv[:3])
             apis = sorted({x for e in hits for x in (e.get("attrs") or {}).get("apis", [])})[:5]
             cite = (hits[0]["citation"] if hits else f"{repo}/{dep.get('path', dep.get('manifest', ''))}:{dep.get('line', 1)}")
@@ -475,7 +480,7 @@ def attack_paths(c: Ctx, limit: int = 12):
             r_ = c.nodes.get(h["dst"], {}).get("repo")
             if r_ and r_ not in repos and r_ != "_system":
                 repos.append(r_)
-        cov_pct = min([(cov["repos"].get(r_, {}).get("call_resolution") or {}).get("resolved_pct", 100) or 100 for r_ in (repos or [src.get("repo")])] or [100])
+        cov_pct = min([(cov["repos"].get(r_, {}).get("call_resolution") or {}).get("resolved_pct") if (cov["repos"].get(r_, {}).get("call_resolution") or {}).get("resolved_pct") is not None else 100 for r_ in (repos or [src.get("repo")])] or [100])
         rows.append({"score": score, "entry": src["name"], "kind": src["kind"], "exposure": exp, "control": f"{ext['kind']}" if ext else "-", "hops": " → ".join(f"{n}" for n in names[:7]) + (" → …" if len(names) > 7 else ""),
                      "via": ", ".join(sorted({h["kind"] for h in p["hops"]})), "sink": f"{p['sink_type']} ({CWE[p['sink_type']][0]})", "confidence": p["label"], "repos": ", ".join(repos) or src.get("repo", ""),
                      "coverage": cov_pct, "citation": sink["citation"]})

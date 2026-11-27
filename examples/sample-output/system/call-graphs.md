@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment` @ `unversioned`, `gateway` @ `unversioned`, `orders` @ `unversioned`, `platform` @ `unversioned`
-> - Generated: 2026-11-25T22:12:20Z by ckb callgraph, stage `callgraph`
+> - Generated: 2026-11-27T00:54:02Z by ckb callgraph, stage `callgraph`
 > - Scope: registered code repos · Excluded: vendored, generated, binaries, symlinks
 > - Method: rolled up from the knowledge graph (static analysis; no target code executed); confidence is the weakest edge on each row
 > - Verification: see evidence/graph-verification.md
@@ -60,7 +60,7 @@ Top 13 of 13 by weight.
 
 | From | To | Mechanism | Count | Confidence | Source |
 | --- | --- | --- | --- | --- | --- |
-| orders/app/main.py | orders/app/db.py | call | 4 | high | `orders/app/main.py:31` `orders/app/main.py:32` |
+| orders/app/main.py | orders/app/db.py | call | 4 | high | `orders/app/main.py:32` `orders/app/main.py:31` |
 | gateway/src/server.js | orders/app/main.py | http | 2 | medium | `gateway/src/server.js:15` `gateway/src/server.js:27` |
 | fulfillment/cmd/worker/main.go | fulfillment/internal/queue/consumer.go | import | 1 | high | `fulfillment/cmd/worker/main.go:14` |
 | gateway/src/server.js | gateway/src/auth.js | import | 1 | high | `gateway/src/server.js:3` |
@@ -125,7 +125,7 @@ External packages the code calls, with the API names seen. Unresolved externals 
 | gateway/src/server.js | axios | post | 1 | `gateway/src/server.js:15` |
 | orders/app/db.py | psycopg2 | connect | 1 | `orders/app/db.py:9` |
 | orders/app/events.py | json | dumps | 1 | `orders/app/events.py:18` |
-| orders/app/events.py | pika | BlockingConnectionURLParameter | 1 | `orders/app/events.py:15` |
+| orders/app/events.py | pika | BlockingConnectionURLParameter | 1 | `orders/app/events.py:25` |
 | orders/app/main.py | fastapi | HTTPExceptionHeaderpost | 1 | `orders/app/main.py:25` |
 | orders/app/main.py | fastapi | HTTPExceptionget | 1 | `orders/app/main.py:37` |
 | orders/app/main.py | uuid | uuid4 | 1 | `orders/app/main.py:30` |

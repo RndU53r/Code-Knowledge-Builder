@@ -275,6 +275,18 @@ def leading_comment(lines: list[str], line: int) -> str:
     return first_para(txt)
 
 
+def _walk_own(node):
+    """Yield node and descendants without descending into nested functions/classes (they are their own owners)."""
+    stack = [node]
+    while stack:
+        cur = stack.pop()
+        yield cur
+        for ch in ast.iter_child_nodes(cur):
+            if isinstance(ch, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef, ast.Lambda)) and ch is not node:
+                continue
+            stack.append(ch)
+
+
 def extract_python(key, rel, text) -> Frag:
     f = Frag(key, rel, "ast")
     tree = ast.parse(text)
@@ -392,9 +404,7 @@ def extract_python(key, rel, text) -> Frag:
             params = [a.arg for a in node.args.args + node.args.kwonlyargs if a.arg not in ("self", "cls", "request", "response", "req", "res", "db", "session", "background_tasks", "background")]
             if params:
                 f.source(nid, qual, is_entry, "handler parameters: " + ", ".join(params[:6]), node.lineno, conf="medium")
-        for sub in ast.walk(node):
-            if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)) and sub is not node:
-                continue
+        for sub in _walk_own(node):
             if sec and isinstance(sub, ast.Attribute):
                 d = dotted(sub)
                 m_ = PY_SOURCE.match(d)
@@ -604,6 +614,11 @@ SSRF_JS = re.compile(r"\b(axios|fetch|got)(?:\.\w+)?\(\s*([^,)]+)")
 def extract_regex(key, rel, text, lang) -> Frag:
     f = Frag(key, rel, "regex")
     lines = text.splitlines()
+    if len(text) > 800_000 or len(lines) > 20000:  # bound the work a single hostile or generated file can cause
+        SKIPS.append({"path": rel, "reason": "very large file: only the first 20000 lines / 800 KB were analysed"})
+        lines = lines[:20000]
+        text = "\n".join(lines)[:800_000]
+        lines = text.splitlines()
     f.node(make_node("file", key, rel, "", rel, 1, max(1, len(lines)), extractor="regex", attrs={"language": lang}))
     sec = not (TEST_PATH.search(rel) or GENERATED_NAME.search(rel))  # no entry points/sources/sinks from tests or generated code
     entries = find_entries(lang, rel, lines) if sec else []
@@ -621,6 +636,9 @@ def extract_regex(key, rel, text, lang) -> Frag:
         for i, ml in enumerate(mlines, 1):
             if len(ml) > 600 or not ml.strip():
                 continue
+            if len(decls) > 4000:
+                SKIPS.append({"path": rel, "reason": "more than 4000 declarations: the rest of the file was not parsed"})
+                break
             for crx in spec["cls"]:
                 m = crx.match(ml)
                 if m and m.group("name") not in DECL_SKIP:
@@ -651,6 +669,8 @@ def extract_regex(key, rel, text, lang) -> Frag:
     for i, ml in enumerate(mlines, 1):
         if len(ml) > 600 or not ml.strip():
             continue
+        if len(decls) > 8000:
+            break
         if i not in class_lines:
             for p_ in pats:
                 m = p_.match(ml)

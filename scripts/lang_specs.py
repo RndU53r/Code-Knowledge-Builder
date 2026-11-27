@@ -34,36 +34,65 @@ def _mk(*parts):
     return re.compile("|".join(parts))
 
 
+MASK_NB = {}  # same rules without the lazy multi-line block alternatives (used when a block opener is never closed)
+
+
+def _reg(lang, *parts):
+    MASK_RX[lang] = _mk(*parts)
+    MASK_NB[lang] = _mk(*[x for x in parts if "[\\s\\S]*?" not in x])
+
+
 for _l in ("javascript", "typescript"):
-    MASK_RX[_l] = _mk(_BC_C, _LC_C, _STR_BT, _STR_DQ, _STR_SQ)
-MASK_RX["go"] = _mk(_BC_C, _LC_C, _STR_BT, _STR_DQ, _CHAR)
-MASK_RX["java"] = _mk(_TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["kotlin"] = _mk(_TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["scala"] = _mk(_TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["csharp"] = _mk(r'@"(?:""|[^"])*"', _TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["swift"] = _mk(_TRIPLE, _BC_C, _LC_C, _STR_DQ)
-MASK_RX["rust"] = _mk(r'r#*"[\s\S]*?"#*', _BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["php"] = _mk(_BC_C, _LC_C, r"#(?!\[)[^\n]*", _STR_DQ, _STR_SQ)
-MASK_RX["ruby"] = _mk(r"(?m)^=begin[\s\S]*?^=end", _LC_HASH, _STR_DQ, _STR_SQ)
-MASK_RX["c"] = _mk(_BC_C, _LC_C, _STR_DQ, _CHAR)
-MASK_RX["cpp"] = MASK_RX["c"]
-MASK_RX["dart"] = _mk(r"'''[\s\S]*?'''", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _STR_SQ)
-MASK_RX["perl"] = _mk(r"(?m)^=\w+[\s\S]*?^=cut", r"(?<![\$@%&\w])#[^\n]*", _STR_DQ, _STR_SQ)
-MASK_RX["abap"] = _mk(r"(?m)^\*[^\n]*", r'"[^\n]*', r"'(?:''|[^'\n])*'", r"\|(?:\\.|[^|\n])*\|")
+    _reg(_l, _BC_C, _LC_C, _STR_BT, _STR_DQ, _STR_SQ)
+_reg("go", _BC_C, _LC_C, _STR_BT, _STR_DQ, _CHAR)
+_reg("java", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
+_reg("kotlin", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
+_reg("scala", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
+_reg("csharp", r'@"(?:""|[^"])*"', _TRIPLE, _BC_C, _LC_C, _STR_DQ, _CHAR)
+_reg("swift", _TRIPLE, _BC_C, _LC_C, _STR_DQ)
+_reg("rust", r'r#*"[\s\S]*?"#*', _BC_C, _LC_C, _STR_DQ, _CHAR)
+_reg("php", _BC_C, _LC_C, r"#(?!\[)[^\n]*", _STR_DQ, _STR_SQ)
+_reg("ruby", r"(?m)^=begin[\s\S]*?^=end", _LC_HASH, _STR_DQ, _STR_SQ)
+_reg("c", _BC_C, _LC_C, _STR_DQ, _CHAR)
+MASK_RX["cpp"], MASK_NB["cpp"] = MASK_RX["c"], MASK_NB["c"]
+_reg("dart", r"'''[\s\S]*?'''", _TRIPLE, _BC_C, _LC_C, _STR_DQ, _STR_SQ)
+_reg("perl", r"(?m)^=\w+[\s\S]*?^=cut", r"(?<![\$@%&\w])#[^\n]*", _STR_DQ, _STR_SQ)
+_reg("abap", r"(?m)^\*[^\n]*", r'"[^\n]*', r"'(?:''|[^'\n])*'", r"\|(?:\\.|[^|\n])*\|")
+
+
+TQ = "'" * 3
+_KEEP_BREAKS = r"[^\n\r\f\v\x1c-\x1e\x85\u2028\u2029]"  # line separators survive masking so line numbers stay aligned with str.splitlines()
+
+
+def _unterminated(text: str, lang: str) -> bool:
+    """A block opener without its closer makes every lazy scan run to the end of the file (quadratic): detect that and skip block masking."""
+    if "/*" in text and text.count("/*") > text.count("*/") + 3:
+        return True
+    if '"""' in text and text.count('"""') % 2 == 1:
+        return True
+    if lang == "ruby" and text.count("=begin") > text.count("=end") + 1:
+        return True
+    if lang == "perl" and re.search(r"(?m)^=\w+", text) and text.count("\n=cut") + text.startswith("=cut") < len(re.findall(r"(?m)^=(?!cut)\w+", text)):
+        return True
+    if lang == "dart" and (TQ in text and text.count(TQ) % 2 == 1):
+        return True
+    return False
 
 
 def mask(text: str, lang: str) -> str:
     rx = MASK_RX.get(lang)
     if not rx:
         return text
+    if _unterminated(text, lang):
+        rx = MASK_NB.get(lang, rx)
 
     def blank(m):
         t = m.group(0)
-        if t[0] in "\"'`|" and len(t) >= 2 and "\n" not in t[:1]:
+        if t[0] in "\"'`|" and len(t) >= 2:
             q = t[0]
-            inner = re.sub(r"[^\n]", " ", t[1:-1])
+            inner = re.sub(_KEEP_BREAKS, " ", t[1:-1])
             return q + inner + (t[-1] if t[-1] == q else " ")
-        return re.sub(r"[^\n]", " ", t)
+        return re.sub(_KEEP_BREAKS, " ", t)
     return rx.sub(blank, text)
 
 
@@ -106,7 +135,7 @@ def block_end(mlines: list[str], idx: int, lang: str) -> int:
                 break
         return idx + 1
     depth, started = 0, False
-    for j in range(idx, min(n, idx + 6000)):
+    for j in range(idx, min(n, idx + 2500)):
         for ch in mlines[j]:
             if ch == "{":
                 depth, started = depth + 1, True
@@ -319,8 +348,8 @@ def _c(p, flags=0):
     return re.compile(p, flags)
 
 
-_JS_CALL = _c(r"(?<![\w$.])(?P<name>(?:this\.|super\.)?[A-Za-z_$][\w$]*(?:(?:\?\.|\.)[A-Za-z_$][\w$]*)*)\s*[(<]")
-_JVM_CALL = _c(r"(?<![\w$.])(?P<name>(?:this\.|super\.)?[A-Za-z_$][\w$]*(?:(?:\?\.|!!\.|!\.|\.)[A-Za-z_$][\w$]*)*)\s*(?:<[^()<>]*>)?\s*[(\{]?(?=\s*(?:\(|\{|$))")
+_JS_CALL = _c(r"(?<![\w$.])(?P<name>(?:this\.|super\.)?[A-Za-z_$][\w$]*(?:(?:\?\.|\.)[A-Za-z_$][\w$]*)*)\s*(?:\(|<[^<>()=;]*>\s*\()")
+_JVM_CALL = _c(r"(?<![\w$.])(?P<name>(?:this\.|super\.)?[A-Za-z_$][\w$]*(?:(?:\?\.|!!\.|!\.|\.)[A-Za-z_$][\w$]*)*)\s*(?:<[^()<>]*>)?\s*(?=\(|\{)")
 
 SPEC: dict[str, dict] = {}
 
@@ -342,7 +371,7 @@ SPEC["typescript"] = {**SPEC["javascript"], "exts": [".ts", ".tsx", ".mts", ".ct
 SPEC["go"] = {
     "func": [_c(r"^func\s+(?:\((?:\w+\s+)?\*?(?P<owner>[A-Za-z_]\w*)(?:\[[^\]]*\])?\)\s*)?(?P<name>[A-Za-z_]\w*)\s*(?:\[[^\]]*\])?\(")],
     "cls": [_c(r"^type\s+(?P<name>[A-Za-z_]\w*)\s+(?P<kind>struct|interface)\b(?P<bases>)")],
-    "call": _c(r"(?<![\w.])(?P<name>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*[(\[]"), "imports": go_imports,
+    "call": _c(r"(?<![\w.])(?P<name>[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*)\s*(?:\(|\[[^\[\]()]*\]\()"), "imports": go_imports,
     "types": [_c(r"(?P<var>\w+)\s*:?=\s*&?(?P<type>[A-Z]\w*)\{"), _c(r"(?P<var>\w+)\s*:?=\s*(?:\w+\.)?New(?P<type>[A-Z]\w*)\("),
               _c(r"(?P<var>[a-z_]\w*)\s+\*?(?:\w+\.)?(?P<type>[A-Z]\w*)\b(?=\s*[,)\n=]|\s*$|\s*`)"),
               _c(r"\((?P<var>\w+)\s+\*?(?P<type>[A-Z]\w*)\)")],
@@ -445,7 +474,7 @@ def parse_bases(lang: str, kind: str, decl: str) -> tuple[list[str], list[str]]:
             imp.extend(_names(m.group(1)))
     elif lang == "scala":
         m = re.search(r"\bextends\s+([\w.\[\], ]+?)(?:\s+with\s+([\w.\[\], with]+))?(?=\s*\{|\s*$)", d)
-        if m:
+        if m and _names(m.group(1)):
             ext.append(_names(m.group(1))[0])
             if m.group(2):
                 imp.extend(_names(m.group(2).replace(" with ", ",")))

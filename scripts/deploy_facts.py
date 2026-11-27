@@ -170,10 +170,11 @@ def parse_compose(repo, rel, text, facts):
         image = re.sub(r"//[^/@\s]*@", "//", (_first(r"^[ \t]+image:[ \t]*(\S+)", b) or ""))[:200] or None
         build = _first(r"^[ \t]+build:\s*(\S+)", b) or _first(r"^[ \t]+context:\s*(\S+)", b)
         ports = re.findall(r"^[ \t]*-\s*['\"]?(?:(\d+(?:\.\d+\.\d+\.\d+)?):)?(\d{1,5})(?:/\w+)?['\"]?\s*$", b[b.find("ports:"):] if "ports:" in b else "", re.M)
-        published = [p for p in re.findall(r"^[ \t]*-\s*['\"]?(?:[\d.]+:)?(\d{1,5}):(\d{1,5})", b[b.find("ports:"):] if "ports:" in b else "", re.M)]
+        published = [(h, c) for bind, h, c in re.findall(r"^[ \t]*-\s*['\"]?((?:[\d.]+:)?)(\d{1,5}):(\d{1,5})", b[b.find("ports:"):] if "ports:" in b else "", re.M)
+                     if not (bind.startswith("127.") or bind.startswith("localhost"))]  # loopback-bound ports are not reachable from outside
         inline = re.search(r"^[ \t]+ports:\s*\[([^\]]*)\]", b, re.M)  # ports: ["3000:3000", "9000:9000"]
         if inline:
-            published += [p for p in re.findall(r"['\"]?(?:[\d.]+:)?(\d+):(\d+)['\"]?", inline.group(1))]
+            published += [(h, c) for bind, h, c in re.findall(r"['\"]?((?:[\d.]+:)?)(\d{1,5}):(\d{1,5})['\"]?", inline.group(1)) if not bind.startswith("127.")]
             ports += [(None, c) for h, c in re.findall(r"['\"]?(?:[\d.]+:)?(\d+):(\d+)['\"]?", inline.group(1))]
         envs = env_entries(b[b.find("environment:"):b.find("environment:") + 2000] if "environment:" in b else "", start + b[:b.find("environment:")].count("\n") + 1 if "environment:" in b else start)
         facts["workloads"].append({"name": name, "kind": "compose-service", "source": "compose", "images": [image] if image else [], "build": build, "ports": [int(c) for _, c in ports][:8],
@@ -230,7 +231,15 @@ def parse_terraform(repo, rel, text, facts):
             facts["controls"].append({"kind": "listener", "scope": name, "detail": f"{proto}:{port}" + (" redirect" if "redirect" in body else ""), "citation": cite,
                                       "insecure": proto == "HTTP" and "redirect" not in body})
         elif typ in ("aws_security_group", "aws_security_group_rule", "azurerm_network_security_rule", "google_compute_firewall"):
-            if PUBLIC_CIDR.search(body) or re.search(r"source_address_prefix\s*=\s*\"(\*|Internet)\"", body):
+            if typ == "aws_security_group":  # only ingress rules count: nearly every group has an egress rule to 0.0.0.0/0
+                scope = " ".join(re.findall(r"\bingress\s*\{[^}]*\}", body))
+            elif typ == "aws_security_group_rule":
+                scope = body if re.search(r'type\s*=\s*"ingress"', body) else ""
+            elif typ == "azurerm_network_security_rule":
+                scope = body if re.search(r'direction\s*=\s*"Inbound"', body) and re.search(r'access\s*=\s*"Allow"', body) else ""
+            else:
+                scope = "" if re.search(r'direction\s*=\s*"EGRESS"', body) else body
+            if scope and (PUBLIC_CIDR.search(scope) or re.search(r"source_address_prefix\s*=\s*\"(\*|Internet)\"", scope)):
                 ports = re.findall(r"(?:from_port|to_port|destination_port_range)\s*=\s*\"?(\d{1,5})", body)
                 facts["controls"].append({"kind": "open-ingress", "scope": name, "detail": "open to the internet" + (f" on {','.join(sorted(set(ports)))}" if ports else ""), "citation": cite})
         elif typ.startswith("aws_wafv2") or typ in ("azurerm_web_application_firewall_policy", "azurerm_cdn_frontdoor_firewall_policy"):
@@ -324,8 +333,11 @@ def scan_repo(repo: str, root: Path, excludes: list[str]) -> dict:
     public_sg = [c for c in facts["controls"] if c["kind"] == "open-ingress"]
     public_lb = [x for x in facts["_lbs"] if x["public"]]
     for w in facts["workloads"]:
-        if w["source"] in ("ecs", "terraform") and w["kind"] in ("ecs-task", "function") and (public_lb or public_sg):
+        if w["source"] == "ecs" and (public_lb or public_sg):
             w["exposure"] = {"kind": "loadbalancer" if public_lb else "open-security-group", "public": True, "citation": (public_lb or public_sg)[0]["citation"]}
+        elif w["source"] == "terraform" and w["kind"] == "function" and any(c["kind"] in ("gateway-auth", "gateway-no-auth") for c in facts["controls"]):
+            gw = next(c for c in facts["controls"] if c["kind"] in ("gateway-auth", "gateway-no-auth"))
+            w["exposure"] = {"kind": "api-gateway", "public": True, "citation": gw["citation"]}
     for k in ("_services", "_ingresses", "_serviceaccounts", "_lbs"):
         facts.pop(k, None)
     return facts

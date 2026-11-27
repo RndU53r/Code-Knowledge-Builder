@@ -1,29 +1,26 @@
 {
- "generated": "2026-11-25T22:12:20Z",
+ "generated": "2026-11-27T00:54:01Z",
  "repos": {
   "fulfillment": {
+   "extract_skips": [],
+   "extract_skip_count": 0,
    "files_by_extractor": {
     "go / regex": 3
    },
    "call_resolution": {
-    "calls": 34,
+    "calls": 31,
     "resolved": 1,
     "external": 19,
     "ambiguous": 0,
     "dynamic": 0,
-    "unresolved": 14,
-    "resolved_pct": 58.8
+    "unresolved": 11,
+    "resolved_pct": 64.5
    },
    "top_unresolved": [
     {
      "name": "m.Nack",
      "count": 2,
      "citation": "fulfillment/internal/queue/consumer.go:41"
-    },
-    {
-     "name": "map",
-     "count": 2,
-     "citation": "fulfillment/cmd/pricing/main.go:25"
     },
     {
      "name": "conn.Channel",
@@ -54,11 +51,6 @@
      "name": "m.Ack",
      "count": 1,
      "citation": "fulfillment/internal/queue/consumer.go:49"
-    },
-    {
-     "name": "items",
-     "count": 1,
-     "citation": "fulfillment/cmd/pricing/main.go:17"
     },
     {
      "name": "req.Header.Set",
@@ -110,6 +102,8 @@
    "dormant_sinks": []
   },
   "gateway": {
+   "extract_skips": [],
+   "extract_skip_count": 0,
    "files_by_extractor": {
     "javascript / regex": 2
    },
@@ -188,6 +182,8 @@
    "dormant_sinks": []
   },
   "orders": {
+   "extract_skips": [],
+   "extract_skip_count": 0,
    "files_by_extractor": {
     "python / ast": 4
    },
@@ -202,14 +198,14 @@
    },
    "top_unresolved": [
     {
-     "name": "conn.cursor",
-     "count": 2,
-     "citation": "orders/app/db.py:13"
-    },
-    {
      "name": "cur.execute",
      "count": 2,
      "citation": "orders/app/db.py:14"
+    },
+    {
+     "name": "conn.cursor",
+     "count": 2,
+     "citation": "orders/app/db.py:13"
     },
     {
      "name": "conn.commit",
@@ -232,24 +228,24 @@
      "citation": "orders/app/main.py:30"
     },
     {
-     "name": "len",
-     "count": 1,
-     "citation": "orders/app/main.py:27"
-    },
-    {
      "name": "i.model_dump",
      "count": 1,
      "citation": "orders/app/main.py:29"
     },
     {
-     "name": "ch.exchange_declare",
+     "name": "len",
      "count": 1,
-     "citation": "orders/app/events.py:17"
+     "citation": "orders/app/main.py:27"
     },
     {
      "name": "ch.basic_publish",
      "count": 1,
      "citation": "orders/app/events.py:24"
+    },
+    {
+     "name": "ch.exchange_declare",
+     "count": 1,
+     "citation": "orders/app/events.py:17"
     },
     {
      "name": "RuntimeError",
@@ -273,23 +269,14 @@
      "citation": "orders/app/main.py:13-15"
     }
    ],
-   "dynamic_hotspots": [
-    {
-     "citation": "orders/app/db.py:14",
-     "what": "exec",
-     "quote": "cur.execute("
-    },
-    {
-     "citation": "orders/app/db.py:23",
-     "what": "exec",
-     "quote": "cur.execute(f\"SELECT id, status, total_cents FROM orders WHERE id = '{order_id}'\")"
-    }
-   ],
+   "dynamic_hotspots": [],
    "unsafe_sinks": 1,
    "unsafe_sinks_reached": 1,
    "dormant_sinks": []
   },
   "platform": {
+   "extract_skips": [],
+   "extract_skip_count": 0,
    "files_by_extractor": {
     "iac / regex": 5
    },

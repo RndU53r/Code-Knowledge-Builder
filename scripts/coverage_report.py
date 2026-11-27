@@ -28,7 +28,7 @@ from graph_common import atomic_write, graph_dir, md_safe, safe_quote  # noqa: E
 
 REACH_EDGES = {"calls", "references", "routes_to", "dispatches", "invokes", "ffi", "contains", "spawns", "overrides", "implements"}
 ENTRY_KINDS = {"endpoint", "consumer", "cron_job", "cli_command", "agent", "command"}
-HOTSPOT = re.compile(r"\b(getattr|setattr|__import__|importlib\.import_module|eval|exec|Class\.forName|Activator\.CreateInstance|Type\.GetType|call_user_func(?:_array)?|"
+HOTSPOT = re.compile(r"(?<![\w.$])(getattr|setattr|__import__|importlib\.import_module|eval|exec)(?=\s*\()|(?<![\w.$])(Class\.forName|Activator\.CreateInstance|Type\.GetType|call_user_func(?:_array)?|"
                      r"const_get|constantize|public_send|send\(\s*[a-z_]+|instance_eval|class_eval|method_missing|reflect\.(?:ValueOf|TypeOf)|Reflect\.(?:get|apply)|"
                      r"require\(\s*[a-zA-Z_$][\w$]*\s*\)|import\(\s*[a-zA-Z_$][\w$]*\s*\)|dlopen|GetProcAddress|NSClassFromString|performSelector|\$\$\w+|\$\{?\w+\}?\s*\()")
 

@@ -4,6 +4,12 @@ Versions follow `plugin.json`. Newest first.
 
 ## 0.6.0
 
+### Fixed (review pass)
+- Call extraction no longer invents calls from `a < b` (JS/TS), `arr[i]` (Go), or trailing identifiers (JVM); calls inside nested Python functions belong to the nested function.
+- Agent graph: agents without a `tools:` field are treated as holding every tool, a wildcard hook matcher covers all tools, manifest names are validated, long lines are bounded.
+- Threat model: secret-like names that are paths/URLs/flags are no longer reported as literal secrets, a 0% resolution rate is no longer shown as 100%, package names are normalised when matching advisories to calls.
+- Coverage hotspots match `eval(`/`exec(` calls only; paths with control characters are skipped; `ingest_context` no longer needs Python 3.12 f-string syntax.
+
 ### Added
 - **Complete call resolution.** Calls are resolved through typed receivers (constructor assignments, annotations, injected fields, module-level instances), the class hierarchy (`super()`/`base`/`parent`, inherited methods, interface-to-implementation dispatch), static/constructor calls, callbacks and decorators. New edge kinds produced: `uses_type`, `overrides`, `implements`, `references`, `calls_lib` (code to external package with the API names). Every call is accounted for as resolved / library / ambiguous / dynamic / unresolved in `evidence/call-resolution-<repo>.json` and `graph.json` stats; nothing is dropped silently. Call-graph levels `class` and `library` join function, file and repo.
 - **Twelve languages to the same depth.** `lang_specs.py` drives declarations, class spans, calls, imports, typed receivers and inheritance for JavaScript, TypeScript, Go, Java, Kotlin, Scala, C#, Ruby, PHP, Rust and Swift (Python keeps the AST path). Each passes the eleven-row matrix in `tests/test_langs.py`; `docs/languages.md` lists parsers, frameworks and gaps. New entry points: Rust (actix, axum, Rocket, warp, tonic, clap), Swift (Vapor), Ktor, Akka HTTP/http4s/Scalatra, Micronaut/Servlets/Vert.x, WordPress, Slim, Sidekiq, tRPC, Python routers with prefixes, aiohttp/Tornado/Starlette, gRPC servicers and Lambda handlers; Rust and Swift sinks and sources; sink types `memory`, `format`, `tls`, `unsafe_code` mapped to CWEs.

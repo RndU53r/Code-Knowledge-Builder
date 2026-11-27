@@ -808,6 +808,18 @@ REQUEST_TAINT = re.compile(r"\b(req|request|ctx)\.(query|body|params|headers|coo
                            r"\br\.(Form|URL|PostForm|Header)|\$request->(input|query|get|post|all|header)\(|request\.(GET|POST|args|form)\b|\bFormValue\(")
 
 
+_XXE_CACHE = [None, False]
+
+
+def _hardened(text: str) -> bool:
+    """Is the file's XML parsing hardened? Computed once per file, ignoring `//` and `#` comments (a comment must not count as hardening)."""
+    key = (id(text), len(text))
+    if _XXE_CACHE[0] != key:
+        _XXE_CACHE[0] = key
+        _XXE_CACHE[1] = bool(XXE_HARDEN.search(re.sub(r"(?m)(?<![:\w])//.*$|^\s*#.*$", "", text)))
+    return _XXE_CACHE[1]
+
+
 def line_sinks(lang: str, line: str, text: str = "") -> list[tuple[str, bool, str, str]]:
     """Dangerous operations on one source line. `text` is the whole file (used for XXE hardening hints). Returns
     (sink_type, safe, reason, confidence); safe=False means the call looks exploitable if its input is attacker-controlled."""
@@ -824,7 +836,7 @@ def line_sinks(lang: str, line: str, text: str = "") -> list[tuple[str, bool, st
         if mode == "unsafe":
             out.append((stype, bool(mit and mit.search(line)), reason, "medium"))
         elif mode == "xxe":
-            hardened = bool(XXE_HARDEN.search(text))
+            hardened = _hardened(text)
             out.append((stype, hardened, "parser factory with hardening features in file" if hardened else "XML parser without visible hardening (DTD/external entities)", "low" if hardened else "medium"))
         elif mode == "nosql":
             tainted = bool(REQUEST_TAINT.search(line))

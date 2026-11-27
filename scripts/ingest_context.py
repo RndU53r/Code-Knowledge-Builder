@@ -369,7 +369,8 @@ def pptx(path: Path) -> list[str]:
                 t = "".join(x.text or "" for x in p.iter() if lname(x.tag) == "t").strip()
                 if t:
                     paras.append(t)
-        out += [f"## Slide {re.search(r'(\d+)', n.rsplit('/', 1)[-1]).group(1)}", ""] + [f"- {t}" for t in paras] + [""]
+        num = re.search(r"(\d+)", n.rsplit("/", 1)[-1])
+        out += [f"## Slide {num.group(1) if num else '?'}", ""] + [f"- {t}" for t in paras] + [""]
     return out
 
 

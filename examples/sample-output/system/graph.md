@@ -2,7 +2,7 @@
 
 > **ckb provenance**
 > - Sources: `fulfillment` @ `unversioned`, `gateway` @ `unversioned`, `orders` @ `unversioned`, `platform` @ `unversioned`
-> - Generated: 2026-11-25T22:12:20Z by ckb graph 1, stage `graph`
+> - Generated: 2026-11-27T00:54:02Z by ckb graph 1, stage `graph`
 > - Scope: registered code repos · Excluded: vendored, generated, binaries, symlinks, secret files
 > - Method: static extraction (ast / tree-sitter if installed / regex); agent proposals merged only after citation verification
 > - Verification: see evidence/graph-verification.md
@@ -30,7 +30,7 @@
 | nodes: sink | 6 |
 | nodes: table | 1 |
 | nodes: taint_source | 9 |
-| nodes: threat | 36 |
+| nodes: threat | 34 |
 | nodes: topic | 1 |
 | nodes: trust_boundary | 7 |
 | edges: affects | 19 |
@@ -65,7 +65,7 @@
 | ast | 34 | 60 |
 | context | 10 | 19 |
 | regex | 87 | 116 |
-| rule | 74 | 68 |
+| rule | 72 | 68 |
 | scanner | 20 | 14 |
 
 ## Repo kinds [inferred]
@@ -137,7 +137,7 @@
 ## Merge and carry-over
 
 - Security nodes attached: {"cloud_resources": 15, "sc_findings": 20, "cspm_findings": 10, "cspm_linked": 19} [inferred]
-- Agent proposals: {"accepted": 143, "rejected": 0, "annotations": 3} [inferred]
+- Agent proposals: {"accepted": 141, "rejected": 0, "annotations": 3} [inferred]
 - Summary carry-over: {"kept": 3, "outdated": 0, "moved": 0, "dropped": 0} [inferred]
 
 Query it with `/ckb:ask`, `/ckb:impact`, the viewer (`graph/index.html`), or the `ckb-graph` MCP server.
